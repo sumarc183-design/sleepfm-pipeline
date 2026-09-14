@@ -1,0 +1,26 @@
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  epoch_length_sec: 30
+  target_sample_rate_hz: 128
+
+physionet2018:
+  url_base: https://physionet.org/files/challenge-2018/1.0.0/
+
+sleepfm:
+  repo: https://github.com/rthapa84/sleepfm-codebase
+  checkpoint_path: third_party/sleepfm/checkpoints/pretrained.pt
+  embedding_dim: 512
+
+osf:
+  repo: https://github.com/bdsp-core/OSF
+  checkpoint_path: third_party/osf/checkpoints/pretrained.pt
+
+linear_probe:
+  num_classes: 5   # Wake, N1, N2, N3, REM
+  lr: 1e-3
+  epochs: 30
+  batch_size: 256
+
+eval:
+  metrics: [accuracy, cohen_kappa, macro_f1, per_class_f1]
