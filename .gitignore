@@ -1,6 +1,6 @@
-/data/
-/third_party/
-/checkpoints/
+data/
+third_party/
+checkpoints/
 *.edf
 *.edf.gz
 *.rec

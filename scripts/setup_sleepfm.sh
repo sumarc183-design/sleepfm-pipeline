@@ -11,7 +11,7 @@ if [ ! -d sleepfm ]; then
 fi
 
 if [ ! -d osf ]; then
-  git clone https://github.com/bdsp-core/OSF.git osf
+  git clone https://github.com/yang-ai-lab/OSF-Open-Sleep-FM.git osf
 fi
 
 echo "Poids préentraînés à récupérer manuellement selon les instructions des dépôts respectifs"

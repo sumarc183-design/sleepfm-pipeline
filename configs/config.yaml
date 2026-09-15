@@ -1,26 +1,74 @@
+# Channel/label conventions below are copied verbatim from the official
+# SleepFM config (rthapa84/sleepfm-codebase, MIT License) so preprocessed
+# data and pretrained checkpoints stay compatible. ALL_CHANNELS matches the
+# 13-channel montage used by both MESA and the PhysioNet/CinC Challenge 2018
+# recordings, which is why we can validate the pipeline on 2018 before MESA
+# access is approved.
+
 data:
   raw_dir: data/raw
   processed_dir: data/processed
-  epoch_length_sec: 30
-  target_sample_rate_hz: 128
+  target_sample_rate_hz: 256   # official SleepFM preprocessing target
+  chunk_duration_sec: 30
+
+  all_channels:
+    - F3-M2
+    - F4-M1
+    - C3-M2
+    - C4-M1
+    - O1-M2
+    - O2-M1
+    - E1-M2
+    - Chin1-Chin2
+    - ABD
+    - CHEST
+    - AIRFLOW
+    - SaO2
+    - ECG
+
+  channel_groups:
+    respiratory: [CHEST, SaO2, ABD]
+    sleep_stages: [C3-M2, C4-M1, O1-M2, O2-M1, E1-M2]
+    ekg: [ECG]
+
+  labels_dict:      # 5-class stage labels used for classification
+    Wake: 0
+    Stage 1: 1
+    Stage 2: 2
+    Stage 3: 3
+    REM: 4
+
+  event_to_id:      # raw sleep_stages struct keys -> mne event ids
+    wake: 1
+    nonrem1: 2
+    nonrem2: 3
+    nonrem3: 4
+    rem: 5
 
 physionet2018:
   url_base: https://physionet.org/files/challenge-2018/1.0.0/
 
 sleepfm:
   repo: https://github.com/rthapa84/sleepfm-codebase
-  checkpoint_path: third_party/sleepfm/checkpoints/pretrained.pt
+  checkpoint_path: third_party/sleepfm/checkpoints/best.pt
   embedding_dim: 512
 
 osf:
-  repo: https://github.com/bdsp-core/OSF
-  checkpoint_path: third_party/osf/checkpoints/pretrained.pt
+  repo: https://github.com/yang-ai-lab/OSF-Open-Sleep-FM
+  weights_download: https://huggingface.co/yang-ai-lab/OSF-Base
+  checkpoint_path: third_party/osf/pretrained_weights/osf_backbone.pth
+  # see docs/OSF_COMPARISON.md before comparing kappa scores directly to SleepFM
+  num_leads: 12
+  seq_len: 1920        # 64 Hz x 30s
+  patch_size_time: 64
+  embedding_dim: 768   # ViT-Base width
 
 linear_probe:
-  num_classes: 5   # Wake, N1, N2, N3, REM
-  lr: 1e-3
-  epochs: 30
-  batch_size: 256
+  # The official evaluation trains a LogisticRegression (or XGBoost) on the
+  # frozen, L2-normalized embeddings -- not a from-scratch neural head.
+  model: logistic   # logistic | xgb
+  max_iter: 100
+  modality: combined   # respiratory | sleep_stages | ekg | combined
 
 eval:
   metrics: [accuracy, cohen_kappa, macro_f1, per_class_f1]
