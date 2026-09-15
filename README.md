@@ -45,18 +45,41 @@ bash scripts/setup_sleepfm.sh   # clone le code officiel SleepFM dans third_part
 python scripts/run_embedding_and_probe.py --processed-train data/processed/train --processed-test data/processed/test
 ```
 
+## Tester sans données réelles (smoke test)
+
+`scripts/generate_synthetic_physionet2018.py` génère un jeu de données au
+format exact PhysioNet 2018 (bruit aléatoire, pas de vraie physiologie) pour
+faire tourner tout le pipeline et vérifier que la plomberie fonctionne, en
+attendant l'accès aux vraies données :
+
+```bash
+pip install -r requirements-dev.txt
+pytest tests/ -v                 # tests unitaires + bout-en-bout (~15s)
+pytest tests/ -m "not slow"      # unitaires seulement, rapide
+```
+
+Le test `tests/test_pipeline_smoke.py::test_full_pipeline_end_to_end` fait
+tourner génération -> extraction -> embeddings -> sonde -> évaluation en une
+passe. À REMPLACER par les vraies données PhysioNet 2018/MESA dès que
+possible : ces résultats synthétiques ne sont pas interprétables
+médicalement (kappa proche de 0 attendu, c'est du bruit).
+
 ## État du code
 
 `src/models/effnet.py`, `src/data/extract_physionet2018.py` et
 `src/models/embeddings.py` sont adaptés du dépôt officiel SleepFM (voir
 `THIRD_PARTY_NOTICES.md`) pour rester strictement compatibles avec les
 checkpoints publiés (mêmes noms de clés, même montage de canaux, même
-architecture). Testés ici avec des données/checkpoints synthétiques
-(shapes, chargement de checkpoint, normalisation L2, sonde logistique) :
-tout tourne sans erreur. Le téléchargement réel de PhysioNet 2018 n'a pas pu
-être validé depuis cet environnement (physionet.org hors de la liste
+architecture). Le pipeline complet (génération synthétique -> extraction ->
+embeddings -> sonde -> évaluation) tourne de bout en bout, 10/10 tests
+passent. Le téléchargement réel de PhysioNet 2018 n'a pas pu être validé
+depuis cet environnement de développement (physionet.org hors de la liste
 d'hôtes autorisés du sandbox) — à lancer depuis votre poste ou une instance
 cloud classique.
+
+## CI
+
+`.github/workflows/ci.yml` lance la suite de tests à chaque push/PR.
 
 ## Roadmap
 
