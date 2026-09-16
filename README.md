@@ -64,6 +64,27 @@ passe. À REMPLACER par les vraies données PhysioNet 2018/MESA dès que
 possible : ces résultats synthétiques ne sont pas interprétables
 médicalement (kappa proche de 0 attendu, c'est du bruit).
 
+## Tester sur les vraies données
+
+Une fois quelques enregistrements PhysioNet 2018 téléchargés (voir
+"Démarrage" ci-dessus -- même à la main via le navigateur si le
+téléchargement Python est bloqué par un proxy d'entreprise, voir la
+docstring de `scripts/download_physionet2018.py`) et extraits dans
+`data/processed/train/` :
+
+```bash
+pytest tests/test_real_data.py -v -s
+```
+
+Validé en conditions réelles : extraction sur 1 enregistrement PhysioNet
+2018 officiel (845 époques de 30s, format confirmé identique à
+`ALL_CHANNELS`), embeddings générés, sonde ajustée -- accuracy ~0.20
+(niveau du hasard sur 5 classes), cohérent avec un backbone à poids
+aléatoires (pas de checkpoint SleepFM officiel téléchargé). Avec un seul
+sujet, pas de split train/test significatif : ce test valide la plomberie,
+pas une performance de généralisation. Sauté automatiquement si
+`data/processed/train` est absent (CI compatible).
+
 ## État du code
 
 `src/models/effnet.py`, `src/data/extract_physionet2018.py` et

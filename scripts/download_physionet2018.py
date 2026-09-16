@@ -2,6 +2,16 @@
 
 Nécessite le paquet `wfdb`. Le jeu complet fait ~130 Go ; utiliser --limit
 pour ne récupérer qu'un sous-ensemble de sujets pendant la mise au point du pipeline.
+
+Sur un réseau d'entreprise : si ce script reste bloqué sur "Downloading
+files..." sans jamais avancer (alors qu'un navigateur classique accède
+bien à physionet.org), c'est probablement un proxy géré par Windows/le
+navigateur mais pas par la librairie Python. Solution de repli : chaque
+enregistrement ne nécessite que 3 fichiers, téléchargeables directement au
+navigateur depuis
+https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
+(+ .mat + -arousal.mat), à ranger dans
+data/raw/physionet2018/training/<id>/.
 """
 import argparse
 import os
