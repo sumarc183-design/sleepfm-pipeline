@@ -1,0 +1,185 @@
+From ddb72302565b74b32858cb5b2b1a749c5141c9d5 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 16 Sep 2026 08:19:28 +0000
+Subject: [PATCH] =?UTF-8?q?Ajoute=20la=20validation=20sur=20donn=C3=A9es?=
+ =?UTF-8?q?=20PhysioNet=202018=20r=C3=A9elles?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+tests/test_real_data.py fait tourner extraction -> embeddings -> sonde sur
+de vraies époques PhysioNet 2018 (data/processed/train), en remplacement
+du smoke test synthétique. Avec un seul sujet, pas de split train/test
+significatif : ajustement et évaluation sur les mêmes données, lu comme
+vérification de plomberie uniquement (backbone à poids aléatoires, pas de
+checkpoint SleepFM officiel).
+
+Validé en conditions réelles : 1 enregistrement PhysioNet 2018 officiel
+(tr03-0005, téléchargé au navigateur suite à un blocage du téléchargement
+Python sur réseau d'entreprise -- note ajoutée dans
+download_physionet2018.py) -> 845 époques extraites -> pipeline complet
+sans erreur, accuracy ~0.20 (niveau du hasard sur 5 classes, cohérent avec
+des poids aléatoires). Confirme aussi que ALL_CHANNELS correspond
+exactement au header .hea réel.
+
+Sauté automatiquement si data/processed/train est absent.
+---
+ README.md                         | 21 +++++++
+ scripts/download_physionet2018.py | 10 ++++
+ tests/test_real_data.py           | 91 +++++++++++++++++++++++++++++++
+ 3 files changed, 122 insertions(+)
+ create mode 100644 tests/test_real_data.py
+
+diff --git a/README.md b/README.md
+index 760ee2b..a362a27 100644
+--- a/README.md
++++ b/README.md
+@@ -64,6 +64,27 @@ passe. À REMPLACER par les vraies données PhysioNet 2018/MESA dès que
+ possible : ces résultats synthétiques ne sont pas interprétables
+ médicalement (kappa proche de 0 attendu, c'est du bruit).
+ 
++## Tester sur les vraies données
++
++Une fois quelques enregistrements PhysioNet 2018 téléchargés (voir
++"Démarrage" ci-dessus -- même à la main via le navigateur si le
++téléchargement Python est bloqué par un proxy d'entreprise, voir la
++docstring de `scripts/download_physionet2018.py`) et extraits dans
++`data/processed/train/` :
++
++```bash
++pytest tests/test_real_data.py -v -s
++```
++
++Validé en conditions réelles : extraction sur 1 enregistrement PhysioNet
++2018 officiel (845 époques de 30s, format confirmé identique à
++`ALL_CHANNELS`), embeddings générés, sonde ajustée -- accuracy ~0.20
++(niveau du hasard sur 5 classes), cohérent avec un backbone à poids
++aléatoires (pas de checkpoint SleepFM officiel téléchargé). Avec un seul
++sujet, pas de split train/test significatif : ce test valide la plomberie,
++pas une performance de généralisation. Sauté automatiquement si
++`data/processed/train` est absent (CI compatible).
++
+ ## État du code
+ 
+ `src/models/effnet.py`, `src/data/extract_physionet2018.py` et
+diff --git a/scripts/download_physionet2018.py b/scripts/download_physionet2018.py
+index b3744e0..aeac495 100644
+--- a/scripts/download_physionet2018.py
++++ b/scripts/download_physionet2018.py
+@@ -2,6 +2,16 @@
+ 
+ Nécessite le paquet `wfdb`. Le jeu complet fait ~130 Go ; utiliser --limit
+ pour ne récupérer qu'un sous-ensemble de sujets pendant la mise au point du pipeline.
++
++Sur un réseau d'entreprise : si ce script reste bloqué sur "Downloading
++files..." sans jamais avancer (alors qu'un navigateur classique accède
++bien à physionet.org), c'est probablement un proxy géré par Windows/le
++navigateur mais pas par la librairie Python. Solution de repli : chaque
++enregistrement ne nécessite que 3 fichiers, téléchargeables directement au
++navigateur depuis
++https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
++(+ .mat + -arousal.mat), à ranger dans
++data/raw/physionet2018/training/<id>/.
+ """
+ import argparse
+ import os
+diff --git a/tests/test_real_data.py b/tests/test_real_data.py
+new file mode 100644
+index 0000000..82301ed
+--- /dev/null
++++ b/tests/test_real_data.py
+@@ -0,0 +1,91 @@
++"""Valide le pipeline (embeddings SleepFM -> sonde) sur de VRAIES époques
++PhysioNet 2018 extraites par src/data/extract_physionet2018.py, en
++remplacement du smoke test synthétique de test_pipeline_smoke.py.
++
++Avec un seul sujet réel, un vrai split train/test n'a pas de sens
++statistique (généralisation non mesurable) -- ce test fait donc un
++ajustement sur l'ensemble des données comme simple vérification de
++plomberie (le code tourne sur du vrai signal PSG), pas une évaluation.
++Le backbone reste à poids aléatoires (pas de checkpoint SleepFM officiel
++téléchargé), donc les métriques n'ont aucune valeur médicale ici.
++
++Sauté si data/processed/train est absent.
++"""
++import sys
++from pathlib import Path
++
++import pytest
++import torch
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
++
++from src.data.epoch_dataset import PhysioNet2018EpochDataset
++from src.models.effnet import EffNet
++from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
++from src.models.linear_probe import evaluate_probe, train_linear_probe
++
++PROCESSED_DIR = Path(__file__).resolve().parents[1] / "data" / "processed" / "train"
++
++requires_real_data = pytest.mark.skipif(
++    not PROCESSED_DIR.exists(),
++    reason="data/processed/train absent -- voir scripts/download_physionet2018.py "
++    "et src/data/extract_physionet2018.py",
++)
++
++
++def _build_fake_checkpoint(path: Path, embedding_dim: int = 512) -> None:
++    def build_encoder(in_ch):
++        m = EffNet(in_channel=in_ch, stride=2, dilation=1)
++        m.fc = torch.nn.Linear(m.fc.in_features, embedding_dim)
++        return m
++
++    torch.save(
++        {
++            "respiratory_state_dict": build_encoder(len(CHANNEL_INDICES["respiratory"])).state_dict(),
++            "sleep_stages_state_dict": build_encoder(len(CHANNEL_INDICES["sleep_stages"])).state_dict(),
++            "ekg_state_dict": build_encoder(len(CHANNEL_INDICES["ekg"])).state_dict(),
++        },
++        path,
++    )
++
++
++@pytest.mark.slow
++@requires_real_data
++def test_real_physionet_data_end_to_end(tmp_path):
++    dataset = PhysioNet2018EpochDataset(PROCESSED_DIR)
++    print(f"\n{len(dataset)} époques réelles chargées")
++    assert len(dataset) > 0
++
++    from collections import Counter
++
++    label_counts = Counter(label for _, label in (dataset[i] for i in range(len(dataset))))
++    print(f"Répartition des stades (0=wake,1=n1,2=n2,3=n3,4=rem) : {dict(label_counts)}")
++
++    ckpt_path = tmp_path / "best.pt"
++    _build_fake_checkpoint(ckpt_path)
++    encoders = SleepFMEncoders(ckpt_path, embedding_dim=512)
++
++    loader = torch.utils.data.DataLoader(dataset, batch_size=32)
++    embeddings, labels = [], []
++    with torch.no_grad():
++        for epochs, batch_labels in loader:
++            embeddings.append(encoders.embed_combined(epochs).numpy())
++            labels.append(batch_labels.numpy())
++
++    import numpy as np
++
++    X = np.concatenate(embeddings)
++    y = np.concatenate(labels)
++    assert X.shape == (len(dataset), 512 * 3)
++    print(f"Embeddings générés : {X.shape}")
++
++    # Un seul sujet : pas de split train/test significatif, on ajuste sur
++    # tout et on lit le score comme vérification de plomberie uniquement
++    # (le modèle peut "voir" ces exact échantillons -- ce n'est PAS une
++    # mesure de généralisation).
++    probe = train_linear_probe(X, y, max_iter=200)
++    results = evaluate_probe(probe, X, y)
++    print(f"Sonde (ajustée et évaluée sur les mêmes données -- plomberie uniquement) : {results['accuracy']:.3f}")
++    assert 0.0 <= results["accuracy"] <= 1.0
++
++    print("\nOK -- pipeline SleepFM validé sur données PhysioNet 2018 réelles.")
+-- 
+2.43.0
+
