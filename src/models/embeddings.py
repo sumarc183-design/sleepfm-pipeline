@@ -67,7 +67,8 @@ class SleepFMEncoders(torch.nn.Module):
         if not checkpoint_path.exists():
             raise FileNotFoundError(
                 f"Checkpoint introuvable : {checkpoint_path}. "
-                "Suivre third_party/sleepfm/README.md pour récupérer best.pt."
+                "Lancer bash scripts/setup_sleepfm.sh : best.pt est versionné dans le dépôt officiel "
+                "(third_party/sleepfm/sleepfm/checkpoint/best.pt)."
             )
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
 

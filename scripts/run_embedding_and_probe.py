@@ -2,7 +2,7 @@
 logistique -> métriques comparées au chiffre publié.
 
 Nécessite : data/processed/{X,Y} (via src/data/extract_physionet2018.py) et
-un checkpoint SleepFM (third_party/sleepfm/checkpoints/best.pt).
+un checkpoint SleepFM (third_party/sleepfm/sleepfm/checkpoint/best.pt).
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--processed-train", required=True)
     parser.add_argument("--processed-test", required=True)
-    parser.add_argument("--checkpoint", default="third_party/sleepfm/checkpoints/best.pt")
+    parser.add_argument("--checkpoint", default="third_party/sleepfm/sleepfm/checkpoint/best.pt")
     parser.add_argument("--published-kappa", type=float, default=None, help="Chiffre publié à comparer, si connu")
     parser.add_argument("--batch-size", type=int, default=64)
     args = parser.parse_args()

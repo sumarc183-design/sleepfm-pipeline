@@ -21,7 +21,7 @@ Exemples :
 
     # Vos vraies données + vrai checkpoint SleepFM (premier vrai chiffre)
     python run_baseline.py --raw-data data/raw/physionet2018/training \\
-        --checkpoint third_party/sleepfm/checkpoints/best.pt
+        --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt
 """
 from __future__ import annotations
 

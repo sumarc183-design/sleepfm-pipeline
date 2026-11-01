@@ -50,7 +50,7 @@ physionet2018:
 
 sleepfm:
   repo: https://github.com/rthapa84/sleepfm-codebase
-  checkpoint_path: third_party/sleepfm/checkpoints/best.pt
+  checkpoint_path: third_party/sleepfm/sleepfm/checkpoint/best.pt
   embedding_dim: 512
 
 osf:

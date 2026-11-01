@@ -89,10 +89,10 @@ pas une performance de généralisation. Sauté automatiquement si
 
 Le checkpoint pré-entraîné `best.pt` (~84 Mo) est hébergé directement dans le
 dépôt officiel, récupérable via `bash scripts/setup_sleepfm.sh` (clone
-`third_party/sleepfm/`, checkpoint dans `third_party/sleepfm/checkpoint/best.pt`).
+`third_party/sleepfm/`, checkpoint dans `third_party/sleepfm/sleepfm/checkpoint/best.pt`).
 
 Validé ici : chargement réel du `best.pt` publié, génération d'embeddings,
-`run_baseline.py --checkpoint third_party/sleepfm/checkpoint/best.pt`
+`run_baseline.py --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt`
 fonctionne de bout en bout.
 
 **Piège découvert en le chargeant** : le `best.pt` publié utilise les clés
