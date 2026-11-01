@@ -2,8 +2,17 @@
 frozen, L2-normalized embeddings per modality (respiratory / sleep_stages /
 ekg), exactly as in 3_generate_embed_pretraining.py of the official repo.
 
-Checkpoint is expected to contain the keys:
-  "respiratory_state_dict", "sleep_stages_state_dict", "ekg_state_dict"
+Checkpoint is expected to contain, per modality, one of two key naming
+conventions (both seen in the official rthapa84/sleepfm-codebase repo):
+  - "respiratory_state_dict", "sleep_stages_state_dict", "ekg_state_dict"
+    (used by 2_pretrain.py / 3_generate_embed_pretraining.py, i.e. what you
+    get if you retrain yourself)
+  - "resp_state_dict", "sleep_state_dict", "ekg_state_dict"
+    (the actual keys inside the released sleepfm/checkpoint/best.pt --
+    verified by loading it directly; an inconsistency in the upstream repo
+    between the shipped checkpoint and its own loading script, not a bug
+    introduced here)
+Both forms are accepted so the released best.pt loads without edits.
 (a "module." prefix from DataParallel training is stripped automatically.)
 """
 from __future__ import annotations
@@ -33,6 +42,16 @@ def _strip_module_prefix(state_dict: dict) -> dict:
     return {k.replace("module.", "", 1) if k.startswith("module.") else k: v for k, v in state_dict.items()}
 
 
+def _get_state_dict(checkpoint: dict, *possible_keys: str) -> dict:
+    for key in possible_keys:
+        if key in checkpoint:
+            return checkpoint[key]
+    raise KeyError(
+        f"Aucune des clés {possible_keys} n'est présente dans le checkpoint "
+        f"(clés disponibles : {list(checkpoint.keys())})."
+    )
+
+
 def build_encoder(in_channels: int, embedding_dim: int) -> EffNet:
     encoder = EffNet(in_channel=in_channels, stride=2, dilation=1)
     encoder.fc = torch.nn.Linear(encoder.fc.in_features, embedding_dim)
@@ -56,9 +75,13 @@ class SleepFMEncoders(torch.nn.Module):
         self.sleep_stages = build_encoder(len(CHANNEL_INDICES["sleep_stages"]), embedding_dim)
         self.ekg = build_encoder(len(CHANNEL_INDICES["ekg"]), embedding_dim)
 
-        self.respiratory.load_state_dict(_strip_module_prefix(checkpoint["respiratory_state_dict"]))
-        self.sleep_stages.load_state_dict(_strip_module_prefix(checkpoint["sleep_stages_state_dict"]))
-        self.ekg.load_state_dict(_strip_module_prefix(checkpoint["ekg_state_dict"]))
+        self.respiratory.load_state_dict(
+            _strip_module_prefix(_get_state_dict(checkpoint, "respiratory_state_dict", "resp_state_dict"))
+        )
+        self.sleep_stages.load_state_dict(
+            _strip_module_prefix(_get_state_dict(checkpoint, "sleep_stages_state_dict", "sleep_state_dict"))
+        )
+        self.ekg.load_state_dict(_strip_module_prefix(_get_state_dict(checkpoint, "ekg_state_dict")))
 
         for module in (self.respiratory, self.sleep_stages, self.ekg):
             module.eval()

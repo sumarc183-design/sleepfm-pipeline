@@ -55,3 +55,40 @@ def test_sleepfm_encoders_missing_checkpoint_raises(tmp_path):
 
     with pytest.raises(FileNotFoundError):
         SleepFMEncoders(tmp_path / "does_not_exist.pt")
+
+
+def _build_fake_checkpoint_short_keys(tmp_path, embedding_dim=512):
+    """Reproduit les noms de clés du vrai checkpoint publié
+    (sleepfm/checkpoint/best.pt) : "resp_state_dict"/"sleep_state_dict",
+    différents de "respiratory_state_dict"/"sleep_stages_state_dict" attendus
+    par 3_generate_embed_pretraining.py -- incohérence vérifiée dans le dépôt
+    officiel rthapa84/sleepfm-codebase, pas une erreur d'ici."""
+    def build_encoder(in_ch):
+        m = EffNet(in_channel=in_ch, stride=2, dilation=1)
+        m.fc = torch.nn.Linear(m.fc.in_features, embedding_dim)
+        return m
+
+    ckpt_path = tmp_path / "best.pt"
+    torch.save(
+        {
+            "resp_state_dict": build_encoder(len(CHANNEL_INDICES["respiratory"])).state_dict(),
+            "sleep_state_dict": build_encoder(len(CHANNEL_INDICES["sleep_stages"])).state_dict(),
+            "ekg_state_dict": build_encoder(len(CHANNEL_INDICES["ekg"])).state_dict(),
+            "temperature": 0.07,
+        },
+        ckpt_path,
+    )
+    return ckpt_path
+
+
+def test_sleepfm_encoders_load_real_checkpoint_key_names(tmp_path):
+    """Le checkpoint réellement publié utilise resp_state_dict/sleep_state_dict
+    (pas respiratory_state_dict/sleep_stages_state_dict) -- voir
+    _build_fake_checkpoint_short_keys. Sans ce test, un futur refactor pourrait
+    silencieusement casser le chargement du vrai best.pt tout en laissant
+    passer test_sleepfm_encoders_load_and_embed (qui utilise les noms longs)."""
+    ckpt_path = _build_fake_checkpoint_short_keys(tmp_path)
+    encoders = SleepFMEncoders(ckpt_path, embedding_dim=512)
+    batch = torch.randn(2, len(ALL_CHANNELS), 256 * 30)
+    combined = encoders.embed_combined(batch)
+    assert combined.shape == (2, 512 * 3)

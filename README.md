@@ -85,18 +85,39 @@ sujet, pas de split train/test significatif : ce test valide la plomberie,
 pas une performance de généralisation. Sauté automatiquement si
 `data/processed/train` est absent (CI compatible).
 
+## Checkpoint officiel
+
+Le checkpoint pré-entraîné `best.pt` (~84 Mo) est hébergé directement dans le
+dépôt officiel, récupérable via `bash scripts/setup_sleepfm.sh` (clone
+`third_party/sleepfm/`, checkpoint dans `third_party/sleepfm/checkpoint/best.pt`).
+
+Validé ici : chargement réel du `best.pt` publié, génération d'embeddings,
+`run_baseline.py --checkpoint third_party/sleepfm/checkpoint/best.pt`
+fonctionne de bout en bout.
+
+**Piège découvert en le chargeant** : le `best.pt` publié utilise les clés
+`resp_state_dict`/`sleep_state_dict`/`ekg_state_dict`, alors que le propre
+script d'inférence du dépôt officiel (`3_generate_embed_pretraining.py`)
+attend `respiratory_state_dict`/`sleep_stages_state_dict`/`ekg_state_dict` —
+une incohérence dans le dépôt amont, pas une erreur introduite ici (vérifié
+en lisant `2_pretrain.py` : les noms longs sont bien ceux produits par un
+réentraînement complet, mais le fichier `best.pt` livré tel quel utilise les
+noms courts). `src/models/embeddings.py` accepte les deux formes.
+
 ## État du code
 
 `src/models/effnet.py`, `src/data/extract_physionet2018.py` et
 `src/models/embeddings.py` sont adaptés du dépôt officiel SleepFM (voir
 `THIRD_PARTY_NOTICES.md`) pour rester strictement compatibles avec les
-checkpoints publiés (mêmes noms de clés, même montage de canaux, même
-architecture). Le pipeline complet (génération synthétique -> extraction ->
-embeddings -> sonde -> évaluation) tourne de bout en bout, 10/10 tests
-passent. Le téléchargement réel de PhysioNet 2018 n'a pas pu être validé
-depuis cet environnement de développement (physionet.org hors de la liste
-d'hôtes autorisés du sandbox) — à lancer depuis votre poste ou une instance
-cloud classique.
+checkpoints publiés (mêmes noms de clés -- avec gestion des deux variantes
+ci-dessus --, même montage de canaux, même architecture). Le pipeline
+complet (génération synthétique -> extraction -> embeddings -> sonde ->
+évaluation) tourne de bout en bout avec le vrai checkpoint officiel, 11/11
+tests passent. Le téléchargement réel de PhysioNet 2018 n'a pas pu être
+validé depuis cet environnement de développement (physionet.org hors de la
+liste d'hôtes autorisés du sandbox) — à lancer depuis votre poste ou une
+instance cloud classique. Le prochain vrai chiffre nécessite plus de sujets
+PhysioNet 2018 téléchargés (`--raw-data`) combinés à ce checkpoint réel.
 
 ## CI
 
