@@ -1,8 +1,9 @@
 # Roadmap SleepFM
 
 ## J30 — Reproduction
-- [ ] Pipeline officiel SleepFM opérationnel sur PhysioNet Challenge 2018
+- [x] Pipeline officiel SleepFM opérationnel sur PhysioNet Challenge 2018
 - [ ] Premier κ de stadification, comparé au chiffre publié (tolérance ±0.05)
+  - premier κ obtenu : 0,584 sur 20 sujets PhysioNet 2018 (2026-11-02) ; pas de chiffre publié sur PhysioNet 2018, la comparaison se fera sur MESA
 - [ ] Demande d'accès NSRR/MESA déposée (voir DATA_ACCESS.md)
 
 ## J60 — Comparaison

@@ -2,6 +2,21 @@
 
 Reproduction et évaluation de [SleepFM](https://github.com/rthapa84/sleepfm-codebase) (modèle fondamental multimodal pour le sommeil) sur données ouvertes, avec comparaison à [OSF](https://github.com/yang-ai-lab/OSF-Open-Sleep-FM) / SleepBench.
 
+## Résultats
+
+| Date | Données | Checkpoint | Accuracy | Cohen's κ | Macro F1 |
+|---|---|---|---|---|---|
+| 2026-11-02 | PhysioNet 2018, 20 sujets (15 train / 5 test, split par sujet, 4 295 époques de test) | `best.pt` officiel | 0,703 | **0,584** | 0,650 |
+
+Sonde logistique sur embeddings figés (combinés : respiratoire + stades + ECG),
+5 classes. Lancé sur Colab GPU T4 via `notebooks/colab_baseline_physionet2018.ipynb`,
+sortie brute dans `results/results_physionet2018.txt`.
+
+Référence interne, pas une reproduction du chiffre publié : le papier SleepFM
+rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018. Avec 5 sujets
+de test, le κ peut varier d'environ ±0,05 selon le tirage ; à consolider avec
+plus de sujets, puis comparer au chiffre publié sur MESA.
+
 ## Objectif phase 1
 
 Ne pas ré-entraîner un modèle fondamental. Reproduire la baseline publiée sur une tâche mesurable — classification des stades du sommeil (5 classes : Wake, N1, N2, N3, REM) — avant d'investir dans du développement propriétaire.
@@ -122,11 +137,8 @@ checkpoints publiés (mêmes noms de clés -- avec gestion des deux variantes
 ci-dessus --, même montage de canaux, même architecture). Le pipeline
 complet (génération synthétique -> extraction -> embeddings -> sonde ->
 évaluation) tourne de bout en bout avec le vrai checkpoint officiel, 11/11
-tests passent. Le téléchargement réel de PhysioNet 2018 n'a pas pu être
-validé depuis cet environnement de développement (physionet.org hors de la
-liste d'hôtes autorisés du sandbox) — à lancer depuis votre poste ou une
-instance cloud classique. Le prochain vrai chiffre nécessite plus de sujets
-PhysioNet 2018 téléchargés (`--raw-data`) combinés à ce checkpoint réel.
+tests passent. Premier vrai chiffre obtenu sur 20 sujets PhysioNet 2018
+avec le checkpoint officiel (voir "Résultats" en haut de ce fichier).
 
 ## CI
 
