@@ -85,6 +85,15 @@ sujet, pas de split train/test significatif : ce test valide la plomberie,
 pas une performance de généralisation. Sauté automatiquement si
 `data/processed/train` est absent (CI compatible).
 
+## Lancer sur GPU gratuit (Google Colab)
+
+[![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
+
+`notebooks/colab_baseline_physionet2018.ipynb` télécharge N sujets PhysioNet
+2018 (20 par défaut), récupère `best.pt`, et lance `run_baseline.py` avec les
+embeddings sur GPU (`--device cuda`, choisi automatiquement si disponible).
+Sélectionner `GPU T4` dans le type d'exécution avant de lancer.
+
 ## Checkpoint officiel
 
 Le checkpoint pré-entraîné `best.pt` (~84 Mo) est hébergé directement dans le

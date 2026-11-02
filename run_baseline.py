@@ -90,13 +90,14 @@ def split_subjects_train_test(raw_dir: Path, test_fraction: float, seed: int) ->
     return subjects[n_test:], subjects[:n_test]
 
 
-def collect_embeddings(encoders: SleepFMEncoders, processed_dir: Path, batch_size: int = 32):
+def collect_embeddings(encoders: SleepFMEncoders, processed_dir: Path, batch_size: int = 32,
+                       device: str = "cpu", num_workers: int = 0):
     dataset = PhysioNet2018EpochDataset(processed_dir)
-    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
     embeddings, labels = [], []
     with torch.no_grad():
         for epochs, batch_labels in loader:
-            embeddings.append(encoders.embed_combined(epochs).numpy())
+            embeddings.append(encoders.embed_combined(epochs.to(device)).cpu().numpy())
             labels.append(batch_labels.numpy())
     return np.concatenate(embeddings), np.concatenate(labels), len(dataset)
 
@@ -109,6 +110,9 @@ def main() -> None:
     parser.add_argument("--num-synthetic-subjects", type=int, default=6)
     parser.add_argument("--num-threads", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu",
+                        help="cuda (GPU Colab/Kaggle) ou cpu. Par défaut : cuda si disponible.")
+    parser.add_argument("--batch-size", type=int, default=32)
     args = parser.parse_args()
 
     is_synthetic = args.raw_data is None
@@ -143,9 +147,10 @@ def main() -> None:
             checkpoint_path = tmp_path / "random_checkpoint.pt"
             build_random_checkpoint(checkpoint_path)
 
-        encoders = SleepFMEncoders(checkpoint_path, embedding_dim=512)
-        X_train, y_train, n_train = collect_embeddings(encoders, processed_train)
-        X_test, y_test, n_test = collect_embeddings(encoders, processed_test)
+        encoders = SleepFMEncoders(checkpoint_path, embedding_dim=512).to(args.device)
+        print(f"Embeddings sur : {args.device}")
+        X_train, y_train, n_train = collect_embeddings(encoders, processed_train, args.batch_size, args.device, args.num_threads)
+        X_test, y_test, n_test = collect_embeddings(encoders, processed_test, args.batch_size, args.device, args.num_threads)
 
         probe = train_linear_probe(X_train, y_train)
         results = evaluate_probe(probe, X_test, y_test)
