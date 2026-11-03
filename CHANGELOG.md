@@ -17,11 +17,19 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Arrêt précoce du MLP** sur des nuits mises à part, au lieu d'époques
   tirées au hasard dans les mêmes nuits que l'entraînement (fuite).
 - Chargement du checkpoint avec `weights_only=True`.
+- **Reprise du mode par lots** : un `.npz` interrompu en pleine écriture
+  restait sur le disque (ou le Drive), était pris pour un sujet traité et
+  faisait planter le run suivant. L'écriture passe par un fichier
+  temporaire renommé ensuite ; un cache illisible existant est détecté,
+  supprimé et recalculé au démarrage.
 
 ### Ajouté
 - Intervalles de confiance à 95 % du kappa et du F1 macro par bootstrap sur
   les sujets de test.
 - Matrice de confusion de la baseline (sortie et JSON).
+- Le JSON de résultats enregistre les sujets de train et de test, les
+  réglages (sondes, `max_iter`, plis, seuils de sélection) et la convergence
+  de chaque sonde : deux runs se comparent sans relire les logs.
 
 ## [0.1.0] — 2026-11-03
 

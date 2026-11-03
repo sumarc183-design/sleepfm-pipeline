@@ -1,17 +1,17 @@
 # Fichier de référence : aucun script ne le lit (les valeurs effectives sont
 # les arguments de run_baseline.py et les constantes de src/).
 #
-# Channel/label conventions below are copied verbatim from the official
-# SleepFM config (rthapa84/sleepfm-codebase, MIT License) so preprocessed
-# data and pretrained checkpoints stay compatible. ALL_CHANNELS matches the
-# 13-channel montage used by both MESA and the PhysioNet/CinC Challenge 2018
-# recordings, which is why we can validate the pipeline on 2018 before MESA
-# access is approved.
+# Les conventions de canaux et de labels ci-dessous sont copiées telles
+# quelles de la config officielle SleepFM (rthapa84/sleepfm-codebase, licence
+# MIT), pour rester compatible avec les données prétraitées et les
+# checkpoints publiés. ALL_CHANNELS correspond au montage 13 canaux commun à
+# MESA et au PhysioNet/CinC Challenge 2018 : c'est ce qui permet de valider
+# le pipeline sur 2018 avant l'accès à MESA.
 
 data:
   raw_dir: data/raw
   processed_dir: data/processed
-  target_sample_rate_hz: 256   # official SleepFM preprocessing target
+  target_sample_rate_hz: 256   # fréquence cible du prétraitement officiel
   chunk_duration_sec: 30
 
   all_channels:
@@ -34,14 +34,14 @@ data:
     sleep_stages: [C3-M2, C4-M1, O1-M2, O2-M1, E1-M2]
     ekg: [ECG]
 
-  labels_dict:      # 5-class stage labels used for classification
+  labels_dict:      # labels des 5 stades pour la classification
     Wake: 0
     Stage 1: 1
     Stage 2: 2
     Stage 3: 3
     REM: 4
 
-  event_to_id:      # raw sleep_stages struct keys -> mne event ids
+  event_to_id:      # clés brutes de sleep_stages -> identifiants d'événements mne
     wake: 1
     nonrem1: 2
     nonrem2: 3
@@ -60,21 +60,21 @@ osf:
   repo: https://github.com/yang-ai-lab/OSF-Open-Sleep-FM
   weights_download: https://huggingface.co/yang-ai-lab/OSF-Base
   checkpoint_path: third_party/osf/pretrained_weights/osf_backbone.pth
-  # see docs/OSF_COMPARISON.md before comparing kappa scores directly to SleepFM
+  # lire docs/OSF_COMPARISON.md avant de comparer des kappas à ceux de SleepFM
   num_leads: 12
-  seq_len: 1920        # 64 Hz x 30s
+  seq_len: 1920        # 64 Hz x 30 s
   patch_size_time: 64
-  embedding_dim: 768   # ViT-Base width
+  embedding_dim: 768   # largeur du ViT-Base
 
 linear_probe:
-  # The official evaluation trains a LogisticRegression (or XGBoost) on the
-  # frozen, L2-normalized embeddings -- not a from-scratch neural head.
+  # L'évaluation officielle entraîne une LogisticRegression (ou XGBoost) sur
+  # les embeddings figés normalisés L2, pas une tête neuronale entraînée de zéro.
   models: [logistic, logistic_unweighted, xgboost, mlp, sequence]   # logistic = baseline officielle (class_weight=balanced) ; run_baseline.py --probes
   selection_cv_folds: 5   # MLP vs XGBoost départagés par validation croisée par sujet, sur le train uniquement
   min_xgboost_gain: 0.02   # XGBoost gardé seulement s'il bat le MLP de plus de 0,02 en F1 macro de validation, sur >= 4 plis sur 5
   max_f1_gap: 0.15   # MLP/XGBoost éliminé si gap F1 moyen apprentissage - validation > 0,15
   test_fraction: 0.2   # split 80/20 par sujet
-  max_iter: 100
+  max_iter: 1000   # le script officiel garde 100 (son --max_iter n'est pas transmis), sans garantie de convergence
   modality: combined   # respiratory | sleep_stages | ekg | combined
 
 eval:

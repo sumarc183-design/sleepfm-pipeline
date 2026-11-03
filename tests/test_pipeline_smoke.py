@@ -164,6 +164,46 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     )
     assert fetched == []
 
+    # Interruption en pleine écriture : le .npz tronqué est recalculé, le
+    # fichier temporaire abandonné est supprimé, les autres sujets restent en cache
+    truncated = embeddings_dir / f"{subjects[0]}.npz"
+    truncated.write_bytes(truncated.read_bytes()[:100])
+    (embeddings_dir / f"{subjects[1]}.tmp.npz").write_bytes(b"partiel")
+    embed_subjects_in_chunks(
+        subjects, fetch_subject, encoders, embeddings_dir, chunk_size=2, num_threads=1, batch_size=16, device="cpu"
+    )
+    assert fetched == [subjects[0]]
+    assert not list(embeddings_dir.glob("*.tmp.npz"))
+    X_again, _, _ = load_cached_embeddings(embeddings_dir, subjects)
+    np.testing.assert_allclose(X_again, X, atol=1e-5)
+
+
+def test_results_json_records_subjects_settings_and_convergence(tmp_path):
+    """Le JSON suffit à savoir si deux runs sont comparables : mêmes sujets
+    de test, mêmes réglages, baseline convergée ou non."""
+    import json
+    from types import SimpleNamespace
+
+    from run_baseline import save_results_json
+    from src.models.linear_probe import compare_probes
+
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 5, 200)
+    X = rng.standard_normal((200, 8))
+    X[np.arange(200), y] += 3.0
+    results = compare_probes(["logistic"], X[:150], y[:150], X[150:], y[150:])
+    args = SimpleNamespace(
+        test_fraction=0.2, seed=42, probes=["logistic"], max_iter=1000, cv_folds=5, min_gain=0.02, max_gap=0.15
+    )
+    path = tmp_path / "run.json"
+    save_results_json(path, results, None, "desc", "ckpt", args, ["s2", "s1"], ["s3"])
+
+    payload = json.loads(path.read_text())
+    assert payload["train_subjects"] == ["s1", "s2"] and payload["test_subjects"] == ["s3"]
+    assert payload["settings"]["max_gap"] == 0.15
+    assert payload["probes"]["logistic"]["converged"] is True
+    assert payload["probes"]["logistic"]["n_iter"] > 0
+
 
 @pytest.mark.slow
 def test_loser_of_mlp_vs_xgboost_is_never_evaluated_on_test():

@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -176,10 +177,21 @@ def embed_subjects_in_chunks(
     float64) restent sur disque, ce qui permet de passer à 100+ sujets sur
     le disque de Colab. Un sujet déjà présent dans embeddings_dir n'est pas
     recalculé : relancer après une déconnexion reprend où on s'est arrêté.
+    Chaque .npz est écrit sous un nom temporaire puis renommé : une
+    interruption en pleine écriture ne laisse pas de fichier tronqué pris
+    pour un sujet traité. Un .npz illisible (cache écrit avant ce correctif)
+    est supprimé et recalculé.
 
     `fetch_subject(subject_id, dest_dir)` doit déposer les 3 fichiers bruts
     du sujet dans dest_dir/<subject_id>/ (téléchargement ou lien local)."""
     embeddings_dir.mkdir(parents=True, exist_ok=True)
+    for leftover in embeddings_dir.glob("*.tmp.npz"):
+        leftover.unlink()  # écriture interrompue lors d'un run précédent
+    for subject in subject_ids:
+        cached = embeddings_dir / f"{subject}.npz"
+        if cached.exists() and not is_valid_cache(cached):
+            print(f"[{subject}] cache illisible (écriture interrompue ?) : supprimé, sera recalculé")
+            cached.unlink()
     todo = [
         s
         for s in subject_ids
@@ -211,12 +223,18 @@ def embed_subjects_in_chunks(
                     # stades...) : marqué pour ne pas le retenter à chaque relance.
                     (embeddings_dir / f"{subject}.skipped").touch()
                     continue
-                np.savez(
-                    embeddings_dir / f"{subject}.npz",
-                    X=X[mask].astype(np.float32),
-                    y=y[mask],
-                    epoch_idx=sample_epoch_idx[mask],
-                )
+                tmp_file = embeddings_dir / f"{subject}.tmp.npz"
+                np.savez(tmp_file, X=X[mask].astype(np.float32), y=y[mask], epoch_idx=sample_epoch_idx[mask])
+                os.replace(tmp_file, embeddings_dir / f"{subject}.npz")
+
+
+def is_valid_cache(path: Path) -> bool:
+    """Le .npz se relit en entier et X, y ont le même nombre de lignes."""
+    try:
+        with np.load(path) as data:
+            return len(data["X"]) == len(data["y"]) > 0
+    except Exception:
+        return False
 
 
 def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
@@ -370,10 +388,19 @@ def print_results(
 
 
 def save_results_json(
-    path: Path, results: dict, selection: dict | None, data_desc: str, checkpoint_desc: str, args
+    path: Path,
+    results: dict,
+    selection: dict | None,
+    data_desc: str,
+    checkpoint_desc: str,
+    args,
+    train_subjects: list[str],
+    test_subjects: list[str],
 ) -> None:
     """Métriques au format JSON, pour comparer des runs sans relire les logs.
-    `per_class_report` est réduit au F1 et à l'effectif de chaque stade."""
+    `per_class_report` est réduit au F1 et à l'effectif de chaque stade.
+    Les sujets et les réglages sont enregistrés : deux runs ne se comparent
+    que s'ils ont été évalués sur les mêmes nuits, avec les mêmes règles."""
     label_to_stage = {v: k for k, v in STAGE_NAME_TO_LABEL.items()}
 
     def summarize(metrics: dict) -> dict:
@@ -389,8 +416,23 @@ def save_results_json(
         "checkpoint": checkpoint_desc,
         "test_fraction": args.test_fraction,
         "seed": args.seed,
+        "settings": {
+            "probes": list(args.probes),
+            "max_iter": args.max_iter,
+            "cv_folds": args.cv_folds,
+            "min_gain": args.min_gain,
+            "max_gap": args.max_gap,
+        },
+        "train_subjects": sorted(train_subjects),
+        "test_subjects": sorted(test_subjects),
         "probes": {
-            kind: {"test": summarize(r["test"]), "train": summarize(r["train"]), "fit_seconds": r["fit_seconds"]}
+            kind: {
+                "test": summarize(r["test"]),
+                "train": summarize(r["train"]),
+                "fit_seconds": r["fit_seconds"],
+                "converged": r.get("converged"),
+                "n_iter": r.get("n_iter"),
+            }
             for kind, r in results.items()
         },
         "selection": None
@@ -452,7 +494,9 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         results, data_desc, checkpoint_desc, data_kind == "SYNTHÉTIQUES" or args.checkpoint is None, selection
     )
     if args.results_json is not None:
-        save_results_json(args.results_json, results, selection, data_desc, checkpoint_desc, args)
+        save_results_json(
+            args.results_json, results, selection, data_desc, checkpoint_desc, args, train_subjects, test_subjects
+        )
 
 
 def main() -> None:
@@ -604,7 +648,9 @@ def main() -> None:
     checkpoint_desc = "ALÉATOIRE (pas de poids SleepFM officiels)" if is_random_checkpoint else str(args.checkpoint)
     print_results(results, data_desc, checkpoint_desc, is_synthetic or is_random_checkpoint, selection)
     if args.results_json is not None:
-        save_results_json(args.results_json, results, selection, data_desc, checkpoint_desc, args)
+        save_results_json(
+            args.results_json, results, selection, data_desc, checkpoint_desc, args, train_subjects, test_subjects
+        )
 
 
 if __name__ == "__main__":

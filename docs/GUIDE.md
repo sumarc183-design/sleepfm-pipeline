@@ -43,7 +43,10 @@ Chaque lot de sujets (`--chunk-size`, 8 par défaut) est téléchargé, extrait 
 passé dans SleepFM, puis le brut et les époques sont supprimés : seul un `.npz`
 d'embeddings par sujet (~5 Mo, contre ~0,85 Go de brut et d'époques) reste dans
 `embeddings/`. Un sujet déjà présent n'est pas recalculé : relancer reprend là
-où on s'était arrêté. Même split, mêmes époques et mêmes labels que le mode
+où on s'était arrêté. Chaque `.npz` est écrit sous un nom temporaire puis
+renommé, et un cache illisible (écriture interrompue) est recalculé au
+démarrage : interrompre un run, même en pleine écriture, ne casse pas le
+suivant. Même split, mêmes époques et mêmes labels que le mode
 classique (vérifié par `tests/test_pipeline_smoke.py`).
 
 Chaque `.npz` contient `X` (embeddings), `y` (stades) et `epoch_idx` (numéro
@@ -58,7 +61,8 @@ est reconstitué depuis ce tri.
 Sélectionner `GPU T4` dans le type d'exécution, puis `Tout exécuter`. Le
 notebook utilise le mode par lots (100 sujets par défaut) avec les embeddings
 sur Google Drive : une déconnexion ne fait rien perdre. Sorties :
-`results_physionet2018_<N>.txt` (lisible) et `.json` (métriques structurées).
+`results_physionet2018_<N>.txt` (lisible) et `.json` (métriques, sujets de
+train et de test, réglages et convergence, pour comparer deux runs).
 
 ## Sondes et sélection de modèle
 
