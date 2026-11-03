@@ -49,7 +49,7 @@ from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDatase
 from src.data.extract_physionet2018 import main as extract_main
 from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
-from src.models.linear_probe import MIN_XGBOOST_GAIN, PROBE_KINDS, choose_mlp_or_xgboost, compare_probes
+from src.models.linear_probe import MAX_F1_GAP, MIN_XGBOOST_GAIN, PROBE_KINDS, choose_mlp_or_xgboost, compare_probes
 
 
 def build_random_checkpoint(path: Path, embedding_dim: int = 512) -> None:
@@ -202,7 +202,7 @@ PROBE_LABELS = {
 
 
 def print_results(results: dict, data_desc: str, checkpoint_desc: str, not_interpretable: bool,
-                  min_gain: float = MIN_XGBOOST_GAIN) -> None:
+                  min_gain: float = MIN_XGBOOST_GAIN, max_gap: float = MAX_F1_GAP) -> None:
     """`results` : sortie de compare_probes, {sonde: {"train": ..., "test": ..., "fit_seconds": ...}}.
     Gap = score train - score test : un gap élevé signale du surapprentissage."""
     label_to_stage = {v: k for k, v in STAGE_NAME_TO_LABEL.items()}
@@ -230,7 +230,7 @@ def print_results(results: dict, data_desc: str, checkpoint_desc: str, not_inter
         print(f"  {label_to_stage[int(label)]:<18}{scores}{int(first_report[label]['support']):>8}")
     if "mlp" in results and "xgboost" in results:
         print("-" * width)
-        print(f"MLP ou XGBoost : {choose_mlp_or_xgboost(results, min_gain)[1]}")
+        print(f"MLP ou XGBoost : {choose_mlp_or_xgboost(results, min_gain, max_gap)[1]}")
     print("=" * width)
     if not_interpretable:
         print("Ces résultats ne sont PAS interprétables médicalement (données et/ou "
@@ -279,6 +279,7 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         "ALÉATOIRE (pas de poids SleepFM officiels)" if args.checkpoint is None else str(args.checkpoint),
         data_kind == "SYNTHÉTIQUES" or args.checkpoint is None,
         args.min_gain,
+        args.max_gap,
     )
 
 
@@ -304,6 +305,8 @@ def main() -> None:
     parser.add_argument("--max-iter", type=int, default=100, help="Itérations max de la régression logistique")
     parser.add_argument("--min-gain", type=float, default=MIN_XGBOOST_GAIN,
                         help="Avance minimale en F1 macro test pour préférer XGBoost au MLP (plus rapide)")
+    parser.add_argument("--max-gap", type=float, default=MAX_F1_GAP,
+                        help="Gap F1 train - test au-delà duquel MLP/XGBoost est éliminé (surapprentissage)")
     parser.add_argument("--probes", nargs="+", choices=PROBE_KINDS, default=list(PROBE_KINDS),
                         help="Sondes à comparer sur les mêmes embeddings. La régression logistique est la "
                              "baseline (protocole officiel SleepFM).")
@@ -372,6 +375,7 @@ def main() -> None:
         "ALÉATOIRE (pas de poids SleepFM officiels)" if is_random_checkpoint else str(args.checkpoint),
         is_synthetic or is_random_checkpoint,
         args.min_gain,
+        args.max_gap,
     )
 
 

@@ -30,10 +30,15 @@ stade, et le gap train − test (un gap élevé signale du surapprentissage).
 Hyperparamètres fixes, jamais réglés sur le test (arrêt précoce du MLP et du
 BiGRU sur une partie du train). `--probes logistic` pour la baseline seule.
 
-Une seule sonde non linéaire est gardée entre XGBoost et MLP : XGBoost
-seulement s'il bat le MLP de plus de 0,02 en F1 macro test (`--min-gain`),
-sinon le MLP, plus rapide. Le verdict s'affiche sous le tableau. Random
-Forest a été retiré (plus lent, moins adapté aux embeddings denses).
+Une seule sonde non linéaire est gardée entre XGBoost et MLP, verdict
+affiché sous le tableau :
+1. une sonde dont le gap F1 train − test dépasse 0,15 (`--max-gap`) est
+   éliminée quel que soit son score : elle a appris le train par cœur ;
+2. si les deux restent, XGBoost seulement s'il bat le MLP de plus de 0,02 en
+   F1 macro test (`--min-gain`), sinon le MLP, plus rapide ;
+3. si aucune ne reste, on s'en tient à la régression logistique.
+
+Random Forest a été retiré (plus lent, moins adapté aux embeddings denses).
 
 Référence interne, pas une reproduction du chiffre publié : le papier SleepFM
 rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018. Avec 5 sujets

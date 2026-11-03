@@ -98,14 +98,18 @@ def test_sequence_probe_requires_groups():
         train_probe("sequence", X, y)
 
 
-@pytest.mark.parametrize("mlp_f1, xgb_f1, expected", [
-    (0.75, 0.70, "mlp"),      # XGBoost moins bon
-    (0.60, 0.615, "mlp"),     # XGBoost devant de 0,015 : quasi-égalité, le MLP (plus rapide) gagne
-    (0.60, 0.63, "xgboost"),  # XGBoost devant de 0,03 : écart net
+@pytest.mark.parametrize("mlp, xgb, expected", [
+    # (F1 train, F1 test) de chaque sonde
+    ((0.78, 0.75), (0.75, 0.70), "mlp"),      # XGBoost moins bon
+    ((0.65, 0.60), (0.66, 0.615), "mlp"),     # XGBoost devant de 0,015 : quasi-égalité, le MLP (plus rapide) gagne
+    ((0.65, 0.60), (0.70, 0.63), "xgboost"),  # XGBoost devant de 0,03, gap raisonnable : écart net
+    ((0.65, 0.60), (1.00, 0.70), "mlp"),      # XGBoost bien meilleur au test mais gap 0,30 : éliminé
+    ((0.99, 0.70), (0.66, 0.62), "xgboost"),  # MLP meilleur au test mais gap 0,29 : éliminé
+    ((1.00, 0.70), (1.00, 0.65), None),       # les deux surapprennent : aucune retenue
 ])
-def test_choose_mlp_or_xgboost(mlp_f1, xgb_f1, expected):
-    results = {
-        "mlp": {"test": {"macro_f1": mlp_f1}, "fit_seconds": 60},
-        "xgboost": {"test": {"macro_f1": xgb_f1}, "fit_seconds": 120},
-    }
-    assert choose_mlp_or_xgboost(results, min_gain=0.02)[0] == expected
+def test_choose_mlp_or_xgboost(mlp, xgb, expected):
+    def run(train_f1, test_f1, seconds):
+        return {"train": {"macro_f1": train_f1}, "test": {"macro_f1": test_f1}, "fit_seconds": seconds}
+
+    results = {"mlp": run(*mlp, 60), "xgboost": run(*xgb, 120)}
+    assert choose_mlp_or_xgboost(results, min_gain=0.02, max_gap=0.15)[0] == expected

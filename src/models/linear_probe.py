@@ -32,6 +32,7 @@ from sklearn.neural_network import MLPClassifier
 
 PROBE_KINDS = ("logistic", "logistic_balanced", "xgboost", "mlp", "sequence")
 MIN_XGBOOST_GAIN = 0.02  # F1 macro : en dessous, l'écart relève du bruit du tirage des sujets de test
+MAX_F1_GAP = 0.15  # gap F1 train - test au-delà duquel une sonde est jugée surapprise
 
 
 def train_linear_probe(
@@ -116,10 +117,31 @@ def evaluate_probe(model, X_test: np.ndarray, y_test: np.ndarray,
     }
 
 
-def choose_mlp_or_xgboost(results: dict, min_gain: float = MIN_XGBOOST_GAIN) -> tuple[str, str]:
-    """Règle du projet : XGBoost n'est retenu que s'il bat le MLP de plus de
-    `min_gain` en F1 macro sur le test ; à quasi-égalité on garde le MLP,
-    plus rapide à entraîner. Renvoie (sonde retenue, explication)."""
+def f1_gap(result: dict) -> float:
+    return result["train"]["macro_f1"] - result["test"]["macro_f1"]
+
+
+def choose_mlp_or_xgboost(results: dict, min_gain: float = MIN_XGBOOST_GAIN,
+                          max_gap: float = MAX_F1_GAP) -> tuple[str | None, str]:
+    """Règle du projet pour garder une seule sonde non linéaire :
+    1. une sonde dont le gap F1 train - test dépasse `max_gap` est éliminée,
+       quel que soit son score (elle a appris le train par cœur) ;
+    2. si les deux restent, XGBoost n'est retenu que s'il bat le MLP de plus
+       de `min_gain` en F1 macro test ; à quasi-égalité on garde le MLP, plus
+       rapide à entraîner ;
+    3. si une seule reste, c'est elle ; si aucune, aucune n'est retenue (on
+       s'en tient à la régression logistique).
+    Renvoie (sonde retenue ou None, explication)."""
+    gaps = {kind: f1_gap(results[kind]) for kind in ("mlp", "xgboost")}
+    eliminated = [kind for kind, gap in gaps.items() if gap > max_gap]
+    note = "".join(f" ; {kind.upper() if kind == 'mlp' else 'XGBoost'} éliminé (gap F1 {gaps[kind]:+.4f} > {max_gap})"
+                   for kind in eliminated)
+    remaining = [kind for kind in ("mlp", "xgboost") if kind not in eliminated]
+    if not remaining:
+        return None, f"aucune sonde retenue, les deux surapprennent{note}"
+    if len(remaining) == 1:
+        kept = remaining[0]
+        return kept, f"{'MLP' if kept == 'mlp' else 'XGBoost'} retenu{note}"
     mlp, xgb = results["mlp"]["test"]["macro_f1"], results["xgboost"]["test"]["macro_f1"]
     gain = xgb - mlp
     if gain > min_gain:
