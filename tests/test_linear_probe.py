@@ -42,9 +42,10 @@ def test_compare_probes_reports_train_test_and_gap():
     X_train, y_train = _separable(400, rng)
     X_test, y_test = _separable(150, rng)
 
-    results = compare_probes(PROBE_KINDS, X_train, y_train, X_test, y_test, max_iter=200)
+    kinds = [k for k in PROBE_KINDS if k != "sequence"]  # "sequence" : tests dédiés (besoin des nuits)
+    results = compare_probes(kinds, X_train, y_train, X_test, y_test, max_iter=200)
 
-    assert set(results) == set(PROBE_KINDS)
+    assert set(results) == set(kinds)
     for kind, r in results.items():
         assert r["test"]["macro_f1"] > 0.8, kind
         assert r["test"]["roc_auc_macro"] > 0.9, kind
@@ -65,3 +66,33 @@ def test_tree_probes_handle_a_stage_missing_from_train(kind):
     assert set(np.unique(model.predict(X_test))) <= {0, 1, 3, 4}  # labels d'origine, jamais 2
     assert model.predict_proba(X_test).shape == (len(X_test), 4)
     assert 0.0 <= evaluate_probe(model, X_test, y_test)["roc_auc_macro"] <= 1.0
+
+
+def test_sequence_probe_uses_temporal_context():
+    """Stade impossible à deviner sur l'époque seule : l'indice du stade de
+    l'époque t est porté par l'embedding de l'époque t+1. Seule la sonde
+    séquentielle, qui voit les voisines, peut le retrouver."""
+    rng = np.random.default_rng(0)
+
+    def nights(n_nights, length=60):
+        X, y, subjects, idx = [], [], [], []
+        for night in range(n_nights):
+            stages = rng.integers(0, 3, length)
+            emb = rng.standard_normal((length, 8)) * 0.3
+            emb[1:, :3] += np.eye(3)[stages[:-1]] * 3  # stade t encodé dans l'époque t+1
+            order = rng.permutation(length)  # lignes mélangées : l'ordre vient de epoch_idx
+            X.append(emb[order]); y.append(stages[order])
+            subjects.append(np.full(length, f"s{night}")); idx.append(np.arange(length)[order])
+        return np.concatenate(X), np.concatenate(y), (np.concatenate(subjects), np.concatenate(idx))
+
+    X_train, y_train, g_train = nights(20)
+    X_test, y_test, g_test = nights(5)
+    results = compare_probes(["logistic", "sequence"], X_train, y_train, X_test, y_test,
+                             train_groups=g_train, test_groups=g_test)
+    assert results["sequence"]["test"]["macro_f1"] > results["logistic"]["test"]["macro_f1"] + 0.3
+
+
+def test_sequence_probe_requires_groups():
+    X, y = _separable(50, np.random.default_rng(0))
+    with pytest.raises(ValueError, match="groups"):
+        train_probe("sequence", X, y)

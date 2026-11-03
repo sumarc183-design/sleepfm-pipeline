@@ -6,9 +6,14 @@ couche PyTorch entraînée par SGD : c'est bien une régression logistique
 sklearn qui fait office de "linear probe" dans la littérature) -- c'est
 elle qui se compare au chiffre publié.
 
-Random Forest et XGBoost (le dépôt officiel propose aussi XGBoost) sont des
-sondes non linéaires évaluées à côté, sur exactement les mêmes embeddings et
-le même split, pour voir si une frontière non linéaire apporte quelque chose.
+Les autres sondes sont évaluées à côté, sur exactement les mêmes embeddings
+et le même split, chacune pour tester un levier :
+  - logistic_balanced : même modèle, classes pondérées (N1 est rare) ;
+  - random_forest, xgboost (le dépôt officiel propose aussi XGBoost) :
+    frontière non linéaire par arbres ;
+  - mlp : frontière non linéaire par réseau, plus adaptée aux embeddings
+    denses que les arbres ;
+  - sequence : contexte temporel (époques voisines), voir sequence_probe.py.
 Hyperparamètres fixes, raisonnables, jamais réglés sur le jeu de test.
 """
 from __future__ import annotations
@@ -19,8 +24,9 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, cohen_kappa_score, f1_score, roc_auc_score
+from sklearn.neural_network import MLPClassifier
 
-PROBE_KINDS = ("logistic", "random_forest", "xgboost")
+PROBE_KINDS = ("logistic", "logistic_balanced", "random_forest", "xgboost", "mlp", "sequence")
 
 
 def train_linear_probe(
@@ -55,10 +61,22 @@ class _EncodedXGBClassifier:
 
 
 def train_probe(kind: str, X_train: np.ndarray, y_train: np.ndarray, max_iter: int = 100,
-                seed: int = 42, device: str = "cpu"):
+                seed: int = 42, device: str = "cpu", groups: tuple[np.ndarray, np.ndarray] | None = None):
+    """`groups` = (sujet, numéro d'époque) de chaque ligne, requis par "sequence"."""
     if kind == "logistic":
         return train_linear_probe(X_train, y_train, max_iter=max_iter)
-    if kind == "random_forest":
+    if kind == "logistic_balanced":
+        model = LogisticRegression(max_iter=max_iter, class_weight="balanced")
+    elif kind == "mlp":
+        model = MLPClassifier(hidden_layer_sizes=(256,), alpha=1e-3, early_stopping=True,
+                              max_iter=100, random_state=seed)
+    elif kind == "sequence":
+        if groups is None:
+            raise ValueError("La sonde 'sequence' a besoin de groups=(sujets, numéros d'époque)")
+        from .sequence_probe import SequenceProbe  # import paresseux : torch
+
+        return SequenceProbe(device=device, seed=seed).fit(X_train, y_train, groups)
+    elif kind == "random_forest":
         # max_samples / min_samples_leaf : limite le temps (CPU Colab à 2 cœurs)
         # et le surapprentissage d'arbres profonds sur 1536 dimensions.
         model = RandomForestClassifier(
@@ -77,37 +95,43 @@ def train_probe(kind: str, X_train: np.ndarray, y_train: np.ndarray, max_iter: i
     return model
 
 
-def macro_roc_auc(model, X: np.ndarray, y: np.ndarray) -> float:
+def macro_roc_auc(proba: np.ndarray, classes: np.ndarray, y: np.ndarray) -> float:
     """ROC-AUC un-contre-tous, moyenne sur les stades présents dans y (un
     stade absent n'a pas d'AUC définie)."""
-    proba = model.predict_proba(X)
-    aucs = [roc_auc_score(y == c, proba[:, i]) for i, c in enumerate(model.classes_)
+    aucs = [roc_auc_score(y == c, proba[:, i]) for i, c in enumerate(classes)
             if 0 < (y == c).sum() < len(y)]
     return float(np.mean(aucs)) if aucs else float("nan")
 
 
-def evaluate_probe(model, X_test: np.ndarray, y_test: np.ndarray) -> dict:
-    y_pred = model.predict(X_test)
+def evaluate_probe(model, X_test: np.ndarray, y_test: np.ndarray,
+                   groups: tuple[np.ndarray, np.ndarray] | None = None) -> dict:
+    if getattr(model, "needs_groups", False):
+        y_pred, proba = model.predict(X_test, groups), model.predict_proba(X_test, groups)
+    else:
+        y_pred, proba = model.predict(X_test), model.predict_proba(X_test)
     return {
         "accuracy": float((y_pred == y_test).mean()),
         "cohen_kappa": float(cohen_kappa_score(y_test, y_pred)),
         "macro_f1": float(f1_score(y_test, y_pred, average="macro")),
-        "roc_auc_macro": macro_roc_auc(model, X_test, y_test),
+        "roc_auc_macro": macro_roc_auc(proba, model.classes_, y_test),
         "per_class_report": classification_report(y_test, y_pred, output_dict=True, zero_division=0),
     }
 
 
 def compare_probes(kinds, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray,
-                   max_iter: int = 100, seed: int = 42, device: str = "cpu") -> dict:
+                   max_iter: int = 100, seed: int = 42, device: str = "cpu",
+                   train_groups: tuple[np.ndarray, np.ndarray] | None = None,
+                   test_groups: tuple[np.ndarray, np.ndarray] | None = None) -> dict:
     """Entraîne chaque sonde sur le même train, l'évalue sur le train ET le
-    test : l'écart (gap) train - test mesure le surapprentissage."""
+    test : l'écart (gap) train - test mesure le surapprentissage.
+    `*_groups` = (sujet, numéro d'époque) par ligne, requis par "sequence"."""
     results = {}
     for kind in kinds:
         start = time.time()
-        model = train_probe(kind, X_train, y_train, max_iter=max_iter, seed=seed, device=device)
+        model = train_probe(kind, X_train, y_train, max_iter=max_iter, seed=seed, device=device, groups=train_groups)
         results[kind] = {
-            "train": evaluate_probe(model, X_train, y_train),
-            "test": evaluate_probe(model, X_test, y_test),
+            "train": evaluate_probe(model, X_train, y_train, train_groups),
+            "test": evaluate_probe(model, X_test, y_test, test_groups),
             "fit_seconds": time.time() - start,
         }
     return results

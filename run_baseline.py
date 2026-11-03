@@ -103,9 +103,20 @@ def split_subject_ids(subjects: list[str], test_fraction: float, seed: int) -> t
 
 def collect_embeddings(encoders: SleepFMEncoders, processed_dir: Path, batch_size: int = 32,
                        device: str = "cpu", num_workers: int = 0):
+    """Renvoie X, y et groups = (sujet, numéro d'époque) de chaque ligne."""
     dataset = PhysioNet2018EpochDataset(processed_dir)
     X, y = embed_dataset(encoders, dataset, batch_size, device, num_workers)
-    return X, y, len(dataset)
+    return X, y, epoch_groups(dataset)
+
+
+def epoch_groups(dataset: PhysioNet2018EpochDataset) -> tuple[np.ndarray, np.ndarray]:
+    """(sujet, numéro d'époque) de chaque échantillon, d'après les noms de
+    fichiers <sujet>_<idx>.npy. Le dataset trie les fichiers par nom
+    ("_10" avant "_2") : le numéro est indispensable pour remettre une nuit
+    dans l'ordre chronologique (sonde "sequence")."""
+    subjects = np.array([epoch_file.parent.name for epoch_file, _ in dataset.samples])
+    epoch_idx = np.array([int(epoch_file.stem.rsplit("_", 1)[1]) for epoch_file, _ in dataset.samples])
+    return subjects, epoch_idx
 
 
 def embed_dataset(encoders: SleepFMEncoders, dataset: PhysioNet2018EpochDataset, batch_size: int = 32,
@@ -152,7 +163,7 @@ def embed_subjects_in_chunks(subject_ids: list[str], fetch_subject, encoders: Sl
                 dataset = None  # aucun sujet du lot n'a passé l'extraction
             if dataset is not None:
                 X, y = embed_dataset(encoders, dataset, batch_size, device, num_threads)
-                sample_subjects = np.array([epoch_file.parent.name for epoch_file, _ in dataset.samples])
+                sample_subjects, sample_epoch_idx = epoch_groups(dataset)
             for subject in chunk:
                 mask = sample_subjects == subject if dataset is not None else np.zeros(0, dtype=bool)
                 if not mask.any():
@@ -160,19 +171,34 @@ def embed_subjects_in_chunks(subject_ids: list[str], fetch_subject, encoders: Sl
                     # stades...) : marqué pour ne pas le retenter à chaque relance.
                     (embeddings_dir / f"{subject}.skipped").touch()
                     continue
-                np.savez(embeddings_dir / f"{subject}.npz", X=X[mask].astype(np.float32), y=y[mask])
+                np.savez(embeddings_dir / f"{subject}.npz", X=X[mask].astype(np.float32), y=y[mask],
+                         epoch_idx=sample_epoch_idx[mask])
 
 
-def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]) -> tuple[np.ndarray, np.ndarray]:
-    X, y = [], []
+def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
+    """Renvoie X, y et groups = (sujet, numéro d'époque) de chaque ligne."""
+    X, y, groups_subject, groups_epoch = [], [], [], []
     for subject in subjects:
         with np.load(embeddings_dir / f"{subject}.npz") as data:
             X.append(data["X"])
             y.append(data["y"])
-    return np.concatenate(X), np.concatenate(y)
+            if "epoch_idx" in data:
+                epoch_idx = data["epoch_idx"]
+            else:
+                # Cache antérieur à epoch_idx : lignes dans l'ordre des noms de
+                # fichiers <sujet>_0..n-1.npy (numérotation sans trou à
+                # l'extraction), on retrouve donc le numéro de chaque ligne.
+                n = len(data["y"])
+                epoch_idx = np.array(sorted(range(n), key=lambda i: f"{subject}_{i}.npy"))
+        groups_subject.append(np.full(len(epoch_idx), subject))
+        groups_epoch.append(epoch_idx)
+    return np.concatenate(X), np.concatenate(y), (np.concatenate(groups_subject), np.concatenate(groups_epoch))
 
 
-PROBE_LABELS = {"logistic": "Régression log.", "random_forest": "Random Forest", "xgboost": "XGBoost"}
+PROBE_LABELS = {
+    "logistic": "Régression log.", "logistic_balanced": "Rég. log. pond.", "random_forest": "Random Forest",
+    "xgboost": "XGBoost", "mlp": "MLP", "sequence": "BiGRU (nuit)",
+}
 
 
 def print_results(results: dict, data_desc: str, checkpoint_desc: str, not_interpretable: bool) -> None:
@@ -236,11 +262,12 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
     if len(cached) < 2:
         raise SystemExit(f"Seulement {len(cached)} sujet(s) exploitable(s) : impossible de faire un split train/test.")
     train_subjects, test_subjects = split_subject_ids(cached, args.test_fraction, args.seed)
-    X_train, y_train = load_cached_embeddings(args.embeddings_dir, train_subjects)
-    X_test, y_test = load_cached_embeddings(args.embeddings_dir, test_subjects)
+    X_train, y_train, train_groups = load_cached_embeddings(args.embeddings_dir, train_subjects)
+    X_test, y_test, test_groups = load_cached_embeddings(args.embeddings_dir, test_subjects)
 
     results = compare_probes(args.probes, X_train, y_train, X_test, y_test,
-                             max_iter=args.max_iter, seed=args.seed, device=args.device)
+                             max_iter=args.max_iter, seed=args.seed, device=args.device,
+                             train_groups=train_groups, test_groups=test_groups)
     print_results(
         results,
         f"{data_kind} ({len(train_subjects)} sujet(s) train / {len(test_subjects)} test, "
@@ -323,11 +350,13 @@ def main() -> None:
 
         encoders = SleepFMEncoders(checkpoint_path, embedding_dim=512).to(args.device)
         print(f"Embeddings sur : {args.device}")
-        X_train, y_train, n_train = collect_embeddings(encoders, processed_train, args.batch_size, args.device, args.num_threads)
-        X_test, y_test, n_test = collect_embeddings(encoders, processed_test, args.batch_size, args.device, args.num_threads)
+        X_train, y_train, train_groups = collect_embeddings(encoders, processed_train, args.batch_size, args.device, args.num_threads)
+        X_test, y_test, test_groups = collect_embeddings(encoders, processed_test, args.batch_size, args.device, args.num_threads)
+        n_train, n_test = len(y_train), len(y_test)
 
         results = compare_probes(args.probes, X_train, y_train, X_test, y_test,
-                                 max_iter=args.max_iter, seed=args.seed, device=args.device)
+                                 max_iter=args.max_iter, seed=args.seed, device=args.device,
+                                 train_groups=train_groups, test_groups=test_groups)
 
     print_results(
         results,

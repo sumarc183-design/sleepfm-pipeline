@@ -98,7 +98,10 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     from run_baseline import embed_subjects_in_chunks, extract, load_cached_embeddings
 
     raw_dir = tmp_path / "raw"
-    _generate_synthetic_raw(raw_dir, n_subjects=3, seed=3)
+    rng = np.random.default_rng(3)
+    for i in range(3):  # 15 époques : "_10".."_14" se trient avant "_2", l'ordre doit être reconstitué
+        generate_subject(str(raw_dir), f"synthetic-{i:04d}", sample_rate=32,
+                         n_epochs=15, epoch_sec=30, lead_in_sec=2, rng=rng)
     subjects = sorted(p.name for p in raw_dir.iterdir())
 
     ckpt_path = tmp_path / "best.pt"
@@ -121,8 +124,19 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     processed = tmp_path / "processed"
     extract(raw_dir, processed, num_threads=1)
     reference = PhysioNet2018EpochDataset(processed)
-    X, y = load_cached_embeddings(embeddings_dir, subjects)
+    X, y, (group_subjects, epoch_idx) = load_cached_embeddings(embeddings_dir, subjects)
     assert X.shape == (len(reference), 3 * 512)
+    reference_idx = [int(f.stem.rsplit("_", 1)[1]) for f, _ in reference.samples]
+    assert list(epoch_idx) == reference_idx and list(group_subjects) == [f.parent.name for f, _ in reference.samples]
+    assert reference_idx != sorted(reference_idx)  # le piège du tri par nom est bien présent
+
+    # Cache antérieur à epoch_idx : même numérotation reconstruite
+    for npz in embeddings_dir.glob("*.npz"):
+        with np.load(npz) as data:
+            legacy = {"X": data["X"], "y": data["y"]}
+        np.savez(npz, **legacy)
+    _, _, (_, legacy_idx) = load_cached_embeddings(embeddings_dir, subjects)
+    assert list(legacy_idx) == reference_idx
     assert X.dtype == np.float32
     assert list(y) == [reference[i][1] for i in range(len(reference))]
 
