@@ -1,24 +1,22 @@
 # Attributions
 
-`src/models/effnet.py` and parts of `src/data/extract_physionet2018.py` and
-`src/models/embeddings.py` are adapted from the official SleepFM codebase:
+## SleepFM (`src/models/effnet.py`, parties de `src/data/extract_physionet2018.py` et de `src/models/embeddings.py`)
 
-- Repository: https://github.com/rthapa84/sleepfm-codebase
-- License: MIT (Copyright 2024 the SleepFM authors)
+- Dépôt : https://github.com/rthapa84/sleepfm-codebase
+- Licence : MIT (Copyright 2024 les auteurs de SleepFM)
 
-Adapted for readability and to remove a `sys.path` dependency on a
-third_party/ clone; the model architecture, channel conventions, and
-checkpoint key names are kept identical so official pretrained weights load
-without remapping.
+Adapté pour la lisibilité et pour supprimer la dépendance à un clone ajouté
+à `sys.path` dans third_party/. L'architecture du modèle, les conventions de
+canaux et les noms de clés du checkpoint sont strictement identiques, pour
+que les poids préentraînés officiels se chargent sans renommage.
 
-## OSF (src/models/osf_vit1d.py)
+## OSF (`src/models/osf_vit1d.py`)
 
-- Repository: https://github.com/yang-ai-lab/OSF-Open-Sleep-FM
-- License: MIT
+- Dépôt : https://github.com/yang-ai-lab/OSF-Open-Sleep-FM
+- Licence : MIT
 
-Minimal re-implementation of `osf/backbone/vit1d_cls.py::ViT` (1D ViT with
-CLS token), enough to load the released `osf_backbone.pth` state_dict and
-generate embeddings, without vendoring the full training/SSL codebase. See
-`docs/OSF_COMPARISON.md` for the channel-convention and label-scheme
-differences that must be handled before comparing SleepFM and OSF numbers
-directly.
+Réimplémentation minimale de `osf/backbone/vit1d_cls.py::ViT` (ViT 1D avec
+token CLS), suffisante pour charger le `osf_backbone.pth` publié et produire
+des embeddings, sans reprendre tout le code d'entraînement. Voir
+`docs/OSF_COMPARISON.md` pour les différences de canaux et de schéma de
+labels à traiter avant de comparer directement SleepFM et OSF.

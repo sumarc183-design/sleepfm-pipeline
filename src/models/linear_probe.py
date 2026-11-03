@@ -22,6 +22,7 @@ Entre XGBoost et MLP, une seule sonde non linéaire est gardée, choisie par
 validation croisée par sujet sur le train (voir choose_mlp_or_xgboost) : le
 test n'intervient qu'à la fin, sur le modèle retenu.
 """
+
 from __future__ import annotations
 
 import time
@@ -51,12 +52,12 @@ class _EncodedXGBClassifier:
     """XGBoost exige des labels 0..K-1 contigus : si un stade manque dans le
     train (petits runs), on ré-encode et on redonne les labels d'origine."""
 
-    def __init__(self, **params):
+    def __init__(self, **params) -> None:
         from xgboost import XGBClassifier  # import paresseux : dépendance optionnelle
 
         self.model = XGBClassifier(**params)
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "_EncodedXGBClassifier":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> _EncodedXGBClassifier:
         self.classes_, y_encoded = np.unique(y, return_inverse=True)
         self.model.fit(X, y_encoded)
         return self
@@ -68,16 +69,24 @@ class _EncodedXGBClassifier:
         return self.model.predict_proba(X)
 
 
-def train_probe(kind: str, X_train: np.ndarray, y_train: np.ndarray, max_iter: int = 100,
-                seed: int = 42, device: str = "cpu", groups: tuple[np.ndarray, np.ndarray] | None = None):
+def train_probe(
+    kind: str,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    max_iter: int = 100,
+    seed: int = 42,
+    device: str = "cpu",
+    groups: tuple[np.ndarray, np.ndarray] | None = None,
+):
     """`groups` = (sujet, numéro d'époque) de chaque ligne, requis par "sequence"."""
     if kind == "logistic":
         return train_linear_probe(X_train, y_train, max_iter=max_iter)
     if kind == "logistic_balanced":
         model = LogisticRegression(max_iter=max_iter, class_weight="balanced")
     elif kind == "mlp":
-        model = MLPClassifier(hidden_layer_sizes=(256,), alpha=1e-3, early_stopping=True,
-                              max_iter=100, random_state=seed)
+        model = MLPClassifier(
+            hidden_layer_sizes=(256,), alpha=1e-3, early_stopping=True, max_iter=100, random_state=seed
+        )
     elif kind == "sequence":
         if groups is None:
             raise ValueError("La sonde 'sequence' a besoin de groups=(sujets, numéros d'époque)")
@@ -86,9 +95,15 @@ def train_probe(kind: str, X_train: np.ndarray, y_train: np.ndarray, max_iter: i
         return SequenceProbe(device=device, seed=seed).fit(X_train, y_train, groups)
     elif kind == "xgboost":
         model = _EncodedXGBClassifier(
-            n_estimators=300, max_depth=6, learning_rate=0.1, subsample=0.8, colsample_bytree=0.5,
-            tree_method="hist", device="cuda" if device.startswith("cuda") else "cpu",
-            random_state=seed, n_jobs=-1,
+            n_estimators=300,
+            max_depth=6,
+            learning_rate=0.1,
+            subsample=0.8,
+            colsample_bytree=0.5,
+            tree_method="hist",
+            device="cuda" if device.startswith("cuda") else "cpu",
+            random_state=seed,
+            n_jobs=-1,
         )
     else:
         raise ValueError(f"Sonde inconnue {kind!r} (disponibles : {PROBE_KINDS})")
@@ -99,13 +114,13 @@ def train_probe(kind: str, X_train: np.ndarray, y_train: np.ndarray, max_iter: i
 def macro_roc_auc(proba: np.ndarray, classes: np.ndarray, y: np.ndarray) -> float:
     """ROC-AUC un-contre-tous, moyenne sur les stades présents dans y (un
     stade absent n'a pas d'AUC définie)."""
-    aucs = [roc_auc_score(y == c, proba[:, i]) for i, c in enumerate(classes)
-            if 0 < (y == c).sum() < len(y)]
+    aucs = [roc_auc_score(y == c, proba[:, i]) for i, c in enumerate(classes) if 0 < (y == c).sum() < len(y)]
     return float(np.mean(aucs)) if aucs else float("nan")
 
 
-def evaluate_probe(model, X_test: np.ndarray, y_test: np.ndarray,
-                   groups: tuple[np.ndarray, np.ndarray] | None = None) -> dict:
+def evaluate_probe(
+    model, X_test: np.ndarray, y_test: np.ndarray, groups: tuple[np.ndarray, np.ndarray] | None = None
+) -> dict:
     if getattr(model, "needs_groups", False):
         y_pred, proba = model.predict(X_test, groups), model.predict_proba(X_test, groups)
     else:
@@ -131,8 +146,16 @@ def subject_folds(subjects: np.ndarray, n_folds: int, seed: int = 42) -> list[tu
     return [(np.flatnonzero(fold != k), np.flatnonzero(fold == k)) for k in range(n_folds)]
 
 
-def cross_validate_probes(kinds, X: np.ndarray, y: np.ndarray, subjects: np.ndarray, n_folds: int = 5,
-                          max_iter: int = 100, seed: int = 42, device: str = "cpu") -> dict:
+def cross_validate_probes(
+    kinds,
+    X: np.ndarray,
+    y: np.ndarray,
+    subjects: np.ndarray,
+    n_folds: int = 5,
+    max_iter: int = 100,
+    seed: int = 42,
+    device: str = "cpu",
+) -> dict:
     """Validation croisée par sujet sur le TRAIN uniquement, mêmes plis pour
     chaque sonde (comparaison appariée). Le jeu de test n'intervient pas :
     il reste réservé à l'évaluation finale du modèle choisi.
@@ -149,8 +172,9 @@ def cross_validate_probes(kinds, X: np.ndarray, y: np.ndarray, subjects: np.ndar
     return results
 
 
-def choose_mlp_or_xgboost(cv: dict, min_gain: float = MIN_XGBOOST_GAIN,
-                          max_gap: float = MAX_F1_GAP) -> tuple[str | None, str]:
+def choose_mlp_or_xgboost(
+    cv: dict, min_gain: float = MIN_XGBOOST_GAIN, max_gap: float = MAX_F1_GAP
+) -> tuple[str | None, str]:
     """Règle du projet pour garder une seule sonde non linéaire, appliquée à
     la validation croisée par sujet sur le train (cross_validate_probes),
     jamais au test :
@@ -164,8 +188,10 @@ def choose_mlp_or_xgboost(cv: dict, min_gain: float = MIN_XGBOOST_GAIN,
        s'en tient à la régression logistique).
     Renvoie (sonde retenue ou None, explication)."""
     names = {"mlp": "MLP", "xgboost": "XGBoost"}
-    gaps = {kind: float(np.mean(np.array(cv[kind]["train_f1"]) - np.array(cv[kind]["val_f1"])))
-            for kind in ("mlp", "xgboost")}
+    gaps = {
+        kind: float(np.mean(np.array(cv[kind]["train_f1"]) - np.array(cv[kind]["val_f1"])))
+        for kind in ("mlp", "xgboost")
+    }
     eliminated = [kind for kind, gap in gaps.items() if gap > max_gap]
     note = "".join(f" ; {names[kind]} éliminé (gap F1 moyen {gaps[kind]:+.4f} > {max_gap})" for kind in eliminated)
     remaining = [kind for kind in ("mlp", "xgboost") if kind not in eliminated]
@@ -179,14 +205,24 @@ def choose_mlp_or_xgboost(cv: dict, min_gain: float = MIN_XGBOOST_GAIN,
     detail = f"gain moyen XGBoost - MLP = {mean_gain:+.4f}, XGBoost meilleur sur {wins}/{n_folds} plis"
     if mean_gain > min_gain and wins >= n_folds - 1:
         return "xgboost", f"{detail} : écart net et régulier, XGBoost retenu"
-    return "mlp", (f"{detail} : écart trop faible ou irrégulier, MLP retenu, plus rapide "
-                   f"({cv['mlp']['fit_seconds']:.0f}s contre {cv['xgboost']['fit_seconds']:.0f}s sur les plis)")
+    return "mlp", (
+        f"{detail} : écart trop faible ou irrégulier, MLP retenu, plus rapide "
+        f"({cv['mlp']['fit_seconds']:.0f}s contre {cv['xgboost']['fit_seconds']:.0f}s sur les plis)"
+    )
 
 
-def compare_probes(kinds, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray,
-                   max_iter: int = 100, seed: int = 42, device: str = "cpu",
-                   train_groups: tuple[np.ndarray, np.ndarray] | None = None,
-                   test_groups: tuple[np.ndarray, np.ndarray] | None = None) -> dict:
+def compare_probes(
+    kinds,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    max_iter: int = 100,
+    seed: int = 42,
+    device: str = "cpu",
+    train_groups: tuple[np.ndarray, np.ndarray] | None = None,
+    test_groups: tuple[np.ndarray, np.ndarray] | None = None,
+) -> dict:
     """Entraîne chaque sonde sur le même train, l'évalue sur le train ET le
     test : l'écart (gap) train - test mesure le surapprentissage.
     `*_groups` = (sujet, numéro d'époque) par ligne, requis par "sequence"."""

@@ -14,8 +14,8 @@ nécessite que 3 fichiers, téléchargeables au navigateur depuis
 https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
 (+ .mat + -arousal.mat), à ranger dans data/raw/physionet2018/training/<id>/.
 """
+
 import argparse
-import os
 import time
 import urllib.request
 from pathlib import Path
@@ -48,7 +48,7 @@ def download_subject(subject_id: str, dest_dir: str | Path, split: str = "traini
                 dest.unlink(missing_ok=True)
                 if attempt == retries - 1:
                     raise
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
     return subject_dir
 
 

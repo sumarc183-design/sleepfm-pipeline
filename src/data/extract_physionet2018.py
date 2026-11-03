@@ -1,16 +1,17 @@
-"""Extracts 30s epochs + sleep-stage labels from PhysioNet/CinC Challenge 2018
-raw files, in the exact format the official SleepFM preprocessing expects.
+"""Extrait les époques de 30 s et les stades de sommeil des fichiers bruts du
+PhysioNet/CinC Challenge 2018, au format exact attendu par le prétraitement
+officiel de SleepFM.
 
-Adapted from 0_extract_pretraining_data.py in rthapa84/sleepfm-codebase (MIT
-license, see THIRD_PARTY_NOTICES.md). Each subject folder under --data_path
-must contain three files (as distributed by PhysioNet):
-  <id>.hea            header: channel names, sampling rate
-  <id>.mat             raw PSG signal (scipy.io.loadmat key "val")
-  <id>-arousal.mat     sleep-stage + arousal labels (h5py, one-hot per sample)
+Adapté de 0_extract_pretraining_data.py (rthapa84/sleepfm-codebase, licence
+MIT, voir THIRD_PARTY_NOTICES.md). Chaque dossier de sujet sous --data_path
+contient trois fichiers (tels que distribués par PhysioNet) :
+  <id>.hea            en-tête : noms des canaux, fréquence d'échantillonnage
+  <id>.mat             signal PSG brut (clé "val" de scipy.io.loadmat)
+  <id>-arousal.mat     stades de sommeil + arousals (h5py, one-hot par échantillon)
 
-Output layout under --save_path:
-  X/<id>/<id>_<epoch_idx>.npy   (n_channels, n_samples) float, one 30s epoch
-  Y/<id>.pickle                  {filename: stage_label_name}
+Sortie sous --save_path :
+  X/<id>/<id>_<epoch_idx>.npy   (n_canaux, n_échantillons) float, une époque de 30 s
+  Y/<id>.pickle                  {nom_de_fichier: nom_du_stade}
 """
 from __future__ import annotations
 
@@ -62,14 +63,15 @@ def extract_labels(arousal_mat_path: str) -> Tuple[np.ndarray, List[str]]:
 
 
 def process_labels_to_events(labels: np.ndarray) -> List[list]:
-    """Collapses per-sample one-hot labels into (start, duration, stage_id) runs.
+    """Regroupe les labels one-hot par échantillon en segments
+    (début, durée, id_stade).
 
-    NOTE: faithfully ported from the official implementation, including its
-    off-by-one run boundaries (each run's `duration` includes the first
-    sample of the next run, i.e. runs of 100/100/100 samples come out as
-    101/100/99). This is a ~1-sample (a few ms) boundary jitter inherited
-    from upstream, not a bug here -- left as-is so results stay comparable
-    to the published numbers we're trying to reproduce.
+    NOTE : porté fidèlement depuis l'implémentation officielle, y compris son
+    décalage d'un échantillon aux frontières (la `durée` de chaque segment
+    inclut le premier échantillon du suivant : des segments de 100/100/100
+    échantillons sortent en 101/100/99). Ce flottement d'environ 1 échantillon
+    (quelques ms) vient du code amont, pas d'une erreur ici -- gardé tel quel
+    pour rester comparable aux chiffres publiés qu'on cherche à reproduire.
     """
     stage_ids = np.argmax(labels, axis=1)
     events, start, current = [], 0, stage_ids[0]

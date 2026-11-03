@@ -1,5 +1,6 @@
 """Vérifie le parsing des fichiers PhysioNet 2018 (.hea) et la conversion
 des labels one-hot en événements."""
+
 import numpy as np
 
 from src.data.extract_physionet2018 import ALL_CHANNELS, import_signal_names, process_labels_to_events

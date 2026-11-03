@@ -9,6 +9,7 @@ uniquement à valider la plomberie du pipeline, pas à produire des résultats
 médicalement significatifs. Les signaux sont du bruit aléatoire, pas de la
 physiologie réelle.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -19,8 +20,19 @@ import numpy as np
 from scipy.io import savemat
 
 ALL_CHANNELS = [
-    "F3-M2", "F4-M1", "C3-M2", "C4-M1", "O1-M2", "O2-M1", "E1-M2",
-    "Chin1-Chin2", "ABD", "CHEST", "AIRFLOW", "SaO2", "ECG",
+    "F3-M2",
+    "F4-M1",
+    "C3-M2",
+    "C4-M1",
+    "O1-M2",
+    "O2-M1",
+    "E1-M2",
+    "Chin1-Chin2",
+    "ABD",
+    "CHEST",
+    "AIRFLOW",
+    "SaO2",
+    "ECG",
 ]
 STAGE_CYCLE = ["wake", "nonrem1", "nonrem2", "nonrem3", "rem"]
 
@@ -34,7 +46,9 @@ def write_hea(path: str, subject_id: str, sample_rate: int, n_samples: int) -> N
         f.write("\n".join(lines) + "\n")
 
 
-def write_signal(path: str, sample_rate: int, lead_in_sec: int, n_epochs: int, epoch_sec: int, rng: np.random.Generator) -> int:
+def write_signal(
+    path: str, sample_rate: int, lead_in_sec: int, n_epochs: int, epoch_sec: int, rng: np.random.Generator
+) -> int:
     n_samples = (lead_in_sec + n_epochs * epoch_sec) * sample_rate
     signal = (rng.standard_normal((len(ALL_CHANNELS), n_samples)) * 100).astype(np.int16)
     savemat(path, {"val": signal})
@@ -64,10 +78,20 @@ def write_arousal(path: str, sample_rate: int, lead_in_sec: int, n_epochs: int, 
             grp.create_dataset(name, data=labels[:, i : i + 1].T)  # shape (1, n_samples), comme les fichiers réels
 
 
-def generate_subject(out_dir: str, subject_id: str, sample_rate: int, n_epochs: int, epoch_sec: int, lead_in_sec: int, rng: np.random.Generator) -> None:
+def generate_subject(
+    out_dir: str,
+    subject_id: str,
+    sample_rate: int,
+    n_epochs: int,
+    epoch_sec: int,
+    lead_in_sec: int,
+    rng: np.random.Generator,
+) -> None:
     subject_dir = os.path.join(out_dir, subject_id)
     os.makedirs(subject_dir, exist_ok=True)
-    n_samples = write_signal(os.path.join(subject_dir, f"{subject_id}.mat"), sample_rate, lead_in_sec, n_epochs, epoch_sec, rng)
+    n_samples = write_signal(
+        os.path.join(subject_dir, f"{subject_id}.mat"), sample_rate, lead_in_sec, n_epochs, epoch_sec, rng
+    )
     write_hea(os.path.join(subject_dir, f"{subject_id}.hea"), subject_id, sample_rate, n_samples)
     write_arousal(os.path.join(subject_dir, f"{subject_id}-arousal.mat"), sample_rate, lead_in_sec, n_epochs, epoch_sec)
 
@@ -77,7 +101,9 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     parser.add_argument("--num-subjects", type=int, default=4)
     parser.add_argument("--num-epochs", type=int, default=20, help="époques de 30s par sujet")
-    parser.add_argument("--sample-rate", type=int, default=32, help="Hz -- bas pour un test rapide, réhaussé à 256Hz par le pipeline")
+    parser.add_argument(
+        "--sample-rate", type=int, default=32, help="Hz -- bas pour un test rapide, réhaussé à 256Hz par le pipeline"
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 

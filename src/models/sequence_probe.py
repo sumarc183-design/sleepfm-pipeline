@@ -11,6 +11,7 @@ Interface proche de sklearn, mais fit/predict prennent en plus le sujet et
 le numéro d'époque de chaque ligne (`groups`), pour reconstituer les nuits
 dans l'ordre chronologique.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -19,7 +20,7 @@ import torch.nn as nn
 
 
 class _BiGRUTagger(nn.Module):
-    def __init__(self, embedding_dim: int, hidden_dim: int, num_classes: int, dropout: float):
+    def __init__(self, embedding_dim: int, hidden_dim: int, num_classes: int, dropout: float) -> None:
         super().__init__()
         self.project = nn.Sequential(nn.Dropout(dropout), nn.Linear(embedding_dim, hidden_dim), nn.ReLU())
         self.gru = nn.GRU(hidden_dim, hidden_dim, batch_first=True, bidirectional=True)
@@ -42,8 +43,17 @@ def split_into_nights(subjects: np.ndarray, epoch_idx: np.ndarray) -> list[np.nd
 class SequenceProbe:
     needs_groups = True  # predict/predict_proba prennent (sujets, numéros d'époque)
 
-    def __init__(self, hidden_dim: int = 128, epochs: int = 25, lr: float = 1e-3, dropout: float = 0.3,
-                 window: int = 120, batch_size: int = 16, device: str = "cpu", seed: int = 42):
+    def __init__(
+        self,
+        hidden_dim: int = 128,
+        epochs: int = 25,
+        lr: float = 1e-3,
+        dropout: float = 0.3,
+        window: int = 120,
+        batch_size: int = 16,
+        device: str = "cpu",
+        seed: int = 42,
+    ):
         # window = 120 époques = 1 h de contexte par exemple d'entraînement ;
         # à la prédiction, le BiGRU lit la nuit entière.
         self.hidden_dim, self.epochs, self.lr, self.dropout = hidden_dim, epochs, lr, dropout
@@ -56,19 +66,19 @@ class SequenceProbe:
         for rows in nights:
             first_cut = int(rng.integers(1, self.window + 1))  # 1..window : première fenêtre raccourcie
             bounds = [0, *range(first_cut, len(rows), self.window), len(rows)]
-            windows += [rows[a:b] for a, b in zip(bounds[:-1], bounds[1:]) if b > a]
+            windows += [rows[a:b] for a, b in zip(bounds[:-1], bounds[1:], strict=True) if b > a]
         rng.shuffle(windows)
         for i in range(0, len(windows), self.batch_size):
-            batch = windows[i:i + self.batch_size]
+            batch = windows[i : i + self.batch_size]
             length = max(len(w) for w in batch)
             xb = np.zeros((len(batch), length, X.shape[1]), dtype=np.float32)
             yb = np.full((len(batch), length), -100, dtype=np.int64)  # -100 = rembourrage ignoré par la loss
             for j, w in enumerate(batch):
-                xb[j, :len(w)] = X[w]
-                yb[j, :len(w)] = y[w]
+                xb[j, : len(w)] = X[w]
+                yb[j, : len(w)] = y[w]
             yield torch.from_numpy(xb).to(self.device), torch.from_numpy(yb).to(self.device)
 
-    def fit(self, X: np.ndarray, y: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> "SequenceProbe":
+    def fit(self, X: np.ndarray, y: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> SequenceProbe:
         torch.manual_seed(self.seed)
         rng = np.random.default_rng(self.seed)
         self.classes_, y_encoded = np.unique(y, return_inverse=True)
@@ -104,8 +114,10 @@ class SequenceProbe:
     @torch.no_grad()
     def _loss(self, X, y_encoded, nights, criterion) -> float:
         self.model_.eval()
-        losses = [criterion(self._logits(X[rows]), torch.from_numpy(y_encoded[rows]).to(self.device)).item()
-                  for rows in nights]
+        losses = [
+            criterion(self._logits(X[rows]), torch.from_numpy(y_encoded[rows]).to(self.device)).item()
+            for rows in nights
+        ]
         return float(np.mean(losses))
 
     def _logits(self, X_night: np.ndarray) -> torch.Tensor:

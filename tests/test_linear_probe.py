@@ -1,10 +1,18 @@
 """Vérifie la sonde logistique (entraînement, évaluation, comparaison)."""
-import numpy as np
 
+import numpy as np
 import pytest
 
 from src.models.linear_probe import (
-    PROBE_KINDS, choose_mlp_or_xgboost, compare_probes, cross_validate_probes, subject_folds, compare_to_published, evaluate_probe, train_linear_probe, train_probe,
+    PROBE_KINDS,
+    choose_mlp_or_xgboost,
+    compare_probes,
+    compare_to_published,
+    cross_validate_probes,
+    evaluate_probe,
+    subject_folds,
+    train_linear_probe,
+    train_probe,
 )
 
 
@@ -81,14 +89,17 @@ def test_sequence_probe_uses_temporal_context():
             emb = rng.standard_normal((length, 8)) * 0.3
             emb[1:, :3] += np.eye(3)[stages[:-1]] * 3  # stade t encodé dans l'époque t+1
             order = rng.permutation(length)  # lignes mélangées : l'ordre vient de epoch_idx
-            X.append(emb[order]); y.append(stages[order])
-            subjects.append(np.full(length, f"s{night}")); idx.append(np.arange(length)[order])
+            X.append(emb[order])
+            y.append(stages[order])
+            subjects.append(np.full(length, f"s{night}"))
+            idx.append(np.arange(length)[order])
         return np.concatenate(X), np.concatenate(y), (np.concatenate(subjects), np.concatenate(idx))
 
     X_train, y_train, g_train = nights(20)
     X_test, y_test, g_test = nights(5)
-    results = compare_probes(["logistic", "sequence"], X_train, y_train, X_test, y_test,
-                             train_groups=g_train, test_groups=g_test)
+    results = compare_probes(
+        ["logistic", "sequence"], X_train, y_train, X_test, y_test, train_groups=g_train, test_groups=g_test
+    )
     assert results["sequence"]["test"]["macro_f1"] > results["logistic"]["test"]["macro_f1"] + 0.3
 
 
@@ -98,16 +109,19 @@ def test_sequence_probe_requires_groups():
         train_probe("sequence", X, y)
 
 
-@pytest.mark.parametrize("mlp, xgb, expected", [
-    # (F1 apprentissage, F1 validation par pli) de chaque sonde, 5 plis
-    ((0.78, [0.75] * 5), (0.75, [0.70] * 5), "mlp"),                    # XGBoost moins bon
-    ((0.65, [0.60] * 5), (0.66, [0.615] * 5), "mlp"),                   # +0,015 : quasi-égalité, MLP (plus rapide)
-    ((0.65, [0.60] * 5), (0.70, [0.63] * 5), "xgboost"),                # +0,03 sur les 5 plis : net et régulier
-    ((0.65, [0.60] * 5), (0.70, [0.75, 0.75, 0.58, 0.58, 0.58]), "mlp"),  # +0,036 en moyenne mais 2/5 plis : tirage
-    ((0.65, [0.60] * 5), (1.00, [0.70] * 5), "mlp"),                    # XGBoost meilleur mais gap 0,30 : éliminé
-    ((0.99, [0.70] * 5), (0.66, [0.62] * 5), "xgboost"),                # MLP meilleur mais gap 0,29 : éliminé
-    ((1.00, [0.70] * 5), (1.00, [0.65] * 5), None),                     # les deux surapprennent
-])
+@pytest.mark.parametrize(
+    "mlp, xgb, expected",
+    [
+        # (F1 apprentissage, F1 validation par pli) de chaque sonde, 5 plis
+        ((0.78, [0.75] * 5), (0.75, [0.70] * 5), "mlp"),  # XGBoost moins bon
+        ((0.65, [0.60] * 5), (0.66, [0.615] * 5), "mlp"),  # +0,015 : quasi-égalité, MLP (plus rapide)
+        ((0.65, [0.60] * 5), (0.70, [0.63] * 5), "xgboost"),  # +0,03 sur les 5 plis : net et régulier
+        ((0.65, [0.60] * 5), (0.70, [0.75, 0.75, 0.58, 0.58, 0.58]), "mlp"),  # +0,036 en moyenne mais 2/5 plis : tirage
+        ((0.65, [0.60] * 5), (1.00, [0.70] * 5), "mlp"),  # XGBoost meilleur mais gap 0,30 : éliminé
+        ((0.99, [0.70] * 5), (0.66, [0.62] * 5), "xgboost"),  # MLP meilleur mais gap 0,29 : éliminé
+        ((1.00, [0.70] * 5), (1.00, [0.65] * 5), None),  # les deux surapprennent
+    ],
+)
 def test_choose_mlp_or_xgboost(mlp, xgb, expected):
     def cv(train_f1, val_f1, seconds):
         return {"train_f1": [train_f1] * len(val_f1), "val_f1": val_f1, "fit_seconds": seconds}

@@ -1,4 +1,5 @@
 """Vérifie l'architecture OSF (ViT-1D) et le round-trip de checkpoint."""
+
 import torch
 
 from src.models.osf_vit1d import load_osf_backbone, vit_base

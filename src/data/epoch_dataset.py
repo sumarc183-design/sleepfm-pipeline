@@ -1,10 +1,10 @@
-"""PyTorch Dataset over the X/Y layout produced by extract_physionet2018.py:
-X/<subject>/<subject>_<idx>.npy (13, n_samples) epochs, Y/<subject>.pickle
-mapping filename -> stage label name (e.g. "wake", "nonrem2", ...).
+"""Dataset PyTorch sur l'arborescence X/Y produite par extract_physionet2018.py :
+époques X/<sujet>/<sujet>_<idx>.npy (13, n_échantillons), et Y/<sujet>.pickle
+qui associe chaque fichier à son stade ("wake", "nonrem2", ...).
 
-Used only to batch epochs through SleepFMEncoders (see src/models/embeddings.py)
-to generate embeddings -- the linear probe itself trains on the resulting
-numpy arrays with sklearn, not on this Dataset directly.
+Sert uniquement à faire passer les époques par lots dans SleepFMEncoders (voir
+src/models/embeddings.py) pour produire les embeddings -- les sondes
+s'entraînent ensuite sur les tableaux numpy obtenus, pas sur ce Dataset.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ STAGE_NAME_TO_LABEL = {"wake": 0, "nonrem1": 1, "nonrem2": 2, "nonrem3": 3, "rem
 
 
 class PhysioNet2018EpochDataset(Dataset):
-    def __init__(self, processed_dir: str | Path):
+    def __init__(self, processed_dir: str | Path) -> None:
         self.processed_dir = Path(processed_dir)
         self.x_dir = self.processed_dir / "X"
         self.y_dir = self.processed_dir / "Y"

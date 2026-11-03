@@ -1,12 +1,12 @@
-"""EffNet 1D-CNN backbone used by SleepFM's per-modality encoders.
+"""Backbone EffNet (CNN 1D) des encodeurs par modalité de SleepFM.
 
-Vendored (not pip-installable) from the official SleepFM codebase
-(https://github.com/rthapa84/sleepfm-codebase, MIT License, Copyright 2024
-the SleepFM authors) so we don't depend on a `sys.path` hack into
-third_party/. Only trimmed of unused commented-out code; the forward pass
-and layer definitions are unchanged so that pretrained checkpoints load
-without remapping.
+Repris du dépôt officiel SleepFM (https://github.com/rthapa84/sleepfm-codebase,
+licence MIT, Copyright 2024 les auteurs de SleepFM) pour ne pas dépendre d'un
+ajout de third_party/ à sys.path. Seul le code commenté inutilisé a été retiré :
+la passe avant et la définition des couches sont inchangées, pour que les
+checkpoints préentraînés se chargent sans renommage.
 """
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -16,13 +16,25 @@ from torch import nn
 
 
 class Bottleneck(nn.Module):
-    def __init__(self, in_channel, out_channel, expansion, activation, stride=1, padding=1):
+    def __init__(
+        self,
+        in_channel: int,
+        out_channel: int,
+        expansion: int,
+        activation: type[nn.Module],
+        stride: int = 1,
+        padding: int = 1,
+    ) -> None:
         super().__init__()
         self.stride = stride
         self.conv1 = nn.Conv1d(in_channel, in_channel * expansion, kernel_size=1)
         self.conv2 = nn.Conv1d(
-            in_channel * expansion, in_channel * expansion, kernel_size=3,
-            groups=in_channel * expansion, padding=padding, stride=stride,
+            in_channel * expansion,
+            in_channel * expansion,
+            kernel_size=3,
+            groups=in_channel * expansion,
+            padding=padding,
+            stride=stride,
         )
         self.conv3 = nn.Conv1d(in_channel * expansion, out_channel, kernel_size=1, stride=1)
         self.b0 = nn.BatchNorm1d(in_channel * expansion)
@@ -30,7 +42,7 @@ class Bottleneck(nn.Module):
         self.d = nn.Dropout()
         self.act = activation()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.stride == 1:
             y = self.act(self.b0(self.conv1(x)))
             y = self.act(self.b1(self.conv2(y)))
@@ -43,7 +55,15 @@ class Bottleneck(nn.Module):
 
 
 class MBConv(nn.Module):
-    def __init__(self, in_channel, out_channels, expansion, layers, activation=nn.ReLU6, stride=2):
+    def __init__(
+        self,
+        in_channel: int,
+        out_channels: int,
+        expansion: int,
+        layers: int,
+        activation: type[nn.Module] = nn.ReLU6,
+        stride: int = 2,
+    ) -> None:
         super().__init__()
         stack = OrderedDict()
         for i in range(layers - 1):
@@ -52,26 +72,26 @@ class MBConv(nn.Module):
         self.stack = nn.Sequential(stack)
         self.bn = nn.BatchNorm1d(out_channels)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.bn(self.stack(x))
 
 
 class EffNet(nn.Module):
-    """1D EfficientNet-style encoder. `fc` is replaced with a 512-dim linear
-    layer by the caller to turn this into an embedding extractor (see
-    src/models/embeddings.py), matching the official generate-embeddings script.
+    """Encodeur 1D de type EfficientNet. L'appelant remplace `fc` par une couche
+    linéaire de dimension 512 pour en faire un extracteur d'embeddings (voir
+    src/models/embeddings.py), comme le script officiel de génération d'embeddings.
     """
 
     def __init__(
         self,
-        in_channel,
-        num_additional_features=0,
-        depth=(1, 2, 2, 3, 3, 3, 3),
-        channels=(32, 16, 24, 40, 80, 112, 192, 320, 1280),
-        dilation=1,
-        stride=2,
-        expansion=6,
-    ):
+        in_channel: int,
+        num_additional_features: int = 0,
+        depth: tuple[int, ...] = (1, 2, 2, 3, 3, 3, 3),
+        channels: tuple[int, ...] = (32, 16, 24, 40, 80, 112, 192, 320, 1280),
+        dilation: int = 1,
+        stride: int = 2,
+        expansion: int = 6,
+    ) -> None:
         super().__init__()
         self.stage1 = nn.Conv1d(in_channel, channels[0], kernel_size=3, stride=stride, padding=1, dilation=dilation)
         self.b0 = nn.BatchNorm1d(channels[0])
@@ -90,7 +110,7 @@ class EffNet(nn.Module):
         self.num_additional_features = num_additional_features
         self.fc = nn.Linear(channels[8] + num_additional_features, 1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.num_additional_features > 0:
             x, additional = x
         x = self.b0(self.stage1(x))

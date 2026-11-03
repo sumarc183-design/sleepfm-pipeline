@@ -1,5 +1,6 @@
 """Vérifie l'architecture EffNet et le chargement de checkpoint SleepFM
 (shapes, normalisation, robustesse au préfixe "module." de DataParallel)."""
+
 import torch
 
 from src.models.effnet import EffNet
@@ -63,6 +64,7 @@ def _build_fake_checkpoint_short_keys(tmp_path, embedding_dim=512):
     différents de "respiratory_state_dict"/"sleep_stages_state_dict" attendus
     par 3_generate_embed_pretraining.py -- incohérence vérifiée dans le dépôt
     officiel rthapa84/sleepfm-codebase, pas une erreur d'ici."""
+
     def build_encoder(in_ch):
         m = EffNet(in_channel=in_ch, stride=2, dilation=1)
         m.fc = torch.nn.Linear(m.fc.in_features, embedding_dim)

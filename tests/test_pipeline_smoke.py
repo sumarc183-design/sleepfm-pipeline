@@ -4,6 +4,7 @@ bout en bout, pour valider la plomberie avant l'arrivée des vraies données.
 Marqué "slow" : exclure avec `pytest -m "not slow"` pour n'avoir que les
 tests unitaires rapides.
 """
+
 import sys
 from pathlib import Path
 
@@ -25,8 +26,13 @@ def _generate_synthetic_raw(raw_dir: Path, n_subjects: int, seed: int) -> None:
     rng = np.random.default_rng(seed)
     for i in range(n_subjects):
         generate_subject(
-            str(raw_dir), f"synthetic-{i:04d}", sample_rate=32,
-            n_epochs=10, epoch_sec=30, lead_in_sec=2, rng=rng,
+            str(raw_dir),
+            f"synthetic-{i:04d}",
+            sample_rate=32,
+            n_epochs=10,
+            epoch_sec=30,
+            lead_in_sec=2,
+            rng=rng,
         )
 
 
@@ -57,9 +63,18 @@ def test_full_pipeline_end_to_end(tmp_path):
     import sys as _sys
 
     for raw_dir, processed_dir in [(raw_train, processed_train), (raw_test, processed_test)]:
-        sys_argv_backup, _sys.argv = _sys.argv, [
-            "extract", "--data_path", str(raw_dir), "--save_path", str(processed_dir), "--num_threads", "1",
-        ]
+        sys_argv_backup, _sys.argv = (
+            _sys.argv,
+            [
+                "extract",
+                "--data_path",
+                str(raw_dir),
+                "--save_path",
+                str(processed_dir),
+                "--num_threads",
+                "1",
+            ],
+        )
         try:
             extract_main()
         finally:
@@ -100,8 +115,9 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     raw_dir = tmp_path / "raw"
     rng = np.random.default_rng(3)
     for i in range(3):  # 15 époques : "_10".."_14" se trient avant "_2", l'ordre doit être reconstitué
-        generate_subject(str(raw_dir), f"synthetic-{i:04d}", sample_rate=32,
-                         n_epochs=15, epoch_sec=30, lead_in_sec=2, rng=rng)
+        generate_subject(
+            str(raw_dir), f"synthetic-{i:04d}", sample_rate=32, n_epochs=15, epoch_sec=30, lead_in_sec=2, rng=rng
+        )
     subjects = sorted(p.name for p in raw_dir.iterdir())
 
     ckpt_path = tmp_path / "best.pt"
@@ -115,8 +131,9 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
         (dest_dir / subject).symlink_to(raw_dir / subject, target_is_directory=True)
 
     embeddings_dir = tmp_path / "embeddings"
-    embed_subjects_in_chunks(subjects, fetch_subject, encoders, embeddings_dir,
-                             chunk_size=2, num_threads=1, batch_size=16, device="cpu")
+    embed_subjects_in_chunks(
+        subjects, fetch_subject, encoders, embeddings_dir, chunk_size=2, num_threads=1, batch_size=16, device="cpu"
+    )
     assert sorted(fetched) == subjects
     assert sorted(p.stem for p in embeddings_dir.glob("*.npz")) == subjects
 
@@ -142,10 +159,10 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
 
     # Reprise : rien n'est retéléchargé ni recalculé
     fetched.clear()
-    embed_subjects_in_chunks(subjects, fetch_subject, encoders, embeddings_dir,
-                             chunk_size=2, num_threads=1, batch_size=16, device="cpu")
+    embed_subjects_in_chunks(
+        subjects, fetch_subject, encoders, embeddings_dir, chunk_size=2, num_threads=1, batch_size=16, device="cpu"
+    )
     assert fetched == []
-
 
 
 @pytest.mark.slow
@@ -167,8 +184,15 @@ def test_loser_of_mlp_vs_xgboost_is_never_evaluated_on_test():
 
     X_train, y_train, g_train = data(10)
     X_test, y_test, g_test = data(3)
-    args = SimpleNamespace(probes=["logistic", "mlp", "xgboost"], cv_folds=5, min_gain=0.02, max_gap=0.15,
-                           max_iter=200, seed=42, device="cpu")
+    args = SimpleNamespace(
+        probes=["logistic", "mlp", "xgboost"],
+        cv_folds=5,
+        min_gain=0.02,
+        max_gap=0.15,
+        max_iter=200,
+        seed=42,
+        device="cpu",
+    )
     results, selection = select_and_evaluate(args, X_train, y_train, g_train, X_test, y_test, g_test)
 
     assert selection["chosen"] in ("mlp", "xgboost")

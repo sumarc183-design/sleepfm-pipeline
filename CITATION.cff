@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "Si vous utilisez ce travail, merci de le citer ainsi que SleepFM."
+title: "SleepFM Pipeline : reproduction et évaluation de SleepFM sur PhysioNet 2018"
+authors:
+  - family-names: Su
+    given-names: Marc
+version: 0.1.0
+date-released: 2026-11-03
+repository-code: "https://github.com/sumarc183-design/sleepfm-pipeline"
+keywords:
+  - sleep staging
+  - foundation model
+  - polysomnography
+  - SleepFM
+references:
+  - type: software
+    title: "SleepFM"
+    repository-code: "https://github.com/rthapa84/sleepfm-codebase"
+    authors:
+      - name: "Les auteurs de SleepFM"

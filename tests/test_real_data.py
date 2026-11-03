@@ -11,6 +11,7 @@ téléchargé), donc les métriques n'ont aucune valeur médicale ici.
 
 Sauté si data/processed/train est absent.
 """
+
 import sys
 from pathlib import Path
 
@@ -28,8 +29,7 @@ PROCESSED_DIR = Path(__file__).resolve().parents[1] / "data" / "processed" / "tr
 
 requires_real_data = pytest.mark.skipif(
     not PROCESSED_DIR.exists(),
-    reason="data/processed/train absent -- voir scripts/download_physionet2018.py "
-    "et src/data/extract_physionet2018.py",
+    reason="data/processed/train absent -- voir scripts/download_physionet2018.py et src/data/extract_physionet2018.py",
 )
 
 
