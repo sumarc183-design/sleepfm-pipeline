@@ -52,6 +52,7 @@ from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
 from src.models.linear_probe import (
     CV_FOLDS,
+    LOGISTIC_MAX_ITER,
     MAX_F1_GAP,
     MIN_XGBOOST_GAIN,
     PROBE_KINDS,
@@ -278,8 +279,8 @@ def select_and_evaluate(args, X_train, y_train, train_groups, X_test, y_test, te
 
 
 PROBE_LABELS = {
-    "logistic": "Régression log.",
-    "logistic_balanced": "Rég. log. pond.",
+    "logistic": "Log. officielle",
+    "logistic_unweighted": "Log. non pond.",
     "xgboost": "XGBoost",
     "mlp": "MLP",
     "sequence": "BiGRU (nuit)",
@@ -326,6 +327,23 @@ def print_results(
             f"{r['fit_seconds']:>7.0f}s"
         )
     print("-" * width)
+    print("Intervalles de confiance à 95 % (bootstrap sur les sujets de test)")
+    for kind, r in results.items():
+        ci = r["test"].get("ci95")
+        if ci:
+            print(
+                f"  {PROBE_LABELS.get(kind, kind):<20}kappa [{ci['cohen_kappa'][0]:.3f} ; {ci['cohen_kappa'][1]:.3f}]"
+                f"   F1 macro [{ci['macro_f1'][0]:.3f} ; {ci['macro_f1'][1]:.3f}]   ({ci['n_subjects']} sujets)"
+            )
+    for kind, r in results.items():
+        if r.get("converged") is False:
+            print(
+                f"  ATTENTION : {PROBE_LABELS.get(kind, kind)} n'a PAS convergé en {r['n_iter']} itérations "
+                "(augmenter --max-iter) : baseline non fiable"
+            )
+        elif r.get("converged"):
+            print(f"  {PROBE_LABELS.get(kind, kind)} : convergé en {r['n_iter']} itérations")
+    print("-" * width)
     first_report = next(iter(results.values()))["test"]["per_class_report"]
     stages = [label for label in first_report if label.isdigit()]
     print("F1 par stade (test) " + "".join(f"{PROBE_LABELS.get(k, k):>16}" for k in results) + f"{'n':>8}")
@@ -335,6 +353,14 @@ def print_results(
             for r in results.values()
         )
         print(f"  {label_to_stage[int(label)]:<18}{scores}{int(first_report[label]['support']):>8}")
+    baseline = results.get("logistic") or next(iter(results.values()))
+    classes = [label_to_stage[c] for c in baseline["test"]["classes"]]
+    name = PROBE_LABELS.get("logistic" if "logistic" in results else next(iter(results)), "")
+    print("-" * width)
+    print(f"Matrice de confusion (test, {name}) : lignes = stade réel, colonnes = stade prédit")
+    print(f"  {'':<10}" + "".join(f"{c:>10}" for c in classes))
+    for stage, row in zip(classes, baseline["test"]["confusion_matrix"], strict=True):
+        print(f"  {stage:<10}" + "".join(f"{v:>10d}" for v in row))
     print("=" * width)
     if not_interpretable:
         print(
@@ -470,7 +496,12 @@ def main() -> None:
         "d'entraînement PhysioNet 2018 (au lieu de --raw-data).",
     )
     parser.add_argument("--chunk-size", type=int, default=8, help="Sujets par lot en mode --embeddings-dir")
-    parser.add_argument("--max-iter", type=int, default=100, help="Itérations max de la régression logistique")
+    parser.add_argument(
+        "--max-iter",
+        type=int,
+        default=LOGISTIC_MAX_ITER,
+        help="Itérations max de la régression logistique (convergence vérifiée et affichée)",
+    )
     parser.add_argument(
         "--results-json",
         type=Path,

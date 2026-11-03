@@ -3,6 +3,26 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions
 selon [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Corrigé
+- **Baseline** : le protocole officiel (`sleepfm/utils.py::train_model`)
+  entraîne `LogisticRegression(class_weight="balanced")`. La baseline
+  `logistic` est désormais pondérée ; l'ancienne, non pondérée, devient
+  `logistic_unweighted`. Les résultats de la 0.1.0 venaient de la version
+  non pondérée.
+- **Convergence** : `max_iter` passe à 1 000 et la convergence de la
+  régression logistique est vérifiée et affichée ; le notebook ne masque
+  plus les avertissements.
+- **Arrêt précoce du MLP** sur des nuits mises à part, au lieu d'époques
+  tirées au hasard dans les mêmes nuits que l'entraînement (fuite).
+- Chargement du checkpoint avec `weights_only=True`.
+
+### Ajouté
+- Intervalles de confiance à 95 % du kappa et du F1 macro par bootstrap sur
+  les sujets de test.
+- Matrice de confusion de la baseline (sortie et JSON).
+
 ## [0.1.0] — 2026-11-03
 
 Premier jalon : baseline SleepFM reproduite de bout en bout sur PhysioNet 2018.

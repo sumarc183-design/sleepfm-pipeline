@@ -68,16 +68,29 @@ même nuit se ressemblent, les séparer gonflerait les scores.
 
 | Sonde (`--probes`) | Levier testé |
 |---|---|
-| `logistic` | **Baseline** : protocole officiel SleepFM, seule comparable à la publication |
-| `logistic_balanced` | Déséquilibre des classes (N1 rare) : classes pondérées |
+| `logistic` | **Baseline** : protocole officiel SleepFM (`class_weight="balanced"`), seule comparable à la publication |
+| `logistic_unweighted` | Même modèle sans pondération des classes (baseline des premiers résultats) |
 | `xgboost` | Frontière non linéaire par arbres (GPU si disponible) |
 | `mlp` | Frontière non linéaire par réseau (1 couche cachée de 256), plus rapide |
 | `sequence` | Contexte temporel : BiGRU sur la suite des embeddings de la nuit (`src/models/sequence_probe.py`) |
 
 Métriques pour chacune : accuracy, kappa de Cohen, F1 macro, ROC-AUC
-un-contre-tous, F1 par stade, et le **gap** train − test (un gap élevé signale
-du surapprentissage). Hyperparamètres fixes, jamais réglés sur le test (arrêt
-précoce du MLP et du BiGRU sur une partie du train).
+un-contre-tous, F1 par stade, le **gap** train − test (un gap élevé signale du
+surapprentissage), l'**intervalle de confiance à 95 %** du kappa et du F1
+macro (bootstrap sur les sujets de test : on tire des nuits entières, pas des
+époques, qui ne sont pas indépendantes) et la **matrice de confusion** de la
+baseline. Hyperparamètres fixes, jamais réglés sur le test.
+
+**Baseline officielle et convergence** : le dépôt officiel entraîne
+`LogisticRegression(class_weight="balanced")` (`sleepfm/utils.py::train_model`).
+Son option `--max_iter` n'est pas transmise au modèle, qui garde 100
+itérations sans garantie de convergence. Ici, `--max-iter` vaut 1 000 et la
+sortie affiche le nombre d'itérations utilisées, ou un avertissement explicite
+si le modèle n'a pas convergé.
+
+**Arrêt précoce sans fuite** : le MLP et le BiGRU s'arrêtent sur ~10 % des
+**nuits** du train mises à part. L'arrêt précoce intégré de scikit-learn
+tirerait des époques au hasard, issues des mêmes nuits que l'entraînement.
 
 ### MLP ou XGBoost
 
@@ -142,6 +155,20 @@ attend `respiratory_state_dict` / `sleep_stages_state_dict` / `ekg_state_dict`.
 Incohérence du dépôt amont (vérifié dans `2_pretrain.py` : les noms longs sont
 ceux d'un réentraînement complet), pas une erreur introduite ici.
 `src/models/embeddings.py` accepte les deux formes.
+
+## Points d'attention connus
+
+- **Double rééchantillonnage à l'extraction** : `raw.resample(256)` puis
+  `scipy.signal.resample` vers `--target_sample_rate`. Sans effet avec la
+  valeur par défaut (256) ; une autre valeur donnerait un double
+  rééchantillonnage. Hérité du prétraitement officiel, gardé tel quel pour
+  rester comparable.
+- **Reprise de l'extraction en mode classique** : un sujet dont le dossier
+  `X/<id>/` n'est pas vide est considéré comme traité ; si une extraction a
+  été interrompue en cours d'écriture, supprimer ce dossier avant de
+  relancer. Le mode par lots n'est pas concerné (dossiers temporaires).
+- **Sous-ensemble de sujets** : `--physionet-subjects N` prend les N premiers
+  sujets par identifiant, pas un tirage aléatoire.
 
 ## Code adapté du dépôt officiel
 

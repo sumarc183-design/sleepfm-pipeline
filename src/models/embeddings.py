@@ -80,7 +80,9 @@ class SleepFMEncoders(torch.nn.Module):
                 "Lancer bash scripts/setup_sleepfm.sh : best.pt est versionné dans le dépôt officiel "
                 "(third_party/sleepfm/sleepfm/checkpoint/best.pt)."
             )
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        # weights_only=True : n'exécute aucun code embarqué dans le fichier (un .pt
+        # est un pickle) ; le best.pt officiel ne contient que des tenseurs.
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 
         self.respiratory = build_encoder(len(CHANNEL_INDICES["respiratory"]), embedding_dim)
         self.sleep_stages = build_encoder(len(CHANNEL_INDICES["sleep_stages"]), embedding_dim)

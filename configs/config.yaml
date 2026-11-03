@@ -69,7 +69,7 @@ osf:
 linear_probe:
   # The official evaluation trains a LogisticRegression (or XGBoost) on the
   # frozen, L2-normalized embeddings -- not a from-scratch neural head.
-  models: [logistic, logistic_balanced, xgboost, mlp, sequence]   # logistic = baseline officielle ; run_baseline.py --probes
+  models: [logistic, logistic_unweighted, xgboost, mlp, sequence]   # logistic = baseline officielle (class_weight=balanced) ; run_baseline.py --probes
   selection_cv_folds: 5   # MLP vs XGBoost départagés par validation croisée par sujet, sur le train uniquement
   min_xgboost_gain: 0.02   # XGBoost gardé seulement s'il bat le MLP de plus de 0,02 en F1 macro de validation, sur >= 4 plis sur 5
   max_f1_gap: 0.15   # MLP/XGBoost éliminé si gap F1 moyen apprentissage - validation > 0,15

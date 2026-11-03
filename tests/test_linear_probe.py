@@ -26,7 +26,16 @@ def test_train_and_evaluate_probe():
     probe = train_linear_probe(X_train, y_train, max_iter=50)
     results = evaluate_probe(probe, X_test, y_test)
 
-    assert set(results.keys()) == {"accuracy", "cohen_kappa", "macro_f1", "roc_auc_macro", "per_class_report"}
+    assert set(results.keys()) == {
+        "accuracy",
+        "cohen_kappa",
+        "macro_f1",
+        "roc_auc_macro",
+        "per_class_report",
+        "confusion_matrix",
+        "classes",
+    }
+    assert np.array(results["confusion_matrix"]).sum() == len(y_test)
     assert 0.0 <= results["roc_auc_macro"] <= 1.0
     assert 0.0 <= results["accuracy"] <= 1.0
     assert -1.0 <= results["cohen_kappa"] <= 1.0
@@ -36,6 +45,12 @@ def test_compare_to_published_reproduced_flag():
     results = {"cohen_kappa": 0.62}
     assert compare_to_published(results, published_kappa=0.60, tolerance=0.05) is True
     assert compare_to_published(results, published_kappa=0.20, tolerance=0.05) is False
+
+
+def _groups(n, n_subjects=10):
+    """(sujet, numéro d'époque) pour n lignes réparties en n_subjects nuits."""
+    subjects = np.array([f"s{i % n_subjects}" for i in range(n)])
+    return subjects, np.arange(n)
 
 
 def _separable(n, rng):
@@ -51,9 +66,14 @@ def test_compare_probes_reports_train_test_and_gap():
     X_test, y_test = _separable(150, rng)
 
     kinds = [k for k in PROBE_KINDS if k != "sequence"]  # "sequence" : tests dédiés (besoin des nuits)
-    results = compare_probes(kinds, X_train, y_train, X_test, y_test, max_iter=200)
+    results = compare_probes(
+        kinds, X_train, y_train, X_test, y_test, train_groups=_groups(400), test_groups=_groups(150)
+    )
 
     assert set(results) == set(kinds)
+    assert results["logistic"]["converged"] is True and results["logistic"]["n_iter"] > 0
+    ci = results["logistic"]["test"]["ci95"]
+    assert ci["cohen_kappa"][0] <= results["logistic"]["test"]["cohen_kappa"] <= ci["cohen_kappa"][1]
     for kind, r in results.items():
         assert r["test"]["macro_f1"] > 0.8, kind
         assert r["test"]["roc_auc_macro"] > 0.9, kind
@@ -70,7 +90,7 @@ def test_probes_handle_a_stage_missing_from_train(kind):
     keep = y_train != 2
     X_test, y_test = _separable(100, rng)
 
-    model = train_probe(kind, X_train[keep], y_train[keep])
+    model = train_probe(kind, X_train[keep], y_train[keep], groups=_groups(int(keep.sum())))
     assert set(np.unique(model.predict(X_test))) <= {0, 1, 3, 4}  # labels d'origine, jamais 2
     assert model.predict_proba(X_test).shape == (len(X_test), 4)
     assert 0.0 <= evaluate_probe(model, X_test, y_test)["roc_auc_macro"] <= 1.0
@@ -148,3 +168,49 @@ def test_cross_validate_probes_uses_only_given_data():
     for kind in ("mlp", "xgboost"):
         assert len(cv[kind]["val_f1"]) == len(cv[kind]["train_f1"]) == 5
         assert np.mean(cv[kind]["val_f1"]) > 0.8
+
+
+def test_baseline_is_the_official_balanced_logistic():
+    """Protocole officiel (sleepfm/utils.py::train_model) :
+    LogisticRegression(class_weight="balanced")."""
+    X, y = _separable(200, np.random.default_rng(0))
+    assert train_probe("logistic", X, y).class_weight == "balanced"
+    assert train_probe("logistic_unweighted", X, y).class_weight is None
+
+
+def test_non_convergence_is_reported_not_hidden():
+    rng = np.random.default_rng(0)
+    X, y = rng.standard_normal((300, 50)) * 50, rng.integers(0, 5, 300)  # mal conditionné, 1 itération
+    model = train_linear_probe(X, y, max_iter=1)
+    assert model.converged_ is False and model.n_iter_used_ == 1
+
+
+def test_mlp_early_stopping_holds_out_whole_nights(monkeypatch):
+    """Les lignes de validation de l'arrêt précoce doivent être des nuits
+    entières absentes de l'apprentissage."""
+    from sklearn.neural_network import MLPClassifier
+
+    seen_fit_rows = []
+    original = MLPClassifier.partial_fit
+
+    def spy(self, X, y, classes=None):
+        seen_fit_rows.append(len(X))
+        return original(self, X, y, classes=classes)
+
+    monkeypatch.setattr(MLPClassifier, "partial_fit", spy)
+    X, y = _separable(300, np.random.default_rng(0))
+    subjects, _ = _groups(300, n_subjects=10)  # 10 nuits de 30 époques -> 1 nuit de validation
+    train_probe("mlp", X, y, groups=(subjects, np.arange(300)))
+    assert set(seen_fit_rows) == {270}
+
+
+def test_bootstrap_ci_is_ordered_and_exact_on_perfect_predictions():
+    from src.models.linear_probe import bootstrap_ci
+
+    y = np.random.default_rng(0).integers(0, 5, 200)
+    subjects = np.array([f"s{i % 8}" for i in range(200)])
+    ci = bootstrap_ci(y, y, subjects, n_boot=50)
+    assert ci["cohen_kappa"] == [1.0, 1.0] and ci["n_subjects"] == 8
+    noisy = np.where(np.random.default_rng(1).random(200) < 0.3, (y + 1) % 5, y)
+    low, high = bootstrap_ci(y, noisy, subjects, n_boot=200)["macro_f1"]
+    assert low <= high

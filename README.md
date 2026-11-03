@@ -17,14 +17,17 @@ flowchart LR
     A[PSG PhysioNet 2018<br/>13 canaux] --> B[Époques de 30 s<br/>256 Hz]
     B --> C[SleepFM figé<br/>3 encodeurs EffNet]
     C --> D[Embeddings<br/>respiratoire + stades + ECG]
-    D --> E[Sondes<br/>logistique · pondérée · MLP/XGBoost · BiGRU]
+    D --> E[Sondes<br/>logistique officielle · non pondérée · MLP/XGBoost · BiGRU]
     E --> F[Accuracy · κ · F1 · ROC-AUC<br/>gap train − test]
 ```
 
 ## Résultats
 
-Régression logistique sur embeddings figés (protocole officiel), split par
-sujet, Colab GPU T4.
+Régression logistique **non pondérée** sur embeddings figés, split par sujet,
+Colab GPU T4. ⚠️ Le protocole officiel pondère les classes
+(`class_weight="balanced"`) : c'est désormais la baseline du pipeline, et ces
+chiffres seront remplacés par ceux du prochain run (avec intervalles de
+confiance).
 
 | Date | Données | Sujets train / test | Accuracy | Cohen's κ | F1 macro |
 |---|---|---|---|---|---|

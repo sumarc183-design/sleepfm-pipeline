@@ -10,9 +10,9 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   auto-supervisée (contrastive) sur des polysomnographies. **Figé** : aucun
   poids de SleepFM n'est modifié ici.
 - **Ce qui est entraîné** : des sondes supervisées légères sur les embeddings
-  concaténés (1 536 dimensions) : régression logistique (baseline, protocole
-  officiel), régression logistique pondérée, MLP ou XGBoost (un seul retenu),
-  BiGRU sur la suite des époques d'une nuit.
+  concaténés (1 536 dimensions) : régression logistique pondérée (baseline,
+  protocole officiel), régression logistique non pondérée, MLP ou XGBoost (un
+  seul retenu), BiGRU sur la suite des époques d'une nuit.
 - **Tâche** : stadification du sommeil par époque de 30 s, 5 classes
   (Wake, N1, N2, N3, REM).
 
@@ -28,7 +28,8 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
 
 - **PhysioNet/CinC Challenge 2018** (accès libre) : polysomnographies adultes
   annotées par des experts (stades AASM), 13 canaux rééchantillonnés à 256 Hz.
-  Les 100 premiers sujets d'entraînement du challenge ont été utilisés.
+  Les 100 premiers sujets d'entraînement du challenge **par identifiant**
+  (pas un tirage aléatoire parmi les 994) ont été utilisés.
 - **Split par sujet** (jamais par époque) : 80/20 par défaut (75/25 pour les
   résultats publiés au 2026-11-03). Les sondes non linéaires sont départagées
   par validation croisée par sujet sur le train ; le test n'est utilisé
@@ -53,7 +54,11 @@ train − test. Résultats à jour : [README](../README.md#résultats).
 - **Canaux** : le montage 13 canaux est requis ; un enregistrement auquel il
   manque un canal est rejeté à l'extraction.
 - **Variabilité** : avec 20 à 25 sujets de test, les chiffres peuvent varier
-  de quelques centièmes selon le tirage des sujets.
+  de quelques centièmes selon le tirage des sujets ; d'où les intervalles de
+  confiance par bootstrap sur les sujets.
+- **Résultats du 2026-11-02/03** obtenus avec une régression logistique non
+  pondérée, alors que le protocole officiel pondère les classes : à remplacer
+  par le run suivant.
 
 ## Considérations éthiques
 

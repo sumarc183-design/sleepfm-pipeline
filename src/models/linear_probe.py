@@ -1,18 +1,24 @@
 """Sondes sur les embeddings figés.
 
-La baseline est la sonde linéaire = LogisticRegression, comme dans
-4_classification_eval_pretraining.py du dépôt officiel SleepFM (pas une
-couche PyTorch entraînée par SGD : c'est bien une régression logistique
-sklearn qui fait office de "linear probe" dans la littérature) -- c'est
-elle qui se compare au chiffre publié.
+La baseline ("logistic") reproduit la sonde officielle : train_model() de
+sleepfm/utils.py (appelé par 4_classification_eval_pretraining.py) entraîne
+`LogisticRegression(class_weight="balanced")` -- classes pondérées, solveur
+lbfgs. Différence assumée : le script officiel expose --max_iter mais ne le
+transmet pas au modèle, qui garde le défaut de scikit-learn (100 itérations,
+sans garantie de convergence sur ~70 000 époques x 1 536 dimensions). Ici,
+max_iter vaut 1 000 et la convergence est vérifiée et affichée (n_iter_),
+plutôt que de comparer un modèle arrêté avant d'avoir convergé.
 
 Les autres sondes sont évaluées à côté, sur exactement les mêmes embeddings
 et le même split, chacune pour tester un levier :
-  - logistic_balanced : même modèle, classes pondérées (N1 est rare) ;
+  - logistic_unweighted : même modèle sans pondération des classes (la
+    baseline utilisée pour les premiers résultats, avant correction) ;
   - xgboost (le dépôt officiel le propose aussi) : frontière non linéaire
     par arbres ;
   - mlp : frontière non linéaire par réseau, plus adaptée aux embeddings
-    denses que les arbres et plus rapide ;
+    denses que les arbres et plus rapide ; arrêt précoce sur des nuits mises
+    à part (pas sur des époques tirées au hasard, qui viendraient des mêmes
+    nuits que l'entraînement) ;
   - sequence : contexte temporel (époques voisines), voir sequence_probe.py.
 Hyperparamètres fixes, raisonnables, jamais réglés sur le jeu de test.
 (Random Forest, testé, a été retiré : plus lent que XGBoost et moins adapté
@@ -25,14 +31,25 @@ test n'intervient qu'à la fin, sur le modèle retenu.
 
 from __future__ import annotations
 
+import copy
 import time
+import warnings
 
 import numpy as np
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, cohen_kappa_score, f1_score, roc_auc_score
+from sklearn.metrics import (
+    classification_report,
+    cohen_kappa_score,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    roc_auc_score,
+)
 from sklearn.neural_network import MLPClassifier
 
-PROBE_KINDS = ("logistic", "logistic_balanced", "xgboost", "mlp", "sequence")
+PROBE_KINDS = ("logistic", "logistic_unweighted", "xgboost", "mlp", "sequence")
+LOGISTIC_MAX_ITER = 1000
 MIN_XGBOOST_GAIN = 0.02  # F1 macro : en dessous, l'écart relève du bruit du tirage des sujets de test
 MAX_F1_GAP = 0.15  # gap F1 apprentissage - validation au-delà duquel une sonde est jugée surapprise
 CV_FOLDS = 5
@@ -41,11 +58,59 @@ CV_FOLDS = 5
 def train_linear_probe(
     X_train: np.ndarray,
     y_train: np.ndarray,
-    max_iter: int = 100,
+    max_iter: int = LOGISTIC_MAX_ITER,
+    class_weight: str | None = "balanced",
 ) -> LogisticRegression:
-    model = LogisticRegression(max_iter=max_iter)
-    model.fit(X_train, y_train)
+    """Régression logistique ; `class_weight="balanced"` = protocole officiel.
+    Enregistre sur le modèle `converged_` et `n_iter_used_` : un modèle non
+    convergé n'est pas une baseline fiable, l'appelant doit pouvoir le dire."""
+    model = LogisticRegression(max_iter=max_iter, class_weight=class_weight)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", ConvergenceWarning)
+        model.fit(X_train, y_train)
+    model.converged_ = not any(issubclass(w.category, ConvergenceWarning) for w in caught)
+    model.n_iter_used_ = int(np.max(model.n_iter_))
     return model
+
+
+class _NightEarlyStoppingMLP:
+    """MLP dont l'arrêt précoce se fait sur ~10 % des NUITS du train mises à
+    part : `MLPClassifier(early_stopping=True)` tirerait 10 % d'époques au
+    hasard, issues des mêmes nuits que l'entraînement (fuite), et s'arrêterait
+    trop tard. Garde l'état du meilleur passage (perte de validation)."""
+
+    def __init__(self, seed: int = 42, max_epochs: int = 100, patience: int = 10) -> None:
+        self.seed, self.max_epochs, self.patience = seed, max_epochs, patience
+
+    def fit(self, X: np.ndarray, y: np.ndarray, subjects: np.ndarray) -> _NightEarlyStoppingMLP:
+        self.classes_ = np.unique(y)
+        nights = np.array(sorted(set(subjects)))
+        np.random.default_rng(self.seed).shuffle(nights)
+        val_nights = set(nights[: max(1, len(nights) // 10)]) if len(nights) >= 5 else set()
+        is_val = np.isin(subjects, list(val_nights))
+        X_fit, y_fit = X[~is_val], y[~is_val]
+
+        model = MLPClassifier(hidden_layer_sizes=(256,), alpha=1e-3, random_state=self.seed)
+        best_loss, best_model, stale = float("inf"), None, 0
+        for _ in range(self.max_epochs):
+            model.partial_fit(X_fit, y_fit, classes=self.classes_)  # une passe sur le train
+            if not is_val.any():
+                continue
+            val_loss = log_loss(y[is_val], model.predict_proba(X[is_val]), labels=self.classes_)
+            if val_loss < best_loss - 1e-4:
+                best_loss, best_model, stale = val_loss, copy.deepcopy(model), 0
+            else:
+                stale += 1
+                if stale >= self.patience:
+                    break
+        self.model_ = best_model or model
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.model_.predict(X)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        return self.model_.predict_proba(X)
 
 
 class _EncodedXGBClassifier:
@@ -73,27 +138,28 @@ def train_probe(
     kind: str,
     X_train: np.ndarray,
     y_train: np.ndarray,
-    max_iter: int = 100,
+    max_iter: int = LOGISTIC_MAX_ITER,
     seed: int = 42,
     device: str = "cpu",
     groups: tuple[np.ndarray, np.ndarray] | None = None,
 ):
-    """`groups` = (sujet, numéro d'époque) de chaque ligne, requis par "sequence"."""
+    """`groups` = (sujet, numéro d'époque) de chaque ligne, requis par "mlp"
+    (nuits de validation) et "sequence" (ordre des époques)."""
     if kind == "logistic":
-        return train_linear_probe(X_train, y_train, max_iter=max_iter)
-    if kind == "logistic_balanced":
-        model = LogisticRegression(max_iter=max_iter, class_weight="balanced")
-    elif kind == "mlp":
-        model = MLPClassifier(
-            hidden_layer_sizes=(256,), alpha=1e-3, early_stopping=True, max_iter=100, random_state=seed
-        )
-    elif kind == "sequence":
+        return train_linear_probe(X_train, y_train, max_iter=max_iter, class_weight="balanced")
+    if kind == "logistic_unweighted":
+        return train_linear_probe(X_train, y_train, max_iter=max_iter, class_weight=None)
+    if kind == "mlp":
+        if groups is None:
+            raise ValueError("La sonde 'mlp' a besoin de groups=(sujets, ...) pour son arrêt précoce par nuit")
+        return _NightEarlyStoppingMLP(seed=seed).fit(X_train, y_train, groups[0])
+    if kind == "sequence":
         if groups is None:
             raise ValueError("La sonde 'sequence' a besoin de groups=(sujets, numéros d'époque)")
         from .sequence_probe import SequenceProbe  # import paresseux : torch
 
         return SequenceProbe(device=device, seed=seed).fit(X_train, y_train, groups)
-    elif kind == "xgboost":
+    if kind == "xgboost":
         model = _EncodedXGBClassifier(
             n_estimators=300,
             max_depth=6,
@@ -118,20 +184,55 @@ def macro_roc_auc(proba: np.ndarray, classes: np.ndarray, y: np.ndarray) -> floa
     return float(np.mean(aucs)) if aucs else float("nan")
 
 
-def evaluate_probe(
-    model, X_test: np.ndarray, y_test: np.ndarray, groups: tuple[np.ndarray, np.ndarray] | None = None
+def bootstrap_ci(
+    y_true: np.ndarray, y_pred: np.ndarray, subjects: np.ndarray, n_boot: int = 500, seed: int = 42
 ) -> dict:
+    """Intervalles de confiance à 95 % du kappa et du F1 macro par bootstrap
+    sur les SUJETS (on retire des nuits entières avec remise) : c'est la
+    bonne unité d'échantillonnage, les époques d'une même nuit n'étant pas
+    indépendantes. Avec ~20 sujets de test, l'intervalle est large."""
+    rng = np.random.default_rng(seed)
+    unique = np.array(sorted(set(subjects)))
+    rows_of = {s: np.flatnonzero(subjects == s) for s in unique}
+    kappas, f1s = [], []
+    for _ in range(n_boot):
+        rows = np.concatenate([rows_of[s] for s in rng.choice(unique, len(unique), replace=True)])
+        kappas.append(cohen_kappa_score(y_true[rows], y_pred[rows]))
+        f1s.append(f1_score(y_true[rows], y_pred[rows], average="macro"))
+    return {
+        "cohen_kappa": [float(np.percentile(kappas, 2.5)), float(np.percentile(kappas, 97.5))],
+        "macro_f1": [float(np.percentile(f1s, 2.5)), float(np.percentile(f1s, 97.5))],
+        "n_boot": n_boot,
+        "n_subjects": len(unique),
+    }
+
+
+def evaluate_probe(
+    model,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    groups: tuple[np.ndarray, np.ndarray] | None = None,
+    with_ci: bool = False,
+) -> dict:
+    """`with_ci=True` (et `groups` fourni) ajoute les intervalles de confiance
+    par bootstrap sur les sujets : à réserver à l'évaluation finale."""
     if getattr(model, "needs_groups", False):
         y_pred, proba = model.predict(X_test, groups), model.predict_proba(X_test, groups)
     else:
         y_pred, proba = model.predict(X_test), model.predict_proba(X_test)
-    return {
+    results = {
         "accuracy": float((y_pred == y_test).mean()),
         "cohen_kappa": float(cohen_kappa_score(y_test, y_pred)),
         "macro_f1": float(f1_score(y_test, y_pred, average="macro")),
         "roc_auc_macro": macro_roc_auc(proba, model.classes_, y_test),
         "per_class_report": classification_report(y_test, y_pred, output_dict=True, zero_division=0),
+        # lignes = stade réel, colonnes = stade prédit, dans l'ordre de model.classes_
+        "confusion_matrix": confusion_matrix(y_test, y_pred, labels=model.classes_).tolist(),
+        "classes": [int(c) for c in model.classes_],
     }
+    if with_ci and groups is not None:
+        results["ci95"] = bootstrap_ci(y_test, y_pred, groups[0])
+    return results
 
 
 def subject_folds(subjects: np.ndarray, n_folds: int, seed: int = 42) -> list[tuple[np.ndarray, np.ndarray]]:
@@ -152,7 +253,7 @@ def cross_validate_probes(
     y: np.ndarray,
     subjects: np.ndarray,
     n_folds: int = 5,
-    max_iter: int = 100,
+    max_iter: int = LOGISTIC_MAX_ITER,
     seed: int = 42,
     device: str = "cpu",
 ) -> dict:
@@ -165,7 +266,10 @@ def cross_validate_probes(
     for fit_idx, val_idx in folds:
         for kind in kinds:
             start = time.time()
-            model = train_probe(kind, X[fit_idx], y[fit_idx], max_iter=max_iter, seed=seed, device=device)
+            fit_groups = (subjects[fit_idx], np.zeros(len(fit_idx), dtype=int))  # nuits, pour l'arrêt précoce du MLP
+            model = train_probe(
+                kind, X[fit_idx], y[fit_idx], max_iter=max_iter, seed=seed, device=device, groups=fit_groups
+            )
             results[kind]["fit_seconds"] += time.time() - start
             results[kind]["train_f1"].append(evaluate_probe(model, X[fit_idx], y[fit_idx])["macro_f1"])
             results[kind]["val_f1"].append(evaluate_probe(model, X[val_idx], y[val_idx])["macro_f1"])
@@ -217,7 +321,7 @@ def compare_probes(
     y_train: np.ndarray,
     X_test: np.ndarray,
     y_test: np.ndarray,
-    max_iter: int = 100,
+    max_iter: int = LOGISTIC_MAX_ITER,
     seed: int = 42,
     device: str = "cpu",
     train_groups: tuple[np.ndarray, np.ndarray] | None = None,
@@ -232,8 +336,11 @@ def compare_probes(
         model = train_probe(kind, X_train, y_train, max_iter=max_iter, seed=seed, device=device, groups=train_groups)
         results[kind] = {
             "train": evaluate_probe(model, X_train, y_train, train_groups),
-            "test": evaluate_probe(model, X_test, y_test, test_groups),
+            "test": evaluate_probe(model, X_test, y_test, test_groups, with_ci=True),
             "fit_seconds": time.time() - start,
+            # None pour les sondes sans notion de convergence (XGBoost, MLP, BiGRU)
+            "converged": getattr(model, "converged_", None),
+            "n_iter": getattr(model, "n_iter_used_", None),
         }
     return results
 
