@@ -31,7 +31,7 @@ Ne pas ré-entraîner un modèle fondamental. Reproduire la baseline publiée su
 
 | Base | Statut | Usage |
 |---|---|---|
-| PhysioNet Challenge 2018 | Public, téléchargement immédiat | Validation du pipeline (phase 1) |
+| PhysioNet Challenge 2018 | Public, téléchargement immédiat (994 sujets d'entraînement annotés) | Validation du pipeline (phase 1) |
 | MESA (NSRR) | Accès sur demande (DUA) | Reproduction de la démo officielle SleepFM |
 | SHHS (NSRR) | Accès sur demande (DUA) | Évaluation à plus grande échelle (phase 2) |
 | CHAT (NSRR) | Accès sur demande (DUA) | Pédiatrie — piste de différenciation (phase 2) |
@@ -41,12 +41,15 @@ Voir `docs/DATA_ACCESS.md` pour la procédure de demande d'accès NSRR.
 ## Structure
 
 ```
-configs/        configuration (chemins, hyperparamètres)
-scripts/        téléchargement de données, setup des dépôts tiers
+run_baseline.py point d'entrée unique : extraction -> embeddings -> sonde -> évaluation
+configs/        conventions de canaux/labels de référence (non lues par les scripts)
+scripts/        téléchargement de données, setup des dépôts tiers, générateur synthétique
 src/data/       chargement et prétraitement des PSG
-src/models/     wrapper SleepFM (embeddings), sonde linéaire
+src/models/     wrapper SleepFM (embeddings), sonde linéaire, backbone OSF
 src/eval/       métriques (accuracy, Cohen's kappa, F1 par classe)
-docs/           roadmap et notes d'accès aux données
+notebooks/      notebook Google Colab (GPU gratuit)
+results/        sorties brutes des runs réels
+docs/           roadmap, accès aux données NSRR, comparaison OSF
 ```
 
 ## Démarrage
@@ -54,11 +57,15 @@ docs/           roadmap et notes d'accès aux données
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python scripts/download_physionet2018.py --out data/raw/physionet2018
-python src/data/extract_physionet2018.py --data_path data/raw/physionet2018 --save_path data/processed/train
 bash scripts/setup_sleepfm.sh   # clone le code officiel SleepFM dans third_party/ pour récupérer best.pt
-python scripts/run_embedding_and_probe.py --processed-train data/processed/train --processed-test data/processed/test
+python scripts/download_physionet2018.py --out data/raw/physionet2018/training --limit 20
+python run_baseline.py --raw-data data/raw/physionet2018/training \
+    --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt
 ```
+
+`run_baseline.py` fait le split par sujet (25 % en test), l'extraction, les
+embeddings et la sonde en une commande. Sans GPU local, passer par le
+notebook Colab (voir plus bas).
 
 ## Tester sans données réelles (smoke test)
 
@@ -69,7 +76,7 @@ attendant l'accès aux vraies données :
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -v                 # tests unitaires + bout-en-bout (~15s)
+pytest tests/ -v                 # tests unitaires + bout-en-bout (~1 min)
 pytest tests/ -m "not slow"      # unitaires seulement, rapide
 ```
 
@@ -91,14 +98,12 @@ docstring de `scripts/download_physionet2018.py`) et extraits dans
 pytest tests/test_real_data.py -v -s
 ```
 
-Validé en conditions réelles : extraction sur 1 enregistrement PhysioNet
-2018 officiel (845 époques de 30s, format confirmé identique à
-`ALL_CHANNELS`), embeddings générés, sonde ajustée -- accuracy ~0.20
-(niveau du hasard sur 5 classes), cohérent avec un backbone à poids
-aléatoires (pas de checkpoint SleepFM officiel téléchargé). Avec un seul
-sujet, pas de split train/test significatif : ce test valide la plomberie,
-pas une performance de généralisation. Sauté automatiquement si
-`data/processed/train` est absent (CI compatible).
+Ce test vérifie le format des époques extraites (845 époques de 30 s pour
+`tr03-0005`, canaux identiques à `ALL_CHANNELS`) et fait tourner embeddings
+et sonde avec des poids aléatoires : il valide la plomberie, pas une
+performance (accuracy ~0,20, niveau du hasard sur 5 classes). Les vrais
+chiffres, avec le checkpoint officiel, sont dans "Résultats". Sauté
+automatiquement si `data/processed/train` est absent (CI compatible).
 
 ## Lancer sur GPU gratuit (Google Colab)
 
@@ -144,8 +149,8 @@ noms courts). `src/models/embeddings.py` accepte les deux formes.
 checkpoints publiés (mêmes noms de clés -- avec gestion des deux variantes
 ci-dessus --, même montage de canaux, même architecture). Le pipeline
 complet (génération synthétique -> extraction -> embeddings -> sonde ->
-évaluation) tourne de bout en bout avec le vrai checkpoint officiel, 11/11
-tests passent. Premier vrai chiffre obtenu sur 20 sujets PhysioNet 2018
+évaluation) tourne de bout en bout avec le vrai checkpoint officiel, et la
+suite de tests passe en CI. Premier vrai chiffre obtenu sur 20 sujets PhysioNet 2018
 avec le checkpoint officiel (voir "Résultats" en haut de ce fichier).
 
 ## CI

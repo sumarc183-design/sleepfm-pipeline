@@ -1,3 +1,6 @@
+# Fichier de référence : aucun script ne le lit (les valeurs effectives sont
+# les arguments de run_baseline.py et les constantes de src/).
+#
 # Channel/label conventions below are copied verbatim from the official
 # SleepFM config (rthapa84/sleepfm-codebase, MIT License) so preprocessed
 # data and pretrained checkpoints stay compatible. ALL_CHANNELS matches the

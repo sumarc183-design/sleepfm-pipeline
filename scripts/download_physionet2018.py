@@ -1,25 +1,24 @@
-"""Télécharge un sous-ensemble du PhysioNet/CinC Challenge 2018 (PSG + labels de stades/arousals).
+"""Télécharge un sous-ensemble du PhysioNet/CinC Challenge 2018 (PSG + labels
+de stades/arousals), sujets d'entraînement uniquement (le jeu de test n'a pas
+de -arousal.mat, donc pas de labels).
 
-Nécessite le paquet `wfdb`. Le jeu complet fait ~130 Go ; utiliser --limit
-pour ne récupérer qu'un sous-ensemble de sujets pendant la mise au point du pipeline.
+Le jeu complet fait 994 sujets / ~130 Go ; utiliser --limit pour ne récupérer
+qu'un sous-ensemble. Range chaque sujet dans <out>/<id>/ (3 fichiers), la
+structure attendue par src/data/extract_physionet2018.py et run_baseline.py.
+Pour 100+ sujets, préférer run_baseline.py --physionet-subjects, qui
+télécharge au fil de l'eau sans tout garder sur disque.
 
-Sur un réseau d'entreprise : si ce script reste bloqué sur "Downloading
-files..." sans jamais avancer (alors qu'un navigateur classique accède
-bien à physionet.org), c'est probablement un proxy géré par Windows/le
-navigateur mais pas par la librairie Python. Solution de repli : chaque
-enregistrement ne nécessite que 3 fichiers, téléchargeables directement au
-navigateur depuis
+Sur un réseau d'entreprise : si le téléchargement Python est bloqué (proxy
+géré par Windows/le navigateur mais pas par Python), chaque sujet ne
+nécessite que 3 fichiers, téléchargeables au navigateur depuis
 https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
-(+ .mat + -arousal.mat), à ranger dans
-data/raw/physionet2018/training/<id>/.
+(+ .mat + -arousal.mat), à ranger dans data/raw/physionet2018/training/<id>/.
 """
 import argparse
 import os
 import time
 import urllib.request
 from pathlib import Path
-
-import wfdb
 
 PHYSIONET_2018_URL = "https://physionet.org/files/challenge-2018/1.0.0"
 
@@ -55,29 +54,15 @@ def download_subject(subject_id: str, dest_dir: str | Path, split: str = "traini
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", required=True, help="Répertoire de sortie")
+    parser.add_argument("--out", required=True, help="Répertoire de sortie (un sous-dossier par sujet)")
     parser.add_argument("--limit", type=int, default=10, help="Nombre de sujets à télécharger")
-    parser.add_argument(
-        "--split",
-        default="training",
-        choices=["training", "test"],
-        help="Sous-ensemble PhysioNet 2018",
-    )
     args = parser.parse_args()
 
-    os.makedirs(args.out, exist_ok=True)
-
-    records = wfdb.get_record_list("challenge-2018/1.0.0")
-    subset = [r for r in records if r.startswith(args.split)][: args.limit]
-
-    print(f"{len(subset)} enregistrement(s) à télécharger vers {args.out}")
-    for record in subset:
-        wfdb.dl_database(
-            "challenge-2018",
-            dl_dir=args.out,
-            records=[record],
-            keep_subdirs=True,
-        )
+    subjects = list_subjects("training")[: args.limit]
+    print(f"{len(subjects)} sujet(s) à télécharger vers {args.out}")
+    for i, subject in enumerate(subjects, 1):
+        download_subject(subject, args.out)
+        print(f"[{i}/{len(subjects)}] {subject}")
 
 
 if __name__ == "__main__":
