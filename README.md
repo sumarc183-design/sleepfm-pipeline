@@ -7,11 +7,17 @@ Reproduction et évaluation de [SleepFM](https://github.com/rthapa84/sleepfm-cod
 | Date | Données | Checkpoint | Accuracy | Cohen's κ | Macro F1 |
 |---|---|---|---|---|---|
 | 2026-11-02 | PhysioNet 2018, 20 sujets (15 train / 5 test, split par sujet, 4 295 époques de test) | `best.pt` officiel | 0,703 | **0,584** | 0,650 |
+| 2026-11-03 | PhysioNet 2018, 100 sujets (75 train / 25 test, split par sujet, 22 236 époques de test) | `best.pt` officiel | 0,722 | **0,622** | 0,681 |
+
+F1 par stade sur 100 sujets : Wake 0,741 · N1 **0,434** · N2 0,801 · N3 0,738 ·
+REM 0,692. N1 reste de loin le stade le plus difficile (c'est aussi le moins
+concordant entre experts humains).
 
 Sonde logistique sur embeddings figés (combinés : respiratoire + stades + ECG),
 5 classes, split 75/25 par sujet (l'ancien défaut). Lancé sur Colab GPU T4 via
-`notebooks/colab_baseline_physionet2018.ipynb`, sortie brute dans
-`results/results_physionet2018.txt`.
+`notebooks/colab_baseline_physionet2018.ipynb`, sorties brutes dans `results/`
+(`results_physionet2018.txt` pour 20 sujets, `results_physionet2018_100.txt`
+pour 100).
 
 Depuis, `run_baseline.py` compare par défaut six sondes sur les mêmes
 embeddings figés et le même split **80/20 par sujet**, chacune testant un
@@ -41,9 +47,9 @@ affiché sous le tableau :
 Random Forest a été retiré (plus lent, moins adapté aux embeddings denses).
 
 Référence interne, pas une reproduction du chiffre publié : le papier SleepFM
-rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018. Avec 5 sujets
-de test, le κ peut varier d'environ ±0,05 selon le tirage ; à consolider avec
-plus de sujets, puis comparer au chiffre publié sur MESA.
+rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018. Passer de 5 à
+25 sujets de test stabilise nettement le chiffre (κ 0,584 → 0,622) ; la
+comparaison stricte au chiffre publié se fera sur MESA.
 
 ## Objectif phase 1
 
