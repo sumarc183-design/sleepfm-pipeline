@@ -18,8 +18,9 @@ Hyperparamètres fixes, raisonnables, jamais réglés sur le jeu de test.
 (Random Forest, testé, a été retiré : plus lent que XGBoost et moins adapté
 aux embeddings denses.)
 
-Entre XGBoost et MLP, une seule sonde non linéaire est gardée : voir
-choose_mlp_or_xgboost.
+Entre XGBoost et MLP, une seule sonde non linéaire est gardée, choisie par
+validation croisée par sujet sur le train (voir choose_mlp_or_xgboost) : le
+test n'intervient qu'à la fin, sur le modèle retenu.
 """
 from __future__ import annotations
 
@@ -32,7 +33,8 @@ from sklearn.neural_network import MLPClassifier
 
 PROBE_KINDS = ("logistic", "logistic_balanced", "xgboost", "mlp", "sequence")
 MIN_XGBOOST_GAIN = 0.02  # F1 macro : en dessous, l'écart relève du bruit du tirage des sujets de test
-MAX_F1_GAP = 0.15  # gap F1 train - test au-delà duquel une sonde est jugée surapprise
+MAX_F1_GAP = 0.15  # gap F1 apprentissage - validation au-delà duquel une sonde est jugée surapprise
+CV_FOLDS = 5
 
 
 def train_linear_probe(
@@ -117,38 +119,68 @@ def evaluate_probe(model, X_test: np.ndarray, y_test: np.ndarray,
     }
 
 
-def f1_gap(result: dict) -> float:
-    return result["train"]["macro_f1"] - result["test"]["macro_f1"]
+def subject_folds(subjects: np.ndarray, n_folds: int, seed: int = 42) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Plis de validation croisée groupés par sujet : un sujet (une nuit)
+    n'est jamais à la fois dans l'apprentissage et la validation d'un pli.
+    Renvoie [(indices d'apprentissage, indices de validation), ...]."""
+    unique = np.array(sorted(set(subjects)))
+    np.random.default_rng(seed).shuffle(unique)
+    n_folds = min(n_folds, len(unique))
+    fold_of_subject = {subject: k % n_folds for k, subject in enumerate(unique)}
+    fold = np.array([fold_of_subject[s] for s in subjects])
+    return [(np.flatnonzero(fold != k), np.flatnonzero(fold == k)) for k in range(n_folds)]
 
 
-def choose_mlp_or_xgboost(results: dict, min_gain: float = MIN_XGBOOST_GAIN,
+def cross_validate_probes(kinds, X: np.ndarray, y: np.ndarray, subjects: np.ndarray, n_folds: int = 5,
+                          max_iter: int = 100, seed: int = 42, device: str = "cpu") -> dict:
+    """Validation croisée par sujet sur le TRAIN uniquement, mêmes plis pour
+    chaque sonde (comparaison appariée). Le jeu de test n'intervient pas :
+    il reste réservé à l'évaluation finale du modèle choisi.
+    Renvoie {sonde: {"val_f1": [par pli], "train_f1": [par pli], "fit_seconds": total}}."""
+    folds = subject_folds(subjects, n_folds, seed)
+    results = {kind: {"val_f1": [], "train_f1": [], "fit_seconds": 0.0} for kind in kinds}
+    for fit_idx, val_idx in folds:
+        for kind in kinds:
+            start = time.time()
+            model = train_probe(kind, X[fit_idx], y[fit_idx], max_iter=max_iter, seed=seed, device=device)
+            results[kind]["fit_seconds"] += time.time() - start
+            results[kind]["train_f1"].append(evaluate_probe(model, X[fit_idx], y[fit_idx])["macro_f1"])
+            results[kind]["val_f1"].append(evaluate_probe(model, X[val_idx], y[val_idx])["macro_f1"])
+    return results
+
+
+def choose_mlp_or_xgboost(cv: dict, min_gain: float = MIN_XGBOOST_GAIN,
                           max_gap: float = MAX_F1_GAP) -> tuple[str | None, str]:
-    """Règle du projet pour garder une seule sonde non linéaire :
-    1. une sonde dont le gap F1 train - test dépasse `max_gap` est éliminée,
-       quel que soit son score (elle a appris le train par cœur) ;
+    """Règle du projet pour garder une seule sonde non linéaire, appliquée à
+    la validation croisée par sujet sur le train (cross_validate_probes),
+    jamais au test :
+    1. une sonde dont le gap F1 moyen (apprentissage - validation) dépasse
+       `max_gap` est éliminée, quel que soit son score (elle apprend par cœur) ;
     2. si les deux restent, XGBoost n'est retenu que s'il bat le MLP de plus
-       de `min_gain` en F1 macro test ; à quasi-égalité on garde le MLP, plus
-       rapide à entraîner ;
+       de `min_gain` en F1 macro de validation en moyenne ET sur tous les plis
+       sauf un au plus (un gain qui ne tient que sur quelques plis dépend du
+       tirage) ; sinon le MLP, plus rapide à entraîner ;
     3. si une seule reste, c'est elle ; si aucune, aucune n'est retenue (on
        s'en tient à la régression logistique).
     Renvoie (sonde retenue ou None, explication)."""
-    gaps = {kind: f1_gap(results[kind]) for kind in ("mlp", "xgboost")}
+    names = {"mlp": "MLP", "xgboost": "XGBoost"}
+    gaps = {kind: float(np.mean(np.array(cv[kind]["train_f1"]) - np.array(cv[kind]["val_f1"])))
+            for kind in ("mlp", "xgboost")}
     eliminated = [kind for kind, gap in gaps.items() if gap > max_gap]
-    note = "".join(f" ; {kind.upper() if kind == 'mlp' else 'XGBoost'} éliminé (gap F1 {gaps[kind]:+.4f} > {max_gap})"
-                   for kind in eliminated)
+    note = "".join(f" ; {names[kind]} éliminé (gap F1 moyen {gaps[kind]:+.4f} > {max_gap})" for kind in eliminated)
     remaining = [kind for kind in ("mlp", "xgboost") if kind not in eliminated]
     if not remaining:
         return None, f"aucune sonde retenue, les deux surapprennent{note}"
     if len(remaining) == 1:
-        kept = remaining[0]
-        return kept, f"{'MLP' if kept == 'mlp' else 'XGBoost'} retenu{note}"
-    mlp, xgb = results["mlp"]["test"]["macro_f1"], results["xgboost"]["test"]["macro_f1"]
-    gain = xgb - mlp
-    if gain > min_gain:
-        return "xgboost", f"XGBoost bat le MLP de {gain:+.4f} en F1 macro test (> {min_gain}) : XGBoost retenu"
-    return "mlp", (f"écart XGBoost - MLP = {gain:+.4f} en F1 macro test (<= {min_gain}) : "
-                   f"MLP retenu, plus rapide ({results['mlp']['fit_seconds']:.0f}s contre "
-                   f"{results['xgboost']['fit_seconds']:.0f}s)")
+        return remaining[0], f"{names[remaining[0]]} retenu{note}"
+
+    diffs = np.array(cv["xgboost"]["val_f1"]) - np.array(cv["mlp"]["val_f1"])
+    mean_gain, wins, n_folds = float(diffs.mean()), int((diffs > 0).sum()), len(diffs)
+    detail = f"gain moyen XGBoost - MLP = {mean_gain:+.4f}, XGBoost meilleur sur {wins}/{n_folds} plis"
+    if mean_gain > min_gain and wins >= n_folds - 1:
+        return "xgboost", f"{detail} : écart net et régulier, XGBoost retenu"
+    return "mlp", (f"{detail} : écart trop faible ou irrégulier, MLP retenu, plus rapide "
+                   f"({cv['mlp']['fit_seconds']:.0f}s contre {cv['xgboost']['fit_seconds']:.0f}s sur les plis)")
 
 
 def compare_probes(kinds, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray,

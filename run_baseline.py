@@ -49,7 +49,10 @@ from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDatase
 from src.data.extract_physionet2018 import main as extract_main
 from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
-from src.models.linear_probe import MAX_F1_GAP, MIN_XGBOOST_GAIN, PROBE_KINDS, choose_mlp_or_xgboost, compare_probes
+from src.models.linear_probe import (
+    CV_FOLDS, MAX_F1_GAP, MIN_XGBOOST_GAIN, PROBE_KINDS, choose_mlp_or_xgboost, compare_probes,
+    cross_validate_probes,
+)
 
 
 def build_random_checkpoint(path: Path, embedding_dim: int = 512) -> None:
@@ -195,6 +198,26 @@ def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
     return np.concatenate(X), np.concatenate(y), (np.concatenate(groups_subject), np.concatenate(groups_epoch))
 
 
+def select_and_evaluate(args, X_train, y_train, train_groups, X_test, y_test, test_groups) -> tuple[dict, dict | None]:
+    """1. Si MLP et XGBoost sont demandés, en garde un seul par validation
+    croisée par sujet sur le TRAIN (choose_mlp_or_xgboost) ;
+    2. évalue sur le test, une seule fois, les sondes retenues -- la sonde
+    écartée n'est jamais évaluée sur le test.
+    Renvoie (résultats finaux, sélection ou None)."""
+    probes, selection = list(args.probes), None
+    if "mlp" in probes and "xgboost" in probes:
+        print(f"Sélection MLP / XGBoost : validation croisée {args.cv_folds} plis par sujet, sur le train uniquement...")
+        cv = cross_validate_probes(["mlp", "xgboost"], X_train, y_train, train_groups[0], n_folds=args.cv_folds,
+                                   max_iter=args.max_iter, seed=args.seed, device=args.device)
+        chosen, reason = choose_mlp_or_xgboost(cv, args.min_gain, args.max_gap)
+        selection = {"cv": cv, "chosen": chosen, "reason": reason}
+        probes = [k for k in probes if k not in ("mlp", "xgboost") or k == chosen]
+    results = compare_probes(probes, X_train, y_train, X_test, y_test,
+                             max_iter=args.max_iter, seed=args.seed, device=args.device,
+                             train_groups=train_groups, test_groups=test_groups)
+    return results, selection
+
+
 PROBE_LABELS = {
     "logistic": "Régression log.", "logistic_balanced": "Rég. log. pond.",
     "xgboost": "XGBoost", "mlp": "MLP", "sequence": "BiGRU (nuit)",
@@ -202,15 +225,28 @@ PROBE_LABELS = {
 
 
 def print_results(results: dict, data_desc: str, checkpoint_desc: str, not_interpretable: bool,
-                  min_gain: float = MIN_XGBOOST_GAIN, max_gap: float = MAX_F1_GAP) -> None:
+                  selection: dict | None = None) -> None:
     """`results` : sortie de compare_probes, {sonde: {"train": ..., "test": ..., "fit_seconds": ...}}.
+    `selection` : sortie de select_and_evaluate (validation croisée MLP / XGBoost).
     Gap = score train - score test : un gap élevé signale du surapprentissage."""
     label_to_stage = {v: k for k, v in STAGE_NAME_TO_LABEL.items()}
     width = 96
     print("=" * width)
     print(f"Données    : {data_desc}")
     print(f"Checkpoint : {checkpoint_desc}")
+    if selection is not None:
+        cv = selection["cv"]
+        n_folds = len(next(iter(cv.values()))["val_f1"])
+        print("-" * width)
+        print(f"1. Sélection MLP / XGBoost -- validation croisée {n_folds} plis par sujet, train uniquement")
+        print(f"{'':<16}{'F1 val moyen':>14}{'écart-type':>12}{'Gap F1':>9}   F1 val par pli")
+        for kind in ("mlp", "xgboost"):
+            val, gap = np.array(cv[kind]["val_f1"]), np.array(cv[kind]["train_f1"]) - np.array(cv[kind]["val_f1"])
+            print(f"{PROBE_LABELS[kind]:<16}{val.mean():>14.4f}{val.std():>12.4f}{gap.mean():>+9.4f}   "
+                  + " ".join(f"{v:.3f}" for v in val))
+        print(f"Verdict : {selection['reason']}")
     print("-" * width)
+    print("2. Évaluation finale sur le test (jamais utilisé pour la sélection)")
     print(f"{'Modèle (test)':<16}{'Accuracy':>9}{'Kappa':>8}{'F1 macro':>10}{'ROC-AUC':>9}"
           f" |{'F1 train':>9}{'Gap F1':>8}{'AUC train':>10}{'Gap AUC':>9}{'Durée':>8}")
     for kind, r in results.items():
@@ -228,9 +264,6 @@ def print_results(results: dict, data_desc: str, checkpoint_desc: str, not_inter
         scores = "".join(f"{r['test']['per_class_report'].get(label, {}).get('f1-score', float('nan')):>16.4f}"
                          for r in results.values())
         print(f"  {label_to_stage[int(label)]:<18}{scores}{int(first_report[label]['support']):>8}")
-    if "mlp" in results and "xgboost" in results:
-        print("-" * width)
-        print(f"MLP ou XGBoost : {choose_mlp_or_xgboost(results, min_gain, max_gap)[1]}")
     print("=" * width)
     if not_interpretable:
         print("Ces résultats ne sont PAS interprétables médicalement (données et/ou "
@@ -269,17 +302,14 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
     X_train, y_train, train_groups = load_cached_embeddings(args.embeddings_dir, train_subjects)
     X_test, y_test, test_groups = load_cached_embeddings(args.embeddings_dir, test_subjects)
 
-    results = compare_probes(args.probes, X_train, y_train, X_test, y_test,
-                             max_iter=args.max_iter, seed=args.seed, device=args.device,
-                             train_groups=train_groups, test_groups=test_groups)
+    results, selection = select_and_evaluate(args, X_train, y_train, train_groups, X_test, y_test, test_groups)
     print_results(
         results,
         f"{data_kind} ({len(train_subjects)} sujet(s) train / {len(test_subjects)} test, "
         f"{len(y_train)} / {len(y_test)} époques ; {n_skipped} sujet(s) rejeté(s) à l'extraction)",
         "ALÉATOIRE (pas de poids SleepFM officiels)" if args.checkpoint is None else str(args.checkpoint),
         data_kind == "SYNTHÉTIQUES" or args.checkpoint is None,
-        args.min_gain,
-        args.max_gap,
+        selection,
     )
 
 
@@ -303,10 +333,12 @@ def main() -> None:
                              "d'entraînement PhysioNet 2018 (au lieu de --raw-data).")
     parser.add_argument("--chunk-size", type=int, default=8, help="Sujets par lot en mode --embeddings-dir")
     parser.add_argument("--max-iter", type=int, default=100, help="Itérations max de la régression logistique")
+    parser.add_argument("--cv-folds", type=int, default=CV_FOLDS,
+                        help="Plis de la validation croisée par sujet (sur le train) qui départage MLP et XGBoost")
     parser.add_argument("--min-gain", type=float, default=MIN_XGBOOST_GAIN,
-                        help="Avance minimale en F1 macro test pour préférer XGBoost au MLP (plus rapide)")
+                        help="Gain moyen minimal en F1 macro de validation pour préférer XGBoost au MLP (plus rapide)")
     parser.add_argument("--max-gap", type=float, default=MAX_F1_GAP,
-                        help="Gap F1 train - test au-delà duquel MLP/XGBoost est éliminé (surapprentissage)")
+                        help="Gap F1 moyen (apprentissage - validation) au-delà duquel MLP/XGBoost est éliminé")
     parser.add_argument("--probes", nargs="+", choices=PROBE_KINDS, default=list(PROBE_KINDS),
                         help="Sondes à comparer sur les mêmes embeddings. La régression logistique est la "
                              "baseline (protocole officiel SleepFM).")
@@ -364,9 +396,7 @@ def main() -> None:
         X_test, y_test, test_groups = collect_embeddings(encoders, processed_test, args.batch_size, args.device, args.num_threads)
         n_train, n_test = len(y_train), len(y_test)
 
-        results = compare_probes(args.probes, X_train, y_train, X_test, y_test,
-                                 max_iter=args.max_iter, seed=args.seed, device=args.device,
-                                 train_groups=train_groups, test_groups=test_groups)
+        results, selection = select_and_evaluate(args, X_train, y_train, train_groups, X_test, y_test, test_groups)
 
     print_results(
         results,
@@ -374,8 +404,7 @@ def main() -> None:
         f"({len(train_subjects)} sujet(s) train / {len(test_subjects)} test, {n_train} / {n_test} époques)",
         "ALÉATOIRE (pas de poids SleepFM officiels)" if is_random_checkpoint else str(args.checkpoint),
         is_synthetic or is_random_checkpoint,
-        args.min_gain,
-        args.max_gap,
+        selection,
     )
 
 

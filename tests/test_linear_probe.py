@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from src.models.linear_probe import (
-    PROBE_KINDS, choose_mlp_or_xgboost, compare_probes, compare_to_published, evaluate_probe, train_linear_probe, train_probe,
+    PROBE_KINDS, choose_mlp_or_xgboost, compare_probes, cross_validate_probes, subject_folds, compare_to_published, evaluate_probe, train_linear_probe, train_probe,
 )
 
 
@@ -99,17 +99,38 @@ def test_sequence_probe_requires_groups():
 
 
 @pytest.mark.parametrize("mlp, xgb, expected", [
-    # (F1 train, F1 test) de chaque sonde
-    ((0.78, 0.75), (0.75, 0.70), "mlp"),      # XGBoost moins bon
-    ((0.65, 0.60), (0.66, 0.615), "mlp"),     # XGBoost devant de 0,015 : quasi-égalité, le MLP (plus rapide) gagne
-    ((0.65, 0.60), (0.70, 0.63), "xgboost"),  # XGBoost devant de 0,03, gap raisonnable : écart net
-    ((0.65, 0.60), (1.00, 0.70), "mlp"),      # XGBoost bien meilleur au test mais gap 0,30 : éliminé
-    ((0.99, 0.70), (0.66, 0.62), "xgboost"),  # MLP meilleur au test mais gap 0,29 : éliminé
-    ((1.00, 0.70), (1.00, 0.65), None),       # les deux surapprennent : aucune retenue
+    # (F1 apprentissage, F1 validation par pli) de chaque sonde, 5 plis
+    ((0.78, [0.75] * 5), (0.75, [0.70] * 5), "mlp"),                    # XGBoost moins bon
+    ((0.65, [0.60] * 5), (0.66, [0.615] * 5), "mlp"),                   # +0,015 : quasi-égalité, MLP (plus rapide)
+    ((0.65, [0.60] * 5), (0.70, [0.63] * 5), "xgboost"),                # +0,03 sur les 5 plis : net et régulier
+    ((0.65, [0.60] * 5), (0.70, [0.75, 0.75, 0.58, 0.58, 0.58]), "mlp"),  # +0,036 en moyenne mais 2/5 plis : tirage
+    ((0.65, [0.60] * 5), (1.00, [0.70] * 5), "mlp"),                    # XGBoost meilleur mais gap 0,30 : éliminé
+    ((0.99, [0.70] * 5), (0.66, [0.62] * 5), "xgboost"),                # MLP meilleur mais gap 0,29 : éliminé
+    ((1.00, [0.70] * 5), (1.00, [0.65] * 5), None),                     # les deux surapprennent
 ])
 def test_choose_mlp_or_xgboost(mlp, xgb, expected):
-    def run(train_f1, test_f1, seconds):
-        return {"train": {"macro_f1": train_f1}, "test": {"macro_f1": test_f1}, "fit_seconds": seconds}
+    def cv(train_f1, val_f1, seconds):
+        return {"train_f1": [train_f1] * len(val_f1), "val_f1": val_f1, "fit_seconds": seconds}
 
-    results = {"mlp": run(*mlp, 60), "xgboost": run(*xgb, 120)}
+    results = {"mlp": cv(*mlp, 60), "xgboost": cv(*xgb, 120)}
     assert choose_mlp_or_xgboost(results, min_gain=0.02, max_gap=0.15)[0] == expected
+
+
+def test_subject_folds_never_split_a_subject():
+    subjects = np.repeat([f"s{i}" for i in range(12)], 7)
+    folds = subject_folds(subjects, n_folds=5)
+    assert len(folds) == 5
+    covered = np.concatenate([val for _, val in folds])
+    assert sorted(covered) == list(range(len(subjects)))  # chaque ligne validée une fois
+    for fit_idx, val_idx in folds:
+        assert set(subjects[fit_idx]).isdisjoint(subjects[val_idx])
+
+
+def test_cross_validate_probes_uses_only_given_data():
+    rng = np.random.default_rng(0)
+    X, y = _separable(300, rng)
+    subjects = np.repeat([f"s{i}" for i in range(10)], 30)
+    cv = cross_validate_probes(["mlp", "xgboost"], X, y, subjects, n_folds=5)
+    for kind in ("mlp", "xgboost"):
+        assert len(cv[kind]["val_f1"]) == len(cv[kind]["train_f1"]) == 5
+        assert np.mean(cv[kind]["val_f1"]) > 0.8

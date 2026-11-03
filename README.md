@@ -36,13 +36,20 @@ stade, et le gap train − test (un gap élevé signale du surapprentissage).
 Hyperparamètres fixes, jamais réglés sur le test (arrêt précoce du MLP et du
 BiGRU sur une partie du train). `--probes logistic` pour la baseline seule.
 
-Une seule sonde non linéaire est gardée entre XGBoost et MLP, verdict
-affiché sous le tableau :
-1. une sonde dont le gap F1 train − test dépasse 0,15 (`--max-gap`) est
-   éliminée quel que soit son score : elle a appris le train par cœur ;
+Une seule sonde non linéaire est gardée entre XGBoost et MLP. Le choix se
+fait **sur le train uniquement**, par validation croisée à 5 plis groupée par
+sujet (`--cv-folds`, mêmes plis pour les deux sondes) ; le test reste à part
+jusqu'au bout et la sonde écartée n'y est jamais évaluée :
+1. une sonde dont le gap F1 moyen (apprentissage − validation) dépasse 0,15
+   (`--max-gap`) est éliminée quel que soit son score : elle apprend par cœur ;
 2. si les deux restent, XGBoost seulement s'il bat le MLP de plus de 0,02 en
-   F1 macro test (`--min-gain`), sinon le MLP, plus rapide ;
+   F1 macro de validation en moyenne (`--min-gain`) **et** sur au moins 4 plis
+   sur 5 (un gain qui ne tient que sur quelques plis dépend du tirage) ;
+   sinon le MLP, plus rapide ;
 3. si aucune ne reste, on s'en tient à la régression logistique.
+
+La sortie affiche d'abord cette sélection (F1 de validation par pli), puis
+l'évaluation finale sur le test des quatre sondes retenues.
 
 Random Forest a été retiré (plus lent, moins adapté aux embeddings denses).
 

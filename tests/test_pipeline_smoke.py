@@ -145,3 +145,32 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     embed_subjects_in_chunks(subjects, fetch_subject, encoders, embeddings_dir,
                              chunk_size=2, num_threads=1, batch_size=16, device="cpu")
     assert fetched == []
+
+
+
+@pytest.mark.slow
+def test_loser_of_mlp_vs_xgboost_is_never_evaluated_on_test():
+    """La sélection MLP / XGBoost se fait par validation croisée sur le
+    train ; le jeu de test ne voit que les sondes retenues."""
+    from types import SimpleNamespace
+
+    from run_baseline import select_and_evaluate
+
+    rng = np.random.default_rng(0)
+
+    def data(n_subjects):
+        y = rng.integers(0, 5, n_subjects * 40)
+        X = rng.standard_normal((len(y), 16)) * 0.5
+        X[np.arange(len(y)), y] += 3.0
+        groups = (np.repeat([f"s{i}" for i in range(n_subjects)], 40), np.tile(np.arange(40), n_subjects))
+        return X, y, groups
+
+    X_train, y_train, g_train = data(10)
+    X_test, y_test, g_test = data(3)
+    args = SimpleNamespace(probes=["logistic", "mlp", "xgboost"], cv_folds=5, min_gain=0.02, max_gap=0.15,
+                           max_iter=200, seed=42, device="cpu")
+    results, selection = select_and_evaluate(args, X_train, y_train, g_train, X_test, y_test, g_test)
+
+    assert selection["chosen"] in ("mlp", "xgboost")
+    loser = {"mlp", "xgboost"} - {selection["chosen"]}
+    assert set(results) == {"logistic", selection["chosen"]} and loser.isdisjoint(results)
