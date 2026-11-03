@@ -104,10 +104,18 @@ pas une performance de généralisation. Sauté automatiquement si
 
 [![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
 
-`notebooks/colab_baseline_physionet2018.ipynb` télécharge N sujets PhysioNet
-2018 (20 par défaut), récupère `best.pt`, et lance `run_baseline.py` avec les
-embeddings sur GPU (`--device cuda`, choisi automatiquement si disponible).
-Sélectionner `GPU T4` dans le type d'exécution avant de lancer.
+`notebooks/colab_baseline_physionet2018.ipynb` récupère `best.pt` et lance
+`run_baseline.py` en mode par lots sur N sujets PhysioNet 2018 (100 par
+défaut), avec les embeddings sur GPU (`--device cuda`, choisi automatiquement
+si disponible). Sélectionner `GPU T4` dans le type d'exécution avant de lancer.
+
+Mode par lots (`--physionet-subjects N --embeddings-dir DIR`) : chaque lot de
+sujets est téléchargé, extrait et passé dans SleepFM, puis le brut et les
+époques sont supprimés ; seul un `.npz` d'embeddings par sujet (~5 Mo, contre
+~0,85 Go de brut + époques) reste dans `DIR`. Un sujet déjà présent n'est pas
+recalculé : avec `DIR` sur Google Drive, une déconnexion Colab ne fait rien
+perdre. Même split par sujet, mêmes époques et mêmes labels que le mode classique (vérifié
+par `tests/test_pipeline_smoke.py`).
 
 ## Checkpoint officiel
 

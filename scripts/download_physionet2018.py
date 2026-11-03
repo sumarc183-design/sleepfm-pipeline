@@ -15,8 +15,42 @@ data/raw/physionet2018/training/<id>/.
 """
 import argparse
 import os
+import time
+import urllib.request
+from pathlib import Path
 
 import wfdb
+
+PHYSIONET_2018_URL = "https://physionet.org/files/challenge-2018/1.0.0"
+
+
+def list_subjects(split: str = "training") -> list[str]:
+    """Identifiants des sujets (ex. "tr03-0005"), d'après le fichier RECORDS."""
+    with urllib.request.urlopen(f"{PHYSIONET_2018_URL}/{split}/RECORDS", timeout=60) as response:
+        return [line.strip().strip("/") for line in response.read().decode().split() if line.strip()]
+
+
+def download_subject(subject_id: str, dest_dir: str | Path, split: str = "training", retries: int = 3) -> Path:
+    """Télécharge les 3 fichiers d'un sujet (.hea, .mat, -arousal.mat) en HTTPS
+    direct vers dest_dir/<subject_id>/, sans passer par wfdb (-arousal.mat est
+    un fichier MATLAB, pas un enregistrement WFDB). Les fichiers déjà présents
+    ne sont pas retéléchargés."""
+    subject_dir = Path(dest_dir) / subject_id
+    subject_dir.mkdir(parents=True, exist_ok=True)
+    for name in (f"{subject_id}.hea", f"{subject_id}.mat", f"{subject_id}-arousal.mat"):
+        dest = subject_dir / name
+        if dest.exists() and dest.stat().st_size > 0:
+            continue
+        for attempt in range(retries):
+            try:
+                urllib.request.urlretrieve(f"{PHYSIONET_2018_URL}/{split}/{subject_id}/{name}", dest)
+                break
+            except OSError:
+                dest.unlink(missing_ok=True)
+                if attempt == retries - 1:
+                    raise
+                time.sleep(2 ** attempt)
+    return subject_dir
 
 
 def main() -> None:

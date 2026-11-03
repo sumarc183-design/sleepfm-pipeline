@@ -89,3 +89,45 @@ def test_full_pipeline_end_to_end(tmp_path):
 
     assert 0.0 <= results["accuracy"] <= 1.0
     assert -1.0 <= results["cohen_kappa"] <= 1.0
+
+
+@pytest.mark.slow
+def test_chunked_embeddings_cache_and_resume(tmp_path):
+    """Mode par lots de run_baseline.py : un .npz par sujet, mêmes époques
+    que l'extraction classique, et une relance ne recalcule rien."""
+    from run_baseline import embed_subjects_in_chunks, extract, load_cached_embeddings
+
+    raw_dir = tmp_path / "raw"
+    _generate_synthetic_raw(raw_dir, n_subjects=3, seed=3)
+    subjects = sorted(p.name for p in raw_dir.iterdir())
+
+    ckpt_path = tmp_path / "best.pt"
+    _build_fake_checkpoint(ckpt_path)
+    encoders = SleepFMEncoders(ckpt_path, embedding_dim=512)
+
+    fetched = []
+
+    def fetch_subject(subject, dest_dir):
+        fetched.append(subject)
+        (dest_dir / subject).symlink_to(raw_dir / subject, target_is_directory=True)
+
+    embeddings_dir = tmp_path / "embeddings"
+    embed_subjects_in_chunks(subjects, fetch_subject, encoders, embeddings_dir,
+                             chunk_size=2, num_threads=1, batch_size=16, device="cpu")
+    assert sorted(fetched) == subjects
+    assert sorted(p.stem for p in embeddings_dir.glob("*.npz")) == subjects
+
+    # Même nombre d'époques et mêmes labels que l'extraction classique en un bloc
+    processed = tmp_path / "processed"
+    extract(raw_dir, processed, num_threads=1)
+    reference = PhysioNet2018EpochDataset(processed)
+    X, y = load_cached_embeddings(embeddings_dir, subjects)
+    assert X.shape == (len(reference), 3 * 512)
+    assert X.dtype == np.float32
+    assert list(y) == [reference[i][1] for i in range(len(reference))]
+
+    # Reprise : rien n'est retéléchargé ni recalculé
+    fetched.clear()
+    embed_subjects_in_chunks(subjects, fetch_subject, encoders, embeddings_dir,
+                             chunk_size=2, num_threads=1, batch_size=16, device="cpu")
+    assert fetched == []
