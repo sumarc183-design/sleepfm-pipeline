@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from src.models.linear_probe import (
-    PROBE_KINDS, compare_probes, compare_to_published, evaluate_probe, train_linear_probe, train_probe,
+    PROBE_KINDS, choose_mlp_or_xgboost, compare_probes, compare_to_published, evaluate_probe, train_linear_probe, train_probe,
 )
 
 
@@ -53,8 +53,8 @@ def test_compare_probes_reports_train_test_and_gap():
         assert r["fit_seconds"] >= 0
 
 
-@pytest.mark.parametrize("kind", ["random_forest", "xgboost"])
-def test_tree_probes_handle_a_stage_missing_from_train(kind):
+@pytest.mark.parametrize("kind", ["xgboost", "mlp"])
+def test_probes_handle_a_stage_missing_from_train(kind):
     """Petit run : un stade (ici 2) peut manquer au train ; XGBoost exige des
     labels contigus, la sonde doit quand même fonctionner."""
     rng = np.random.default_rng(1)
@@ -96,3 +96,16 @@ def test_sequence_probe_requires_groups():
     X, y = _separable(50, np.random.default_rng(0))
     with pytest.raises(ValueError, match="groups"):
         train_probe("sequence", X, y)
+
+
+@pytest.mark.parametrize("mlp_f1, xgb_f1, expected", [
+    (0.75, 0.70, "mlp"),      # XGBoost moins bon
+    (0.60, 0.615, "mlp"),     # XGBoost devant de 0,015 : quasi-égalité, le MLP (plus rapide) gagne
+    (0.60, 0.63, "xgboost"),  # XGBoost devant de 0,03 : écart net
+])
+def test_choose_mlp_or_xgboost(mlp_f1, xgb_f1, expected):
+    results = {
+        "mlp": {"test": {"macro_f1": mlp_f1}, "fit_seconds": 60},
+        "xgboost": {"test": {"macro_f1": xgb_f1}, "fit_seconds": 120},
+    }
+    assert choose_mlp_or_xgboost(results, min_gain=0.02)[0] == expected

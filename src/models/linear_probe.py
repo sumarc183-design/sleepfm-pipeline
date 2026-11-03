@@ -9,24 +9,29 @@ elle qui se compare au chiffre publié.
 Les autres sondes sont évaluées à côté, sur exactement les mêmes embeddings
 et le même split, chacune pour tester un levier :
   - logistic_balanced : même modèle, classes pondérées (N1 est rare) ;
-  - random_forest, xgboost (le dépôt officiel propose aussi XGBoost) :
-    frontière non linéaire par arbres ;
+  - xgboost (le dépôt officiel le propose aussi) : frontière non linéaire
+    par arbres ;
   - mlp : frontière non linéaire par réseau, plus adaptée aux embeddings
-    denses que les arbres ;
+    denses que les arbres et plus rapide ;
   - sequence : contexte temporel (époques voisines), voir sequence_probe.py.
 Hyperparamètres fixes, raisonnables, jamais réglés sur le jeu de test.
+(Random Forest, testé, a été retiré : plus lent que XGBoost et moins adapté
+aux embeddings denses.)
+
+Entre XGBoost et MLP, une seule sonde non linéaire est gardée : voir
+choose_mlp_or_xgboost.
 """
 from __future__ import annotations
 
 import time
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, cohen_kappa_score, f1_score, roc_auc_score
 from sklearn.neural_network import MLPClassifier
 
-PROBE_KINDS = ("logistic", "logistic_balanced", "random_forest", "xgboost", "mlp", "sequence")
+PROBE_KINDS = ("logistic", "logistic_balanced", "xgboost", "mlp", "sequence")
+MIN_XGBOOST_GAIN = 0.02  # F1 macro : en dessous, l'écart relève du bruit du tirage des sujets de test
 
 
 def train_linear_probe(
@@ -76,13 +81,6 @@ def train_probe(kind: str, X_train: np.ndarray, y_train: np.ndarray, max_iter: i
         from .sequence_probe import SequenceProbe  # import paresseux : torch
 
         return SequenceProbe(device=device, seed=seed).fit(X_train, y_train, groups)
-    elif kind == "random_forest":
-        # max_samples / min_samples_leaf : limite le temps (CPU Colab à 2 cœurs)
-        # et le surapprentissage d'arbres profonds sur 1536 dimensions.
-        model = RandomForestClassifier(
-            n_estimators=200, max_features="sqrt", min_samples_leaf=5, max_samples=0.5,
-            n_jobs=-1, random_state=seed,
-        )
     elif kind == "xgboost":
         model = _EncodedXGBClassifier(
             n_estimators=300, max_depth=6, learning_rate=0.1, subsample=0.8, colsample_bytree=0.5,
@@ -116,6 +114,19 @@ def evaluate_probe(model, X_test: np.ndarray, y_test: np.ndarray,
         "roc_auc_macro": macro_roc_auc(proba, model.classes_, y_test),
         "per_class_report": classification_report(y_test, y_pred, output_dict=True, zero_division=0),
     }
+
+
+def choose_mlp_or_xgboost(results: dict, min_gain: float = MIN_XGBOOST_GAIN) -> tuple[str, str]:
+    """Règle du projet : XGBoost n'est retenu que s'il bat le MLP de plus de
+    `min_gain` en F1 macro sur le test ; à quasi-égalité on garde le MLP,
+    plus rapide à entraîner. Renvoie (sonde retenue, explication)."""
+    mlp, xgb = results["mlp"]["test"]["macro_f1"], results["xgboost"]["test"]["macro_f1"]
+    gain = xgb - mlp
+    if gain > min_gain:
+        return "xgboost", f"XGBoost bat le MLP de {gain:+.4f} en F1 macro test (> {min_gain}) : XGBoost retenu"
+    return "mlp", (f"écart XGBoost - MLP = {gain:+.4f} en F1 macro test (<= {min_gain}) : "
+                   f"MLP retenu, plus rapide ({results['mlp']['fit_seconds']:.0f}s contre "
+                   f"{results['xgboost']['fit_seconds']:.0f}s)")
 
 
 def compare_probes(kinds, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray,

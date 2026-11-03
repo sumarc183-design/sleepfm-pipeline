@@ -21,14 +21,19 @@ levier :
 |---|---|
 | `logistic` | **Baseline** : protocole officiel SleepFM, seule comparable à la publication |
 | `logistic_balanced` | Déséquilibre des classes (N1 rare) : classes pondérées |
-| `random_forest`, `xgboost` | Frontière non linéaire par arbres |
-| `mlp` | Frontière non linéaire par réseau (1 couche cachée de 256) |
+| `xgboost` | Frontière non linéaire par arbres |
+| `mlp` | Frontière non linéaire par réseau (1 couche cachée de 256), plus rapide |
 | `sequence` | Contexte temporel : BiGRU sur la suite des embeddings de la nuit (`src/models/sequence_probe.py`) |
 
 Pour chacune : accuracy, kappa, F1 macro, ROC-AUC un-contre-tous, F1 par
 stade, et le gap train − test (un gap élevé signale du surapprentissage).
 Hyperparamètres fixes, jamais réglés sur le test (arrêt précoce du MLP et du
 BiGRU sur une partie du train). `--probes logistic` pour la baseline seule.
+
+Une seule sonde non linéaire est gardée entre XGBoost et MLP : XGBoost
+seulement s'il bat le MLP de plus de 0,02 en F1 macro test (`--min-gain`),
+sinon le MLP, plus rapide. Le verdict s'affiche sous le tableau. Random
+Forest a été retiré (plus lent, moins adapté aux embeddings denses).
 
 Référence interne, pas une reproduction du chiffre publié : le papier SleepFM
 rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018. Avec 5 sujets
@@ -63,7 +68,7 @@ run_baseline.py point d'entrée unique : extraction -> embeddings -> sonde -> é
 configs/        conventions de canaux/labels de référence (non lues par les scripts)
 scripts/        téléchargement de données, setup des dépôts tiers, générateur synthétique
 src/data/       chargement et prétraitement des PSG
-src/models/     wrapper SleepFM (embeddings), sondes (logistique, RF, XGBoost, MLP, BiGRU), backbone OSF
+src/models/     wrapper SleepFM (embeddings), sondes (logistique, XGBoost, MLP, BiGRU), backbone OSF
 src/eval/       métriques (accuracy, Cohen's kappa, F1 par classe)
 notebooks/      notebook Google Colab (GPU gratuit)
 results/        sorties brutes des runs réels
