@@ -9,8 +9,16 @@ Reproduction et évaluation de [SleepFM](https://github.com/rthapa84/sleepfm-cod
 | 2026-11-02 | PhysioNet 2018, 20 sujets (15 train / 5 test, split par sujet, 4 295 époques de test) | `best.pt` officiel | 0,703 | **0,584** | 0,650 |
 
 Sonde logistique sur embeddings figés (combinés : respiratoire + stades + ECG),
-5 classes. Lancé sur Colab GPU T4 via `notebooks/colab_baseline_physionet2018.ipynb`,
-sortie brute dans `results/results_physionet2018.txt`.
+5 classes, split 75/25 par sujet (l'ancien défaut). Lancé sur Colab GPU T4 via
+`notebooks/colab_baseline_physionet2018.ipynb`, sortie brute dans
+`results/results_physionet2018.txt`.
+
+Depuis, `run_baseline.py` compare par défaut trois sondes sur les mêmes
+embeddings et le même split **80/20 par sujet** : régression logistique
+(baseline, protocole officiel SleepFM, seule comparable à la publication),
+Random Forest et XGBoost. Pour chacune : accuracy, kappa, F1 macro, ROC-AUC
+un-contre-tous, F1 par stade, et le gap train − test (un gap élevé signale
+du surapprentissage). `--probes logistic` pour la baseline seule.
 
 Référence interne, pas une reproduction du chiffre publié : le papier SleepFM
 rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018. Avec 5 sujets
@@ -45,7 +53,7 @@ run_baseline.py point d'entrée unique : extraction -> embeddings -> sonde -> é
 configs/        conventions de canaux/labels de référence (non lues par les scripts)
 scripts/        téléchargement de données, setup des dépôts tiers, générateur synthétique
 src/data/       chargement et prétraitement des PSG
-src/models/     wrapper SleepFM (embeddings), sonde linéaire, backbone OSF
+src/models/     wrapper SleepFM (embeddings), sondes (logistique, RF, XGBoost), backbone OSF
 src/eval/       métriques (accuracy, Cohen's kappa, F1 par classe)
 notebooks/      notebook Google Colab (GPU gratuit)
 results/        sorties brutes des runs réels
@@ -79,6 +87,11 @@ pip install -r requirements-dev.txt
 pytest tests/ -v                 # tests unitaires + bout-en-bout (~1 min)
 pytest tests/ -m "not slow"      # unitaires seulement, rapide
 ```
+
+Sur Mac Intel avec Anaconda, XGBoost multithread plante (segfault) une fois
+PyTorch chargé dans le même processus (deux runtimes OpenMP) : préfixer les
+commandes par `OMP_NUM_THREADS=1` (ex. `OMP_NUM_THREADS=1 pytest tests/`).
+Sans effet sur Colab/Linux.
 
 Le test `tests/test_pipeline_smoke.py::test_full_pipeline_end_to_end` fait
 tourner génération -> extraction -> embeddings -> sonde -> évaluation en une

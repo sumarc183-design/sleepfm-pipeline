@@ -10,3 +10,4 @@ pyyaml
 tqdm
 matplotlib
 einops
+xgboost>=2.0  # paramètre device (GPU) introduit en 2.0

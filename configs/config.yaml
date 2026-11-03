@@ -69,7 +69,8 @@ osf:
 linear_probe:
   # The official evaluation trains a LogisticRegression (or XGBoost) on the
   # frozen, L2-normalized embeddings -- not a from-scratch neural head.
-  model: logistic   # logistic | xgb
+  models: [logistic, random_forest, xgboost]   # logistic = baseline officielle ; run_baseline.py --probes
+  test_fraction: 0.2   # split 80/20 par sujet
   max_iter: 100
   modality: combined   # respiratory | sleep_stages | ekg | combined
 

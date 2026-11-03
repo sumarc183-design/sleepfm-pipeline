@@ -49,7 +49,7 @@ from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDatase
 from src.data.extract_physionet2018 import main as extract_main
 from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
-from src.models.linear_probe import evaluate_probe, train_linear_probe
+from src.models.linear_probe import PROBE_KINDS, compare_probes
 
 
 def build_random_checkpoint(path: Path, embedding_dim: int = 512) -> None:
@@ -172,18 +172,36 @@ def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]) -> tuple[n
     return np.concatenate(X), np.concatenate(y)
 
 
+PROBE_LABELS = {"logistic": "Régression log.", "random_forest": "Random Forest", "xgboost": "XGBoost"}
+
+
 def print_results(results: dict, data_desc: str, checkpoint_desc: str, not_interpretable: bool) -> None:
+    """`results` : sortie de compare_probes, {sonde: {"train": ..., "test": ..., "fit_seconds": ...}}.
+    Gap = score train - score test : un gap élevé signale du surapprentissage."""
     label_to_stage = {v: k for k, v in STAGE_NAME_TO_LABEL.items()}
-    print("=" * 60)
-    print(f"Données          : {data_desc}")
-    print(f"Checkpoint       : {checkpoint_desc}")
-    print(f"Accuracy         : {results['accuracy']:.4f}")
-    print(f"Cohen's kappa    : {results['cohen_kappa']:.4f}")
-    print(f"Macro F1         : {results['macro_f1']:.4f}")
-    for label, metrics in results["per_class_report"].items():
-        if label.isdigit():
-            print(f"  F1 {label_to_stage[int(label)]:>10s} : {metrics['f1-score']:.4f}  (n={int(metrics['support'])})")
-    print("=" * 60)
+    width = 96
+    print("=" * width)
+    print(f"Données    : {data_desc}")
+    print(f"Checkpoint : {checkpoint_desc}")
+    print("-" * width)
+    print(f"{'Modèle (test)':<16}{'Accuracy':>9}{'Kappa':>8}{'F1 macro':>10}{'ROC-AUC':>9}"
+          f" |{'F1 train':>9}{'Gap F1':>8}{'AUC train':>10}{'Gap AUC':>9}{'Durée':>8}")
+    for kind, r in results.items():
+        test, train = r["test"], r["train"]
+        print(f"{PROBE_LABELS.get(kind, kind):<16}{test['accuracy']:>9.4f}{test['cohen_kappa']:>8.4f}"
+              f"{test['macro_f1']:>10.4f}{test['roc_auc_macro']:>9.4f}"
+              f" |{train['macro_f1']:>9.4f}{train['macro_f1'] - test['macro_f1']:>+8.4f}"
+              f"{train['roc_auc_macro']:>10.4f}{train['roc_auc_macro'] - test['roc_auc_macro']:>+9.4f}"
+              f"{r['fit_seconds']:>7.0f}s")
+    print("-" * width)
+    first_report = next(iter(results.values()))["test"]["per_class_report"]
+    stages = [label for label in first_report if label.isdigit()]
+    print("F1 par stade (test) " + "".join(f"{PROBE_LABELS.get(k, k):>16}" for k in results) + f"{'n':>8}")
+    for label in stages:
+        scores = "".join(f"{r['test']['per_class_report'].get(label, {}).get('f1-score', float('nan')):>16.4f}"
+                         for r in results.values())
+        print(f"  {label_to_stage[int(label)]:<18}{scores}{int(first_report[label]['support']):>8}")
+    print("=" * width)
     if not_interpretable:
         print("Ces résultats ne sont PAS interprétables médicalement (données et/ou "
               "checkpoint non réels) -- ils valident uniquement que le pipeline tourne.")
@@ -221,8 +239,8 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
     X_train, y_train = load_cached_embeddings(args.embeddings_dir, train_subjects)
     X_test, y_test = load_cached_embeddings(args.embeddings_dir, test_subjects)
 
-    probe = train_linear_probe(X_train, y_train, max_iter=args.max_iter)
-    results = evaluate_probe(probe, X_test, y_test)
+    results = compare_probes(args.probes, X_train, y_train, X_test, y_test,
+                             max_iter=args.max_iter, seed=args.seed, device=args.device)
     print_results(
         results,
         f"{data_kind} ({len(train_subjects)} sujet(s) train / {len(test_subjects)} test, "
@@ -236,7 +254,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--raw-data", type=Path, default=None, help="Dossier des sujets PhysioNet 2018 (.hea/.mat/-arousal.mat). Omis = synthétique.")
     parser.add_argument("--checkpoint", type=Path, default=None, help="Checkpoint SleepFM officiel. Omis = poids aléatoires.")
-    parser.add_argument("--test-fraction", type=float, default=0.25, help="Fraction de sujets pour le test (split par sujet, jamais par époque)")
+    parser.add_argument("--test-fraction", type=float, default=0.2,
+                        help="Fraction de sujets pour le test : 0,2 = split 80/20, par sujet (jamais par époque)")
     parser.add_argument("--num-synthetic-subjects", type=int, default=6)
     parser.add_argument("--num-threads", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
@@ -251,6 +270,9 @@ def main() -> None:
                              "d'entraînement PhysioNet 2018 (au lieu de --raw-data).")
     parser.add_argument("--chunk-size", type=int, default=8, help="Sujets par lot en mode --embeddings-dir")
     parser.add_argument("--max-iter", type=int, default=100, help="Itérations max de la régression logistique")
+    parser.add_argument("--probes", nargs="+", choices=PROBE_KINDS, default=list(PROBE_KINDS),
+                        help="Sondes à comparer sur les mêmes embeddings. La régression logistique est la "
+                             "baseline (protocole officiel SleepFM).")
     args = parser.parse_args()
 
     if args.physionet_subjects and args.embeddings_dir is None:
@@ -304,8 +326,8 @@ def main() -> None:
         X_train, y_train, n_train = collect_embeddings(encoders, processed_train, args.batch_size, args.device, args.num_threads)
         X_test, y_test, n_test = collect_embeddings(encoders, processed_test, args.batch_size, args.device, args.num_threads)
 
-        probe = train_linear_probe(X_train, y_train, max_iter=args.max_iter)
-        results = evaluate_probe(probe, X_test, y_test)
+        results = compare_probes(args.probes, X_train, y_train, X_test, y_test,
+                                 max_iter=args.max_iter, seed=args.seed, device=args.device)
 
     print_results(
         results,
