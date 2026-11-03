@@ -5,7 +5,6 @@ scipy
 pandas
 scikit-learn
 mne
-wfdb
 h5py
 pyyaml
 tqdm

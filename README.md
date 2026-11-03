@@ -91,10 +91,11 @@ médicalement (kappa proche de 0 attendu, c'est du bruit).
 Une fois quelques enregistrements PhysioNet 2018 téléchargés (voir
 "Démarrage" ci-dessus -- même à la main via le navigateur si le
 téléchargement Python est bloqué par un proxy d'entreprise, voir la
-docstring de `scripts/download_physionet2018.py`) et extraits dans
-`data/processed/train/` :
+docstring de `scripts/download_physionet2018.py`), les extraire dans
+`data/processed/train/` puis lancer le test :
 
 ```bash
+python src/data/extract_physionet2018.py --data_path data/raw/physionet2018/training --save_path data/processed/train
 pytest tests/test_real_data.py -v -s
 ```
 
