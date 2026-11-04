@@ -23,6 +23,12 @@ selon [SemVer](https://semver.org/lang/fr/).
   temporaire renommé ensuite ; un cache illisible existant est détecté,
   supprimé et recalculé au démarrage.
 
+### Résultats
+- 100 sujets, split 80/20 par sujet, protocole officiel (2026-11-04) :
+  baseline pondérée κ 0,606 [0,545 ; 0,669], non pondérée 0,646, MLP 0,623,
+  BiGRU 0,684 [0,615 ; 0,739]. XGBoost éliminé par la sélection (gap F1
+  +0,32). Mêmes chiffres sur GPU (Kaggle) et CPU (Colab), à 0,001 près.
+
 ### Ajouté
 - Intervalles de confiance à 95 % du kappa et du F1 macro par bootstrap sur
   les sujets de test.

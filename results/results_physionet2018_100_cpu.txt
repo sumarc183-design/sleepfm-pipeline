@@ -1,0 +1,44 @@
+Embeddings sur : cpu
+100 sujet(s) déjà en cache, 0 à traiter
+Sélection MLP / XGBoost : validation croisée 5 plis par sujet, sur le train uniquement...
+================================================================================================
+Données    : RÉELLES (80 sujet(s) train / 20 test, 71458 / 17818 époques ; 0 sujet(s) rejeté(s) à l'extraction)
+Checkpoint : third_party/sleepfm/sleepfm/checkpoint/best.pt
+------------------------------------------------------------------------------------------------
+1. Sélection MLP / XGBoost -- validation croisée 5 plis par sujet, train uniquement
+                  F1 val moyen  écart-type   Gap F1   F1 val par pli
+MLP                     0.6723      0.0191  +0.0689   0.670 0.682 0.692 0.681 0.637
+XGBoost                 0.6679      0.0221  +0.3180   0.664 0.651 0.691 0.695 0.638
+Verdict : MLP retenu ; XGBoost éliminé (gap F1 moyen +0.3180 > 0.15)
+------------------------------------------------------------------------------------------------
+2. Évaluation finale sur le test (jamais utilisé pour la sélection)
+Modèle (test)    Accuracy   Kappa  F1 macro  ROC-AUC | F1 train  Gap F1 AUC train  Gap AUC   Durée
+Log. officielle    0.6935  0.6061    0.6826   0.9254 |   0.7527 +0.0702    0.9507  +0.0253    107s
+Log. non pond.     0.7382  0.6462    0.6978   0.9274 |   0.7598 +0.0619    0.9505  +0.0231    100s
+MLP                0.7142  0.6235    0.6837   0.9240 |   0.7675 +0.0839    0.9533  +0.0292     63s
+BiGRU (nuit)       0.7643  0.6848    0.7380   0.9357 |   0.7931 +0.0551    0.9625  +0.0268    216s
+------------------------------------------------------------------------------------------------
+Intervalles de confiance à 95 % (bootstrap sur les sujets de test)
+  Log. officielle     kappa [0.543 ; 0.668]   F1 macro [0.628 ; 0.728]   (20 sujets)
+  Log. non pond.      kappa [0.579 ; 0.703]   F1 macro [0.644 ; 0.741]   (20 sujets)
+  MLP                 kappa [0.556 ; 0.686]   F1 macro [0.630 ; 0.726]   (20 sujets)
+  BiGRU (nuit)        kappa [0.611 ; 0.741]   F1 macro [0.674 ; 0.781]   (20 sujets)
+  Log. officielle : convergé en 226 itérations
+  Log. non pond. : convergé en 221 itérations
+------------------------------------------------------------------------------------------------
+F1 par stade (test)  Log. officielle  Log. non pond.             MLP    BiGRU (nuit)       n
+  wake                        0.7688          0.7740          0.7692          0.7605    3472
+  nonrem1                     0.5103          0.4497          0.4456          0.5104    2571
+  nonrem2                     0.7099          0.8075          0.7741          0.8291    7214
+  nonrem3                     0.7486          0.7641          0.7668          0.7861    2301
+  rem                         0.6752          0.6938          0.6626          0.8040    2260
+------------------------------------------------------------------------------------------------
+Matrice de confusion (test, Log. officielle) : lignes = stade réel, colonnes = stade prédit
+                  wake   nonrem1   nonrem2   nonrem3       rem
+  wake            2946       454        27         0        45
+  nonrem1          713      1362       188         3       305
+  nonrem2          276       775      4285      1061       817
+  nonrem3           21         8       252      2013         7
+  rem              236       168       106         0      1750
+================================================================================================
+Résultats JSON : results_physionet2018_100.json

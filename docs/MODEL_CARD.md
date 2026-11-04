@@ -30,8 +30,8 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   annotées par des experts (stades AASM), 13 canaux rééchantillonnés à 256 Hz.
   Les 100 premiers sujets d'entraînement du challenge **par identifiant**
   (pas un tirage aléatoire parmi les 994) ont été utilisés.
-- **Split par sujet** (jamais par époque) : 80/20 par défaut (75/25 pour les
-  résultats publiés au 2026-11-03). Les sondes non linéaires sont départagées
+- **Split par sujet** (jamais par époque) : 80/20, soit 80 nuits
+  d'entraînement et 20 de test (17 818 époques). Les sondes non linéaires sont départagées
   par validation croisée par sujet sur le train ; le test n'est utilisé
   qu'une fois.
 
@@ -46,7 +46,8 @@ train − test. Résultats à jour : [README](../README.md#résultats).
 - **Pas encore comparé au chiffre publié** : SleepFM rapporte ses résultats
   sur MESA/SHHS, pas sur PhysioNet 2018. La reproduction stricte attend
   l'accès NSRR.
-- **N1 mal reconnu** (F1 ≈ 0,43) : stade de transition, rare et peu
+- **N1 mal reconnu** (F1 ≈ 0,51 avec la baseline et le BiGRU, 0,45 sans
+  pondération), confondu surtout avec l'éveil : stade de transition, rare et peu
   concordant même entre experts.
 - **Population** : adultes d'un seul centre (PhysioNet 2018). Aucune
   évaluation en pédiatrie (CHAT, phase 2), ni sur d'autres appareils ou
@@ -56,9 +57,9 @@ train − test. Résultats à jour : [README](../README.md#résultats).
 - **Variabilité** : avec 20 à 25 sujets de test, les chiffres peuvent varier
   de quelques centièmes selon le tirage des sujets ; d'où les intervalles de
   confiance par bootstrap sur les sujets.
-- **Résultats du 2026-11-02/03** obtenus avec une régression logistique non
-  pondérée, alors que le protocole officiel pondère les classes : à remplacer
-  par le run suivant.
+- **Résultats** (2026-11-04, protocole officiel) : κ 0,606 [0,545 ; 0,669]
+  pour la baseline, 0,684 [0,615 ; 0,739] pour le BiGRU. Les résultats du
+  2026-11-02/03 (κ 0,584 et 0,622) utilisaient une régression non pondérée.
 
 ## Considérations éthiques
 

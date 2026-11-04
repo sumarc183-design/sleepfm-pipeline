@@ -1,0 +1,20 @@
+Embeddings sur : cuda
+56 sujet(s) déjà en cache, 44 à traiter
+Lot 1/6 : 8 sujet(s)
+Lot 2/6 : 8 sujet(s)
+Lot 3/6 : 8 sujet(s)
+Lot 4/6 : 8 sujet(s)
+Lot 5/6 : 8 sujet(s)
+Lot 6/6 : 4 sujet(s)
+============================================================
+Données          : RÉELLES (75 sujet(s) train / 25 test, 67040 / 22236 époques ; 0 sujet(s) rejeté(s) à l'extraction)
+Checkpoint       : third_party/sleepfm/sleepfm/checkpoint/best.pt
+Accuracy         : 0.7222
+Cohen's kappa    : 0.6220
+Macro F1         : 0.6812
+  F1       wake : 0.7412  (n=4140)
+  F1    nonrem1 : 0.4337  (n=3115)
+  F1    nonrem2 : 0.8012  (n=9216)
+  F1    nonrem3 : 0.7382  (n=2846)
+  F1        rem : 0.6917  (n=2919)
+============================================================

@@ -24,26 +24,45 @@ flowchart LR
 
 ## Résultats
 
-Régression logistique **non pondérée** sur embeddings figés, split par sujet,
-Colab GPU T4. ⚠️ Le protocole officiel pondère les classes
-(`class_weight="balanced"`) : c'est désormais la baseline du pipeline, et ces
-chiffres seront remplacés par ceux du prochain run (avec intervalles de
-confiance).
+100 sujets PhysioNet 2018, split 80/20 **par sujet** (80 nuits d'entraînement,
+20 de test, 17 818 époques de test), embeddings SleepFM figés, 2026-11-04. Le
+test n'a servi qu'une fois ; IC à 95 % par bootstrap sur les sujets de test.
 
-| Date | Données | Sujets train / test | Accuracy | Cohen's κ | F1 macro |
-|---|---|---|---|---|---|
-| 2026-11-02 | PhysioNet 2018 | 15 / 5 | 0,703 | 0,584 | 0,650 |
-| 2026-11-03 | PhysioNet 2018 | 75 / 25 (22 236 époques de test) | **0,722** | **0,622** | **0,681** |
+| Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | Gap F1 train − test |
+|---|---|---|---|---|
+| **Régression logistique pondérée** (baseline officielle) | 0,693 | **0,606** [0,545 ; 0,669] | 0,683 [0,628 ; 0,728] | +0,070 |
+| Régression logistique non pondérée | 0,738 | 0,646 [0,579 ; 0,703] | 0,698 [0,643 ; 0,741] | +0,062 |
+| MLP (retenu face à XGBoost) | 0,714 | 0,623 [0,555 ; 0,685] | 0,683 [0,629 ; 0,726] | +0,085 |
+| **BiGRU sur la nuit** | **0,764** | **0,684** [0,615 ; 0,739] | **0,737** [0,673 ; 0,779] | +0,057 |
 
-F1 par stade (100 sujets) : Wake 0,741 · **N1 0,434** · N2 0,801 · N3 0,738 ·
-REM 0,692. N1, stade de transition, est le plus difficile (c'est aussi le moins
-concordant entre experts humains). Sorties brutes dans [`results/`](results/).
+- **Le contexte de la nuit est le levier** : le BiGRU, qui voit les époques
+  voisines, gagne +0,08 de κ sur la baseline et le meilleur F1 sur chaque
+  stade sauf l'éveil (REM 0,80 contre 0,68). Les IC se chevauchent : une
+  comparaison appariée sur les mêmes nuits reste à faire pour conclure.
+- **Une frontière non linéaire n'apporte rien** : le MLP fait jeu égal avec la
+  régression logistique. XGBoost, un peu moins bon en validation croisée
+  (F1 0,669 contre 0,672), est en plus éliminé pour surapprentissage (gap F1
+  +0,32).
+- **Pondérer les classes déplace les erreurs** : la baseline officielle
+  reconnaît mieux N1 (F1 0,51 contre 0,45), mais confond davantage N2 avec
+  N3, N1 et REM, d'où un κ plus bas (0,606 contre 0,646).
+- **N1 reste le stade le plus difficile** (F1 ≈ 0,51), confondu surtout avec
+  l'éveil (715 époques sur 2 571) et le REM (304). C'est aussi le stade le
+  moins concordant entre experts humains.
+- **Reproductible** : le même run sur GPU (Kaggle) et sur CPU (Colab) donne
+  les mêmes chiffres à 0,001 près.
+
+Sorties brutes dans [`results/`](results/) : texte, JSON (sujets de test,
+réglages, matrices de confusion) et le run CPU.
+
+Avant le 2026-11-04 : κ 0,584 (20 sujets) puis 0,622 (100 sujets, split
+75/25), avec la régression **non pondérée**, qui n'est pas le protocole
+officiel ([détail](results/results_physionet2018_100_v0.1.0_non_pondere.txt)).
 
 **Lecture** : référence interne, pas une reproduction du chiffre publié. Le
 papier SleepFM rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018 ;
-la comparaison stricte se fera sur MESA (accès NSRR en cours). La comparaison
-des sondes (pondérée, MLP ou XGBoost, BiGRU) est décrite dans le
-[guide](docs/GUIDE.md#sondes-et-sélection-de-modèle).
+la comparaison stricte se fera sur MESA (accès NSRR en cours). Sondes et règle
+de sélection : [guide](docs/GUIDE.md#sondes-et-sélection-de-modèle).
 
 ## Démarrage rapide
 
