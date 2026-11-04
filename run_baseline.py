@@ -33,6 +33,7 @@ Exemples :
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -48,6 +49,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scripts.download_physionet2018 import download_subject, list_subjects
 from scripts.generate_synthetic_physionet2018 import generate_subject
 from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDataset
+from src.data.extract_physionet2018 import ALL_CHANNELS, PREPROCESSING_VERSION
 from src.data.extract_physionet2018 import main as extract_main
 from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
@@ -116,6 +118,34 @@ def split_subjects_train_test(raw_dir: Path, test_fraction: float, seed: int) ->
     return split_subject_ids([p.name for p in raw_dir.iterdir() if p.is_dir()], test_fraction, seed)
 
 
+def load_or_extend_split(
+    path: Path | None, subjects: list[str], test_fraction: float, seed: int
+) -> tuple[list[str], list[str]]:
+    """Découpage figé dans un fichier JSON ({"train": [...], "test": [...]}).
+    Un sujet déjà listé garde toujours son rôle ; seuls les nouveaux sujets
+    sont répartis (même fraction, même graine) puis ajoutés au fichier. Passer
+    de 100 à 200 sujets ne change donc pas le rôle des 100 premiers. Sans
+    fichier (`path=None`), découpage aléatoire habituel."""
+    if path is None:
+        return split_subject_ids(subjects, test_fraction, seed)
+    frozen = json.loads(path.read_text()) if path.exists() else {"train": [], "test": []}
+    known = set(frozen["train"]) | set(frozen["test"])
+    new = [s for s in subjects if s not in known]
+    if new:
+        if frozen["train"] and not frozen["test"]:
+            raise SystemExit(f"{path} : aucun sujet de test, fichier incohérent")
+        new_train, new_test = split_subject_ids(new, test_fraction, seed) if len(new) > 1 else (new, [])
+        frozen = {"train": sorted(frozen["train"] + new_train), "test": sorted(frozen["test"] + new_test)}
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(frozen, indent=2) + "\n")
+        print(f"Découpage figé : {len(new)} nouveau(x) sujet(s) ajouté(s) à {path}")
+    available = set(subjects)
+    missing = sorted(known - available)
+    if missing:
+        print(f"ATTENTION : {len(missing)} sujet(s) du découpage figé indisponible(s), ignoré(s) : {missing[:5]}...")
+    return [s for s in frozen["train"] if s in available], [s for s in frozen["test"] if s in available]
+
+
 def split_subject_ids(subjects: list[str], test_fraction: float, seed: int) -> tuple[list[str], list[str]]:
     """Split au niveau sujet (pas époque) pour éviter toute fuite -- un même
     sujet ne doit jamais apparaître à la fois en train et en test."""
@@ -145,6 +175,20 @@ def epoch_groups(dataset: PhysioNet2018EpochDataset) -> tuple[np.ndarray, np.nda
     return subjects, epoch_idx
 
 
+def epoch_onsets(dataset: PhysioNet2018EpochDataset, processed_dir: Path) -> np.ndarray:
+    """Début de chaque époque (s depuis le début de l'enregistrement
+    d'origine), lu dans T/<sujet>.json ; NaN si absent."""
+    onsets_by_subject: dict[str, dict] = {}
+    out = np.full(len(dataset.samples), np.nan)
+    for i, (epoch_file, _) in enumerate(dataset.samples):
+        subject = epoch_file.parent.name
+        if subject not in onsets_by_subject:
+            path = processed_dir / "T" / f"{subject}.json"
+            onsets_by_subject[subject] = json.loads(path.read_text()) if path.exists() else {}
+        out[i] = onsets_by_subject[subject].get(epoch_file.name, np.nan)
+    return out
+
+
 def embed_dataset(
     encoders: SleepFMEncoders,
     dataset: PhysioNet2018EpochDataset,
@@ -161,6 +205,65 @@ def embed_dataset(
     return np.concatenate(embeddings), np.concatenate(labels)
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def embeddings_manifest(checkpoint_path: Path | None) -> dict:
+    """Ce qui détermine les embeddings : poids, prétraitement, montage.
+    `checkpoint_path=None` : poids aléatoires (tests, données synthétiques)."""
+    return {
+        "checkpoint_sha256": "aléatoire" if checkpoint_path is None else file_sha256(checkpoint_path),
+        "preprocessing_version": PREPROCESSING_VERSION,
+        "channels": list(ALL_CHANNELS),
+        "sample_rate": 256,
+    }
+
+
+def check_embeddings_manifest(embeddings_dir: Path, expected: dict, n_to_compute: int) -> dict:
+    """Le dossier de cache garde un manifest.json décrivant ses embeddings.
+    - Checkpoint différent : arrêt, les résultats seraient attribués au
+      mauvais modèle.
+    - Prétraitement ou montage différent : arrêt s'il reste des sujets à
+      calculer (on mélangerait deux versions) ; sinon simple avertissement.
+    - Pas de manifeste mais des caches (créés avant son introduction) : on
+      l'écrit avec le checkpoint fourni et la version 1 du prétraitement, en
+      le signalant (provenance déclarée, pas vérifiable)."""
+    path = embeddings_dir / "manifest.json"
+    if path.exists():
+        manifest = json.loads(path.read_text())
+    else:
+        legacy = sorted(p.name for p in embeddings_dir.glob("*.npz"))
+        manifest = dict(expected)
+        if legacy:
+            manifest["preprocessing_version"] = 1
+            manifest["legacy"] = f"{len(legacy)} cache(s) antérieurs au manifeste : provenance déclarée, non vérifiée"
+            print(f"ATTENTION : {manifest['legacy']} ; manifeste écrit avec le checkpoint fourni")
+        path.write_text(json.dumps(manifest, indent=2) + "\n")
+    if manifest["checkpoint_sha256"] != expected["checkpoint_sha256"]:
+        raise SystemExit(
+            f"{path} : les embeddings en cache viennent d'un autre checkpoint "
+            f"({manifest['checkpoint_sha256'][:12]}… contre {expected['checkpoint_sha256'][:12]}…). "
+            "Utiliser un autre --embeddings-dir."
+        )
+    differs = [k for k in ("preprocessing_version", "channels", "sample_rate") if manifest.get(k) != expected[k]]
+    if differs and n_to_compute:
+        raise SystemExit(
+            f"{path} : cache fait avec un autre {', '.join(differs)} ({ {k: manifest.get(k) for k in differs} }) ; "
+            f"{n_to_compute} sujet(s) à calculer mélangeraient deux versions. Utiliser un autre --embeddings-dir."
+        )
+    if differs:
+        print(
+            f"ATTENTION : cache fait avec {', '.join(f'{k}={manifest.get(k)}' for k in differs)} (code actuel : "
+            f"{', '.join(f'{k}={expected[k]}' for k in differs)}) ; résultats valables pour cette version du cache"
+        )
+    return manifest
+
+
 def embed_subjects_in_chunks(
     subject_ids: list[str],
     fetch_subject,
@@ -170,7 +273,8 @@ def embed_subjects_in_chunks(
     num_threads: int,
     batch_size: int,
     device: str,
-) -> None:
+    manifest: dict | None = None,
+) -> dict | None:
     """Traite les sujets par lots : brut -> époques -> embeddings, un
     <id>.npz par sujet dans embeddings_dir, puis supprime brut et époques.
     Seuls les embeddings (~5 Mo/sujet, contre ~0,85 Go de brut + époques
@@ -198,6 +302,8 @@ def embed_subjects_in_chunks(
         if not (embeddings_dir / f"{s}.npz").exists() and not (embeddings_dir / f"{s}.skipped").exists()
     ]
     print(f"{len(subject_ids) - len(todo)} sujet(s) déjà en cache, {len(todo)} à traiter")
+    if manifest is not None:
+        manifest = check_embeddings_manifest(embeddings_dir, manifest, len(todo))
 
     for start in range(0, len(todo), chunk_size):
         chunk = todo[start : start + chunk_size]
@@ -216,16 +322,27 @@ def embed_subjects_in_chunks(
             if dataset is not None:
                 X, y = embed_dataset(encoders, dataset, batch_size, device, num_threads)
                 sample_subjects, sample_epoch_idx = epoch_groups(dataset)
+                sample_onsets = epoch_onsets(dataset, processed_dir)
             for subject in chunk:
                 mask = sample_subjects == subject if dataset is not None else np.zeros(0, dtype=bool)
                 if not mask.any():
                     # Sujet rejeté par l'extraction (canaux manquants, pas de
-                    # stades...) : marqué pour ne pas le retenter à chaque relance.
-                    (embeddings_dir / f"{subject}.skipped").touch()
+                    # stades...) : marqué, avec la raison, pour ne pas le
+                    # retenter à chaque relance.
+                    reason_file = processed_dir / "rejected" / f"{subject}.txt"
+                    reason = reason_file.read_text() if reason_file.exists() else "aucune époque valide\n"
+                    (embeddings_dir / f"{subject}.skipped").write_text(reason)
                     continue
                 tmp_file = embeddings_dir / f"{subject}.tmp.npz"
-                np.savez(tmp_file, X=X[mask].astype(np.float32), y=y[mask], epoch_idx=sample_epoch_idx[mask])
+                np.savez(
+                    tmp_file,
+                    X=X[mask].astype(np.float32),
+                    y=y[mask],
+                    epoch_idx=sample_epoch_idx[mask],
+                    onset_s=sample_onsets[mask],
+                )
                 os.replace(tmp_file, embeddings_dir / f"{subject}.npz")
+    return manifest
 
 
 def is_valid_cache(path: Path) -> bool:
@@ -447,6 +564,7 @@ def save_results_json(
     test_subjects: list[str],
     y_test: np.ndarray | None = None,
     test_groups: tuple[np.ndarray, np.ndarray] | None = None,
+    embeddings_manifest: dict | None = None,
 ) -> None:
     """Métriques au format JSON, pour comparer des runs sans relire les logs.
     `per_class_report` est réduit au F1 et à l'effectif de chaque stade.
@@ -476,6 +594,8 @@ def save_results_json(
             "min_gain": args.min_gain,
             "max_gap": args.max_gap,
         },
+        "split_file": None if getattr(args, "split_file", None) is None else str(args.split_file),
+        "embeddings_manifest": embeddings_manifest,
         "train_subjects": sorted(train_subjects),
         "test_subjects": sorted(test_subjects),
         "probes": {
@@ -536,7 +656,7 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
 
     encoders = SleepFMEncoders(checkpoint_path, embedding_dim=512).to(args.device)
     print(f"Embeddings sur : {args.device}")
-    embed_subjects_in_chunks(
+    manifest = embed_subjects_in_chunks(
         subject_ids,
         fetch_subject,
         encoders,
@@ -545,13 +665,14 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         args.num_threads,
         args.batch_size,
         args.device,
+        manifest=embeddings_manifest(args.checkpoint),
     )
 
     cached = [s for s in subject_ids if (args.embeddings_dir / f"{s}.npz").exists()]
     n_skipped = len(subject_ids) - len(cached)
     if len(cached) < 2:
         raise SystemExit(f"Seulement {len(cached)} sujet(s) exploitable(s) : impossible de faire un split train/test.")
-    train_subjects, test_subjects = split_subject_ids(cached, args.test_fraction, args.seed)
+    train_subjects, test_subjects = load_or_extend_split(args.split_file, cached, args.test_fraction, args.seed)
     X_train, y_train, train_groups = load_cached_embeddings(args.embeddings_dir, train_subjects)
     X_test, y_test, test_groups = load_cached_embeddings(args.embeddings_dir, test_subjects)
 
@@ -576,6 +697,7 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
             test_subjects,
             y_test,
             test_groups,
+            manifest,
         )
 
 
@@ -620,6 +742,13 @@ def main() -> None:
         "d'entraînement PhysioNet 2018 (au lieu de --raw-data).",
     )
     parser.add_argument("--chunk-size", type=int, default=8, help="Sujets par lot en mode --embeddings-dir")
+    parser.add_argument(
+        "--split-file",
+        type=Path,
+        default=None,
+        help="Découpage train/test figé (JSON) : un sujet listé garde son rôle, les nouveaux sont "
+        "répartis puis ajoutés. Ex. configs/split_physionet2018.json",
+    )
     parser.add_argument(
         "--max-iter",
         type=int,
@@ -685,7 +814,12 @@ def main() -> None:
             print(f"[synthétique] Génération de {args.num_synthetic_subjects} sujets factices...")
             generate_synthetic_raw(raw_dir, args.num_synthetic_subjects, args.seed)
 
-        train_subjects, test_subjects = split_subjects_train_test(raw_dir, args.test_fraction, args.seed)
+        train_subjects, test_subjects = load_or_extend_split(
+            args.split_file,
+            sorted(p.name for p in raw_dir.iterdir() if p.is_dir()),
+            args.test_fraction,
+            args.seed,
+        )
         if not test_subjects:
             print("ATTENTION : un seul sujet disponible -> pas de split train/test possible.")
             print(

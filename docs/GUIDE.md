@@ -35,8 +35,9 @@ aléatoires. Dans les deux cas, la sortie le signale (plomberie uniquement).
 ### Mode par lots (100 sujets et plus)
 
 ```bash
-python run_baseline.py --physionet-subjects 200 --embeddings-dir embeddings/ \
-    --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt
+python run_baseline.py --physionet-subjects 200 --embeddings-dir embeddings/physionet2018_v2 \
+    --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt \
+    --split-file configs/split_physionet2018.json
 ```
 
 Chaque lot de sujets (`--chunk-size`, 8 par défaut) est téléchargé, extrait et
@@ -49,10 +50,34 @@ démarrage : interrompre un run, même en pleine écriture, ne casse pas le
 suivant. Même split, mêmes époques et mêmes labels que le mode
 classique (vérifié par `tests/test_pipeline_smoke.py`).
 
-Chaque `.npz` contient `X` (embeddings), `y` (stades) et `epoch_idx` (numéro
+Chaque `.npz` contient `X` (embeddings), `y` (stades), `epoch_idx` (numéro
 d'époque, pour remettre la nuit dans l'ordre chronologique : les fichiers sont
-triés par nom, `_10` avant `_2`). Pour un cache antérieur à `epoch_idx`, l'ordre
-est reconstitué depuis ce tri.
+triés par nom, `_10` avant `_2`) et `onset_s` (début de l'époque, en secondes
+depuis le début de l'enregistrement d'origine : un écart de plus de 30 s
+signale des époques retirées en cours de nuit). Pour un cache antérieur à
+`epoch_idx`, l'ordre est reconstitué depuis ce tri.
+
+**Découpage figé** (`--split-file`) : `configs/split_physionet2018.json` liste
+les 80 sujets d'entraînement et les 20 de test des résultats publiés. Un sujet
+listé garde toujours son rôle ; les nouveaux sujets sont répartis (même
+fraction, même graine) et ajoutés au fichier. Sans ce fichier, passer à 200
+sujets refait tout le tirage et change les nuits de test.
+
+**Provenance du cache** : le dossier garde un `manifest.json` (empreinte
+SHA-256 du checkpoint, version du prétraitement, canaux, fréquence). Un autre
+checkpoint est refusé ; un autre prétraitement aussi, dès qu'il reste des
+sujets à calculer, pour ne jamais mélanger deux versions. Les 100 caches
+actuels datent d'avant le manifeste : ils sont déclarés en version 1 (début
+utile pris sur la colonne « wake »). La version 2 prend la fin de la période
+« undefined », colonne désignée par son nom, comme le code officiel ; sur les
+3 enregistrements bruts vérifiés, le résultat est identique. Pour 200 sujets,
+utiliser un nouveau dossier (`physionet2018_v2`) : les 200 sont alors calculés
+avec la même version.
+
+**Sujets rejetés** : la raison est écrite dans `<sujet>.skipped` (canaux
+manquants, aucun stade annoté…). Une extraction interrompue ne laisse pas de
+sujet à moitié traité : un sujet n'est terminé qu'une fois son fichier de
+stades écrit, en dernier.
 
 ### Google Colab (GPU gratuit)
 

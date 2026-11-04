@@ -6,6 +6,15 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Découpage figé** (`--split-file`, `configs/split_physionet2018.json`) :
+  un sujet garde son rôle quand on en ajoute ; les 80 / 20 sujets actuels y
+  sont enregistrés.
+- **Manifeste du cache d'embeddings** (`manifest.json`) : empreinte du
+  checkpoint, version du prétraitement, canaux, fréquence. Un cache d'un
+  autre checkpoint est refusé, un autre prétraitement n'est jamais mélangé.
+  Enregistré dans le JSON des résultats.
+- **Temps d'origine de chaque époque** (`onset_s`) dans l'extraction et le
+  cache ; **raison des rejets** enregistrée.
 - **Prédictions du test sauvegardées** (`<json>.predictions.npz`) : sujet,
   numéro d'époque, vrai stade, prédiction et probabilités de chaque sonde.
 - **Ablation du contexte du BiGRU** (`scripts/ablation_sequence.py`) :
@@ -18,6 +27,13 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Début utile de l'enregistrement** (prétraitement version 2) : fin de la
+  période « undefined » initiale, colonne désignée par son nom, comme le code
+  officiel, au lieu du premier changement de la dernière colonne (« wake »).
+  Identique sur les enregistrements vérifiés ; les caches actuels restent en
+  version 1.
+- **Extraction interrompue** : un dossier d'époques partiel n'est plus pris
+  pour un sujet terminé ; le sujet est réextrait.
 - **BiGRU** : le rembourrage des fenêtres courtes passait dans le GRU et
   influençait les vraies époques (sens retour). Le GRU reçoit maintenant la
   longueur réelle de chaque fenêtre. Effet mesuré négligeable (κ 0,6845 →

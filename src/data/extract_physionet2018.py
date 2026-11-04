@@ -11,15 +11,22 @@ contient trois fichiers (tels que distribués par PhysioNet) :
 
 Sortie sous --save_path :
   X/<id>/<id>_<epoch_idx>.npy   (n_canaux, n_échantillons) float, une époque de 30 s
-  Y/<id>.pickle                  {nom_de_fichier: nom_du_stade}
+  Y/<id>.pickle                  {nom_de_fichier: nom_du_stade}, écrit en dernier :
+                                 sa présence marque un sujet terminé
+  T/<id>.json                    début de chaque époque, en secondes depuis le
+                                 début de l'enregistrement d'origine
+  rejected/<id>.txt              raison du rejet d'un sujet
 """
+
 from __future__ import annotations
 
 import argparse
 import glob
+import json
 import multiprocessing
 import os
 import pickle
+import shutil
 import warnings
 from typing import List, Tuple
 
@@ -33,9 +40,28 @@ from tqdm import tqdm
 warnings.filterwarnings("ignore")
 
 ALL_CHANNELS = [
-    "F3-M2", "F4-M1", "C3-M2", "C4-M1", "O1-M2", "O2-M1", "E1-M2",
-    "Chin1-Chin2", "ABD", "CHEST", "AIRFLOW", "SaO2", "ECG",
+    "F3-M2",
+    "F4-M1",
+    "C3-M2",
+    "C4-M1",
+    "O1-M2",
+    "O2-M1",
+    "E1-M2",
+    "Chin1-Chin2",
+    "ABD",
+    "CHEST",
+    "AIRFLOW",
+    "SaO2",
+    "ECG",
 ]
+
+# Version du prétraitement, enregistrée avec les embeddings : un cache fait
+# avec une autre version n'est pas mélangé à de nouveaux sujets.
+# 1 : début utile = premier changement de la dernière colonne (« wake »).
+# 2 : début utile = fin de la période « undefined » initiale, colonne
+#     désignée par son nom (le code officiel prend la colonne 4, qui est
+#     « undefined » dans l'ordre alphabétique des clés).
+PREPROCESSING_VERSION = 2
 
 EVENT_TO_ID = {"wake": 1, "nonrem1": 2, "nonrem2": 3, "nonrem3": 4, "rem": 5}
 ID_TO_EVENT = {v: k for k, v in EVENT_TO_ID.items()}
@@ -60,6 +86,24 @@ def extract_labels(arousal_mat_path: str) -> Tuple[np.ndarray, List[str]]:
     for i, name in enumerate(stage_names):
         labels[:, i] = data["data"]["sleep_stages"][name][:]
     return labels, stage_names
+
+
+def first_defined_sample(labels: np.ndarray, stage_names: List[str]) -> int | None:
+    """Premier échantillon dont le stade n'est pas « undefined » : la période
+    initiale, avant que l'expert commence à annoter, est retirée. Colonne
+    désignée par son nom, pas par sa position. None si tout est « undefined »."""
+    if "undefined" not in stage_names:
+        raise ValueError(f"colonne « undefined » absente des stades {stage_names}")
+    defined = np.flatnonzero(labels[:, stage_names.index("undefined")] == 0)
+    return int(defined[0]) if len(defined) else None
+
+
+def reject(path_to_save: str, subject_id: str, reason: str) -> None:
+    """Affiche et enregistre la raison du rejet d'un sujet."""
+    print(f"[{subject_id}] skipped: {reason}")
+    os.makedirs(os.path.join(path_to_save, "rejected"), exist_ok=True)
+    with open(os.path.join(path_to_save, "rejected", f"{subject_id}.txt"), "w") as f:
+        f.write(reason + "\n")
 
 
 def process_labels_to_events(labels: np.ndarray) -> List[list]:
@@ -96,26 +140,26 @@ def process_one_subject(
 
     path_to_x = os.path.join(path_to_save, "X", subject_id)
     path_to_y = os.path.join(path_to_save, "Y", f"{subject_id}.pickle")
-    if os.path.exists(path_to_x) and os.listdir(path_to_x):
-        return  # already processed
+    path_to_t = os.path.join(path_to_save, "T", f"{subject_id}.json")
+    if os.path.exists(path_to_y):
+        return  # déjà traité (Y est écrit en dernier)
+    if os.path.exists(path_to_x):
+        shutil.rmtree(path_to_x)  # extraction interrompue : on recommence ce sujet
 
     try:
         channel_names, sample_rate, _ = import_signal_names(hea_path)
         labels, stage_names = extract_labels(arousal_path)
         signal = loadmat(mat_path)["val"]
     except Exception as exc:
-        print(f"[{subject_id}] skipped: failed to load raw files ({exc})")
+        reject(path_to_save, subject_id, f"failed to load raw files ({exc})")
         return
 
     try:
-        # Drop the leading segment recorded before the first stage transition
-        # (undefined/lead-in period), matching official preprocessing.
-        diff = np.diff(labels, axis=0)
-        cutoff = np.where(diff[:, -1] != 0)[0]
-        if len(cutoff) == 0:
-            print(f"[{subject_id}] skipped: no stage transitions found")
+        # Retire la période « undefined » initiale (avant le début de l'annotation).
+        start = first_defined_sample(labels, stage_names)
+        if start is None:
+            reject(path_to_save, subject_id, "no annotated sleep stage")
             return
-        start = cutoff[0] + 1
         signal, labels = signal[:, start:], labels[start:, :]
 
         info = mne.create_info(channel_names, sample_rate, ch_types="eeg")
@@ -125,29 +169,39 @@ def process_one_subject(
         events = np.array(process_labels_to_events(labels))
         descriptions = [label_id_by_index[i] for i in events[:, 2]]
         raw.set_annotations(
-            mne.Annotations(onset=events[:, 0] / sample_rate, duration=events[:, 1] / sample_rate, description=descriptions),
+            mne.Annotations(
+                onset=events[:, 0] / sample_rate, duration=events[:, 1] / sample_rate, description=descriptions
+            ),
             emit_warning=False,
         )
         raw.resample(sfreq=256, verbose=False)
 
-        events_raw, _ = mne.events_from_annotations(raw, event_id=EVENT_TO_ID, chunk_duration=chunk_duration, verbose=False)
+        events_raw, _ = mne.events_from_annotations(
+            raw, event_id=EVENT_TO_ID, chunk_duration=chunk_duration, verbose=False
+        )
         present_ids = {ID_TO_EVENT[i]: i for i in set(events_raw[:, 2])}
         epochs = mne.Epochs(
-            raw=raw, events=events_raw, event_id=present_ids,
-            tmin=0.0, tmax=chunk_duration - 1.0 / raw.info["sfreq"],
-            baseline=None, event_repeated="drop", verbose=False,
+            raw=raw,
+            events=events_raw,
+            event_id=present_ids,
+            tmin=0.0,
+            tmax=chunk_duration - 1.0 / raw.info["sfreq"],
+            baseline=None,
+            event_repeated="drop",
+            verbose=False,
         ).drop_bad(verbose=False)
     except Exception as exc:
-        print(f"[{subject_id}] skipped: preprocessing failed ({exc})")
+        reject(path_to_save, subject_id, f"preprocessing failed ({exc})")
         return
 
     channel_indices = [raw.ch_names.index(ch) for ch in ALL_CHANNELS if ch in raw.ch_names]
     if len(channel_indices) != len(ALL_CHANNELS):
-        print(f"[{subject_id}] skipped: missing required channels")
+        missing = [ch for ch in ALL_CHANNELS if ch not in raw.ch_names]
+        reject(path_to_save, subject_id, f"missing required channels {missing}")
         return
 
     os.makedirs(path_to_x, exist_ok=True)
-    labels_out = {}
+    labels_out, onsets = {}, {}
     for idx, epoch in enumerate(epochs):
         epoch_data = epoch[channel_indices, :]
         if epoch_data.shape[1] == 0:
@@ -158,8 +212,14 @@ def process_one_subject(
         file_name = f"{subject_id}_{idx}.npy"
         np.save(os.path.join(path_to_x, file_name), resampled)
         labels_out[file_name] = epochs[idx].event_id
+        # Début de l'époque dans l'enregistrement d'origine : révèle les trous
+        # (époques « undefined » retirées en cours de nuit).
+        onsets[file_name] = start / sample_rate + float(epochs.events[idx, 0]) / raw.info["sfreq"]
 
-    with open(path_to_y, "wb") as f:
+    os.makedirs(os.path.dirname(path_to_t), exist_ok=True)
+    with open(path_to_t, "w") as f:
+        json.dump(onsets, f)
+    with open(path_to_y, "wb") as f:  # en dernier : marque le sujet comme terminé
         pickle.dump(labels_out, f)
 
 
@@ -204,7 +264,9 @@ def main() -> None:
     print(f"{len(subjects)} subject(s) to process")
 
     chunks = np.array_split(subjects, max(1, args.num_threads))
-    tasks = [(list(chunk), args.save_path, args.chunk_duration, args.target_sample_rate) for chunk in chunks if len(chunk)]
+    tasks = [
+        (list(chunk), args.save_path, args.chunk_duration, args.target_sample_rate) for chunk in chunks if len(chunk)
+    ]
     with multiprocessing.Pool(args.num_threads) as pool:
         pool.map(_worker, tasks)
 

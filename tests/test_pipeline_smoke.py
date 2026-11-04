@@ -136,6 +136,12 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     )
     assert sorted(fetched) == subjects
     assert sorted(p.stem for p in embeddings_dir.glob("*.npz")) == subjects
+    # Début de chaque époque dans l'enregistrement d'origine : après la
+    # période « undefined » de 2 s, toutes les 30 s.
+    with np.load(embeddings_dir / f"{subjects[0]}.npz") as data:
+        onsets = np.sort(data["onset_s"])
+    assert onsets[0] == pytest.approx(2.0, abs=0.1)
+    np.testing.assert_allclose(np.diff(onsets), 30.0, atol=0.1)
 
     # Même nombre d'époques et mêmes labels que l'extraction classique en un bloc
     processed = tmp_path / "processed"
@@ -244,3 +250,46 @@ def test_loser_of_mlp_vs_xgboost_is_never_evaluated_on_test():
     assert selection["chosen"] in ("mlp", "xgboost")
     loser = {"mlp", "xgboost"} - {selection["chosen"]}
     assert set(results) == {"logistic", selection["chosen"]} and loser.isdisjoint(results)
+
+
+def test_frozen_split_keeps_roles_when_subjects_are_added(tmp_path):
+    from run_baseline import load_or_extend_split
+
+    path = tmp_path / "split.json"
+    first = [f"s{i:03d}" for i in range(50)]
+    train1, test1 = load_or_extend_split(path, first, 0.2, seed=42)
+    assert len(test1) == 10 and not set(train1) & set(test1)
+    # Ajout de 50 sujets : les 50 premiers gardent leur rôle.
+    more = first + [f"s{i:03d}" for i in range(50, 100)]
+    train2, test2 = load_or_extend_split(path, more, 0.2, seed=42)
+    assert set(test1) <= set(test2) and set(train1) <= set(train2)
+    assert len(test2) == 20 and len(train2) == 80
+    # Relecture : identique, et un sujet indisponible est ignoré.
+    assert load_or_extend_split(path, more, 0.2, seed=42) == (train2, test2)
+    train3, test3 = load_or_extend_split(path, more[1:], 0.2, seed=42)
+    assert more[0] not in train3 + test3
+
+
+def test_embeddings_manifest_refuses_mixing_checkpoints_or_preprocessing(tmp_path):
+    from run_baseline import check_embeddings_manifest
+
+    expected = {"checkpoint_sha256": "aaa", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
+    # Caches antérieurs au manifeste : déclarés en version 1, signalés.
+    legacy_dir = tmp_path / "legacy"
+    legacy_dir.mkdir()
+    np.savez(legacy_dir / "s1.npz", X=np.zeros((1, 2)), y=np.zeros(1))
+    manifest = check_embeddings_manifest(legacy_dir, expected, n_to_compute=0)
+    assert manifest["preprocessing_version"] == 1 and "legacy" in manifest
+    # Rien à calculer : la version différente est seulement signalée...
+    check_embeddings_manifest(legacy_dir, expected, n_to_compute=0)
+    # ... mais on refuse d'y ajouter des sujets calculés avec la version 2.
+    with pytest.raises(SystemExit):
+        check_embeddings_manifest(legacy_dir, expected, n_to_compute=3)
+    # Autre checkpoint : toujours refusé.
+    with pytest.raises(SystemExit):
+        check_embeddings_manifest(legacy_dir, expected | {"checkpoint_sha256": "bbb"}, n_to_compute=0)
+    # Dossier neuf : manifeste écrit tel quel, puis accepté.
+    fresh = tmp_path / "fresh"
+    fresh.mkdir()
+    assert check_embeddings_manifest(fresh, expected, n_to_compute=5) == expected
+    assert check_embeddings_manifest(fresh, expected, n_to_compute=5) == expected
