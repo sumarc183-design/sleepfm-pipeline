@@ -39,6 +39,7 @@ import numpy as np
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
+    average_precision_score,
     classification_report,
     cohen_kappa_score,
     confusion_matrix,
@@ -184,6 +185,21 @@ def macro_roc_auc(proba: np.ndarray, classes: np.ndarray, y: np.ndarray) -> floa
     return float(np.mean(aucs)) if aucs else float("nan")
 
 
+def per_class_auc(proba: np.ndarray, classes: np.ndarray, y: np.ndarray) -> dict[int, dict[str, float]]:
+    """ROC-AUC et AUPRC un-contre-tous de chaque stade présent dans y.
+    L'AUPRC (aire sous la courbe précision-rappel) dépend de la fréquence du
+    stade : elle est plus sévère que la ROC-AUC pour les stades rares (N1)."""
+    out = {}
+    for i, c in enumerate(classes):
+        positives = y == c
+        if 0 < positives.sum() < len(y):
+            out[int(c)] = {
+                "roc_auc": float(roc_auc_score(positives, proba[:, i])),
+                "auprc": float(average_precision_score(positives, proba[:, i])),
+            }
+    return out
+
+
 def bootstrap_ci(
     y_true: np.ndarray, y_pred: np.ndarray, subjects: np.ndarray, n_boot: int = 500, seed: int = 42
 ) -> dict:
@@ -263,11 +279,14 @@ def evaluate_probe(
         "cohen_kappa": float(cohen_kappa_score(y_test, y_pred)),
         "macro_f1": float(f1_score(y_test, y_pred, average="macro")),
         "roc_auc_macro": macro_roc_auc(proba, model.classes_, y_test),
+        "per_class_auc": per_class_auc(proba, model.classes_, y_test),
         "per_class_report": classification_report(y_test, y_pred, output_dict=True, zero_division=0),
         # lignes = stade réel, colonnes = stade prédit, dans l'ordre de model.classes_
         "confusion_matrix": confusion_matrix(y_test, y_pred, labels=model.classes_).tolist(),
         "classes": [int(c) for c in model.classes_],
     }
+    aucs = results["per_class_auc"].values()
+    results["auprc_macro"] = float(np.mean([a["auprc"] for a in aucs])) if aucs else float("nan")
     if with_ci and groups is not None:
         results["ci95"] = bootstrap_ci(y_test, y_pred, groups[0])
     return results

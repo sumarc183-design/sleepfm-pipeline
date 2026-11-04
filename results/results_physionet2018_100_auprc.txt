@@ -1,0 +1,51 @@
+Embeddings sur : cpu
+100 sujet(s) déjà en cache, 0 à traiter
+================================================================================================
+Données    : RÉELLES (80 sujet(s) train / 20 test, 71458 / 17818 époques ; 0 sujet(s) rejeté(s) à l'extraction)
+Checkpoint : third_party/sleepfm/sleepfm/checkpoint/best.pt
+------------------------------------------------------------------------------------------------
+2. Évaluation finale sur le test (jamais utilisé pour la sélection)
+Modèle (test)    Accuracy   Kappa  F1 macro  ROC-AUC   AUPRC | F1 train  Gap F1 AUC train  Gap AUC   Durée
+Log. officielle    0.6944  0.6072    0.6833   0.9255  0.7697 |   0.7522 +0.0689    0.9506  +0.0251    633s
+Log. non pond.     0.7370  0.6446    0.6968   0.9273  0.7708 |   0.7608 +0.0640    0.9510  +0.0237    206s
+MLP                0.7137  0.6229    0.6833   0.9240  0.7621 |   0.7672 +0.0839    0.9533  +0.0293    827s
+BiGRU (nuit)       0.7643  0.6845    0.7386   0.9360  0.8004 |   0.7944 +0.0557    0.9626  +0.0266    182s
+------------------------------------------------------------------------------------------------
+Intervalles de confiance à 95 % (bootstrap sur les sujets de test)
+  Log. officielle     kappa [0.545 ; 0.669]   F1 macro [0.629 ; 0.729]   (20 sujets)
+  Log. non pond.      kappa [0.577 ; 0.702]   F1 macro [0.642 ; 0.741]   (20 sujets)
+  MLP                 kappa [0.556 ; 0.684]   F1 macro [0.629 ; 0.726]   (20 sujets)
+  BiGRU (nuit)        kappa [0.612 ; 0.740]   F1 macro [0.673 ; 0.783]   (20 sujets)
+------------------------------------------------------------------------------------------------
+Comparaison appariée à la baseline (mêmes nuits de test) : écart, IC 95 %
+  Log. non pond.      kappa +0.037 [+0.008 ; +0.067]   F1 macro +0.014 [-0.010 ; +0.038]   (significatif sur le kappa)
+  MLP                 kappa +0.016 [-0.006 ; +0.038]   F1 macro -0.000 [-0.017 ; +0.019]   (non significatif sur le kappa)
+  BiGRU (nuit)        kappa +0.077 [+0.041 ; +0.113]   F1 macro +0.055 [+0.025 ; +0.084]   (significatif sur le kappa)
+  Log. officielle : convergé en 216 itérations
+  Log. non pond. : convergé en 261 itérations
+------------------------------------------------------------------------------------------------
+F1 par stade (test)  Log. officielle  Log. non pond.             MLP    BiGRU (nuit)       n
+  wake                        0.7669          0.7730          0.7690          0.7608    3472
+  nonrem1                     0.5084          0.4489          0.4449          0.5179    2571
+  nonrem2                     0.7122          0.8059          0.7732          0.8299    7214
+  nonrem3                     0.7499          0.7609          0.7667          0.7868    2301
+  rem                         0.6792          0.6955          0.6626          0.7978    2260
+------------------------------------------------------------------------------------------------
+Baseline officielle contre l'article SleepFM 2024 (tableau 8, PhysioNet 2018) : nous / article
+  Stade                ROC-AUC             AUPRC                F1
+  wake           0.962 / 0.966     0.843 / 0.867     0.767 / 0.790
+  nonrem1        0.860 / 0.830     0.503 / 0.471     0.508 / 0.439
+  nonrem2        0.913 / 0.902     0.863 / 0.857     0.712 / 0.793
+  nonrem3        0.966 / 0.971     0.847 / 0.821     0.750 / 0.743
+  rem            0.928 / 0.950     0.793 / 0.778     0.679 / 0.717
+  macro          0.925 / 0.924     0.770 / 0.759     0.683 / 0.700
+------------------------------------------------------------------------------------------------
+Matrice de confusion (test, Log. officielle) : lignes = stade réel, colonnes = stade prédit
+                  wake   nonrem1   nonrem2   nonrem3       rem
+  wake            2942       463        25         0        42
+  nonrem1          718      1357       185         3       308
+  nonrem2          283       774      4300      1060       797
+  nonrem3           21         8       248      2018         6
+  rem              236       165       104         0      1755
+================================================================================================
+Résultats JSON : /private/tmp/claude-501/-Users-marco-Desktop-projet-alternance/db4ce273-2198-4e33-80d0-ea178fc34fd5/scratchpad/auprc_run.json

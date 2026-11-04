@@ -2,12 +2,15 @@
 
 ## J30 — Reproduction
 - [x] Pipeline officiel SleepFM opérationnel sur PhysioNet Challenge 2018
-- [ ] Premier κ de stadification, comparé au chiffre publié (tolérance ±0.05)
-  - κ au protocole officiel (régression pondérée) : 0,606 [IC 95 % 0,545 ; 0,669] sur 100 sujets PhysioNet 2018, 20 sujets de test (2026-11-04) ; BiGRU sur la nuit 0,684. Premiers essais (non pondérés) : 0,584 puis 0,622. Pas de chiffre publié sur PhysioNet 2018, la comparaison se fera sur MESA
-- [ ] Demande d'accès NSRR/MESA déposée (voir DATA_ACCESS.md)
+- [x] Premier κ de stadification au protocole officiel (régression pondérée) : 0,606 [IC 95 % 0,545 ; 0,669] sur 100 sujets PhysioNet 2018, 20 sujets de test (2026-11-04) ; BiGRU sur la nuit 0,684. Premiers essais (non pondérés) : 0,584 puis 0,622
+- [ ] Comparaison à l'article SleepFM 2024 (tableau 8, PhysioNet 2018 : ROC-AUC 0,924, AUPRC 0,759, F1 0,700, 100 participants en test ; pas de κ publié)
+  - [x] Premier ordre de grandeur : ROC-AUC 0,925 et F1 0,683 avec la baseline officielle
+  - [x] AUPRC (0,770 contre 0,759) et comparaison stade par stade : le profil du F1 de la logistique non pondérée colle à celui de l'article (hypothèse à vérifier)
+  - [ ] Protocole aligné et figé : 100 nuits de test, listes de sujets enregistrées
+- [ ] Demande d'accès NSRR (MESA, SHHS) déposée (voir DATA_ACCESS.md) : évaluation supplémentaire, pas un préalable à la comparaison à l'article
 
 ## J60 — Comparaison
-- [ ] Embeddings + sonde linéaire sur MESA (reproduction de la démo officielle)
+- [ ] Embeddings + sonde linéaire sur MESA (cohorte supplémentaire, si l'accès NSRR est obtenu)
 - [ ] Comparaison SleepFM vs OSF sur SleepBench (même protocole, mêmes données)
 - [ ] Tableau de résultats consolidé
 

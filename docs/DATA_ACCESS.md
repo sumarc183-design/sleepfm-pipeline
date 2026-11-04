@@ -26,8 +26,10 @@ processus peut évoluer)
 
 ## Priorité de dépôt
 
-1. **MESA** — cette semaine (chemin critique pour reproduire la démo
-   officielle SleepFM)
+1. **MESA** — évaluation sur une cohorte supplémentaire et indépendante.
+   Ce n'est **pas** un préalable à la comparaison avec l'article SleepFM 2024,
+   qui évalue déjà PhysioNet 2018 (section 4.6, tableau 8) ; MESA n'apparaît
+   ni dans cet article ni dans le dépôt officiel.
 2. **SHHS** — en parallèle ou juste après (évaluation à plus grande échelle)
 3. **CHAT** — phase 2 (pédiatrie)
 
@@ -35,5 +37,5 @@ processus peut évoluer)
 
 Créer le compte sleepdata.org et déposer la demande MESA ne dépend
 d'aucune autre étape technique — c'est purement administratif et c'est le
-plus long délai de la phase 1. À lancer en parallèle du travail sur
-PhysioNet 2018.
+plus long délai. À lancer en parallèle du travail sur PhysioNet 2018, sans
+bloquer la comparaison à l'article.

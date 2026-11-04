@@ -32,20 +32,22 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   (pas un tirage aléatoire parmi les 994) ont été utilisés.
 - **Split par sujet** (jamais par époque) : 80/20, soit 80 nuits
   d'entraînement et 20 de test (17 818 époques). Les sondes non linéaires sont départagées
-  par validation croisée par sujet sur le train ; le test n'est utilisé
-  qu'une fois.
+  par validation croisée par sujet sur le train ; le test ne sert à aucun
+  choix, mais les mêmes 20 nuits ont été évaluées par plusieurs runs.
 
 ## Métriques
 
 Accuracy, kappa de Cohen (accord corrigé du hasard, métrique de référence en
-stadification), F1 macro, F1 par stade, ROC-AUC un-contre-tous, gap
+stadification), F1 macro, F1 par stade, ROC-AUC et AUPRC un-contre-tous, gap
 train − test. Résultats à jour : [README](../README.md#résultats).
 
 ## Limites connues
 
-- **Pas encore comparé au chiffre publié** : SleepFM rapporte ses résultats
-  sur MESA/SHHS, pas sur PhysioNet 2018. La reproduction stricte attend
-  l'accès NSRR.
+- **Comparaison à l'article encore approximative** : l'article SleepFM 2024
+  (section 4.6, tableau 8) évalue PhysioNet 2018 avec 100 participants en test
+  (ROC-AUC 0,924, F1 0,700). La baseline obtient 0,925 et 0,683, mais sur 20
+  nuits de test et avec un autre découpage : même ordre de grandeur, pas une
+  reproduction stricte.
 - **N1 mal reconnu** (F1 ≈ 0,51 avec la baseline et le BiGRU, 0,45 sans
   pondération), confondu surtout avec l'éveil : stade de transition, rare et peu
   concordant même entre experts.

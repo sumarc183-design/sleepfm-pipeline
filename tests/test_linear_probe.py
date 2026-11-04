@@ -10,6 +10,7 @@ from src.models.linear_probe import (
     compare_to_published,
     cross_validate_probes,
     evaluate_probe,
+    per_class_auc,
     subject_folds,
     train_linear_probe,
     train_probe,
@@ -31,12 +32,15 @@ def test_train_and_evaluate_probe():
         "cohen_kappa",
         "macro_f1",
         "roc_auc_macro",
+        "auprc_macro",
+        "per_class_auc",
         "per_class_report",
         "confusion_matrix",
         "classes",
     }
     assert np.array(results["confusion_matrix"]).sum() == len(y_test)
     assert 0.0 <= results["roc_auc_macro"] <= 1.0
+    assert 0.0 <= results["auprc_macro"] <= 1.0
     assert 0.0 <= results["accuracy"] <= 1.0
     assert -1.0 <= results["cohen_kappa"] <= 1.0
 
@@ -253,3 +257,16 @@ def test_compare_probes_reports_paired_gap_to_baseline():
     paired = results["logistic_unweighted"]["vs_baseline"]
     low, high = paired["cohen_kappa"]["ci95"]
     assert low <= paired["cohen_kappa"]["diff"] <= high
+
+
+def test_per_class_auc_perfect_random_and_rare_stage():
+    y = np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 1])
+    perfect = np.stack([1.0 - (y == 1), (y == 1).astype(float)], axis=1)
+    scores = per_class_auc(perfect, np.array([0, 1]), y)
+    assert scores[1] == {"roc_auc": 1.0, "auprc": 1.0}
+    # Probabilités constantes : ROC-AUC 0,5, AUPRC = fréquence du stade (plus sévère pour un stade rare).
+    flat = per_class_auc(np.full((10, 2), 0.5), np.array([0, 1]), y)
+    assert flat[1]["roc_auc"] == 0.5
+    assert flat[1]["auprc"] == pytest.approx(0.3)
+    # Un stade absent du test n'a pas de score.
+    assert 2 not in per_class_auc(np.full((10, 3), 1 / 3), np.array([0, 1, 2]), y)

@@ -26,7 +26,9 @@ flowchart LR
 
 100 sujets PhysioNet 2018, split 80/20 **par sujet** (80 nuits d'entraînement,
 20 de test, 17 818 époques de test), embeddings SleepFM figés, 2026-11-04. Le
-test n'a servi qu'une fois ; IC à 95 % par bootstrap sur les sujets de test.
+test ne sert jamais au choix d'un modèle ou d'un réglage, mais les mêmes 20
+nuits ont été évaluées par plusieurs runs successifs ; IC à 95 % par bootstrap
+sur les sujets de test.
 
 | Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | ROC-AUC | Gap F1 train − test |
 |---|---|---|---|---|---|
@@ -58,17 +60,44 @@ test n'a servi qu'une fois ; IC à 95 % par bootstrap sur les sujets de test.
   les mêmes chiffres à 0,001 près.
 
 Sorties brutes dans [`results/`](results/) : texte, JSON (sujets de test,
-réglages, matrices de confusion), le run CPU, et le run local avec la
-comparaison appariée (`…_paired`).
+réglages, matrices de confusion), le run CPU, le run local avec la
+comparaison appariée (`…_paired`) et celui avec l'AUPRC (`…_auprc`).
 
 Avant le 2026-11-04 : κ 0,584 (20 sujets) puis 0,622 (100 sujets, split
 75/25), avec la régression **non pondérée**, qui n'est pas le protocole
 officiel ([détail](results/results_physionet2018_100_v0.1.0_non_pondere.txt)).
 
-**Lecture** : référence interne, pas une reproduction du chiffre publié. Le
-papier SleepFM rapporte la stadification sur MESA/SHHS, pas sur PhysioNet 2018 ;
-la comparaison stricte se fera sur MESA (accès NSRR en cours). Sondes et règle
-de sélection : [guide](docs/GUIDE.md#sondes-et-sélection-de-modèle).
+### Comparaison à l'article
+
+L'article SleepFM 2024 ([Thapa et al., ICML 2024](https://arxiv.org/abs/2405.17766),
+section 4.6, tableau 8) évalue le même checkpoint sur PhysioNet 2018, en
+validation externe, avec 100 participants en test. Ses résultats principaux
+portent sur les données internes de Stanford, non publiques ; MESA n'y
+apparaît pas. Il ne publie pas de κ sur PhysioNet 2018.
+
+| Test | ROC-AUC macro | AUPRC macro | F1 macro | F1 Wake / N1 / N2 / N3 / REM |
+|---|---|---|---|---|
+| Article (tableau 8) | 0,924 | 0,759 | 0,700 | 0,79 / 0,44 / 0,79 / 0,74 / 0,72 |
+| Logistique pondérée (baseline officielle) | 0,925 | 0,770 | 0,683 | 0,77 / 0,51 / 0,71 / 0,75 / 0,68 |
+| Logistique non pondérée | 0,927 | 0,771 | 0,697 | 0,77 / 0,45 / 0,81 / 0,76 / 0,70 |
+| BiGRU sur la nuit | 0,936 | 0,800 | 0,739 | 0,76 / 0,52 / 0,83 / 0,79 / 0,80 |
+
+- **Même ordre de grandeur que l'article** : ROC-AUC et AUPRC macro au niveau
+  publié, ou légèrement au-dessus.
+- **Le profil du F1 de la logistique non pondérée colle à celui de
+  l'article**, stade par stade (N1 0,45 contre 0,44 ; N2 0,81 contre 0,79).
+  La pondérée s'en écarte : meilleure sur N1, moins bonne sur N2. C'est une
+  hypothèse à vérifier : l'évaluation de l'article n'a peut-être pas pondéré
+  les classes, alors que le code officiel le fait.
+- **Pas une reproduction stricte** : 20 nuits de test contre 100, notre propre
+  découpage, et l'article ne précise ni le nombre de nuits d'entraînement ni
+  la sonde utilisée pour cette évaluation.
+
+Chiffres du run local
+([`results/…_auprc`](results/results_physionet2018_100_auprc.txt), mêmes
+nuits que le tableau ci-dessus, écarts d'au plus 0,002). La sortie du script
+compare la baseline au tableau 8 stade par stade. Sondes et règle de
+sélection : [guide](docs/GUIDE.md#sondes-et-sélection-de-modèle).
 
 ## Démarrage rapide
 
@@ -93,7 +122,7 @@ d'attention : [docs/GUIDE.md](docs/GUIDE.md).
 | Base | Accès | Usage |
 |---|---|---|
 | PhysioNet Challenge 2018 | Public (994 sujets annotés) | Validation du pipeline (phase 1) |
-| MESA (NSRR) | Sur demande (DUA) | Reproduction du chiffre publié |
+| MESA (NSRR) | Sur demande (DUA) | Évaluation sur une cohorte supplémentaire (phase 2) |
 | SHHS (NSRR) | Sur demande (DUA) | Évaluation à plus grande échelle (phase 2) |
 | CHAT (NSRR) | Sur demande (DUA) | Pédiatrie, piste de différenciation (phase 2) |
 

@@ -5,7 +5,19 @@ selon [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+- **AUPRC** (macro et par stade) et ROC-AUC par stade, dans la sortie et le
+  JSON. La sortie compare la baseline officielle au tableau 8 de l'article
+  SleepFM 2024 (PhysioNet 2018), stade par stade.
+
 ### Corrigé
+- **Référence à l'article** : la documentation affirmait que SleepFM ne
+  publiait pas de résultat sur PhysioNet 2018 et que la comparaison
+  attendait MESA. L'article SleepFM 2024 évalue pourtant PhysioNet 2018
+  (section 4.6, tableau 8 : ROC-AUC 0,924, AUPRC 0,759, F1 0,700). MESA
+  devient une évaluation supplémentaire, pas un préalable.
+- La formule « le test n'a servi qu'une fois » est précisée : le test ne sert
+  à aucun choix, mais les mêmes nuits ont été évaluées par plusieurs runs.
 - **Baseline** : le protocole officiel (`sleepfm/utils.py::train_model`)
   entraîne `LogisticRegression(class_weight="balanced")`. La baseline
   `logistic` est désormais pondérée ; l'ancienne, non pondérée, devient
@@ -24,6 +36,10 @@ selon [SemVer](https://semver.org/lang/fr/).
   supprimé et recalculé au démarrage.
 
 ### Résultats
+- Comparaison à l'article SleepFM 2024 (tableau 8, PhysioNet 2018) :
+  baseline officielle ROC-AUC 0,925 / AUPRC 0,770 / F1 0,683, contre
+  0,924 / 0,759 / 0,700 publiés. Le profil du F1 par stade de la logistique
+  non pondérée est le plus proche de l'article.
 - 100 sujets, split 80/20 par sujet, protocole officiel (2026-11-04) :
   baseline pondérée κ 0,606 [0,545 ; 0,669], non pondérée 0,646, MLP 0,623,
   BiGRU 0,684 [0,615 ; 0,739]. XGBoost éliminé par la sélection (gap F1

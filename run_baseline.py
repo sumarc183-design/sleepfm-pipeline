@@ -332,14 +332,14 @@ def print_results(
     print("-" * width)
     print("2. Évaluation finale sur le test (jamais utilisé pour la sélection)")
     print(
-        f"{'Modèle (test)':<16}{'Accuracy':>9}{'Kappa':>8}{'F1 macro':>10}{'ROC-AUC':>9}"
+        f"{'Modèle (test)':<16}{'Accuracy':>9}{'Kappa':>8}{'F1 macro':>10}{'ROC-AUC':>9}{'AUPRC':>8}"
         f" |{'F1 train':>9}{'Gap F1':>8}{'AUC train':>10}{'Gap AUC':>9}{'Durée':>8}"
     )
     for kind, r in results.items():
         test, train = r["test"], r["train"]
         print(
             f"{PROBE_LABELS.get(kind, kind):<16}{test['accuracy']:>9.4f}{test['cohen_kappa']:>8.4f}"
-            f"{test['macro_f1']:>10.4f}{test['roc_auc_macro']:>9.4f}"
+            f"{test['macro_f1']:>10.4f}{test['roc_auc_macro']:>9.4f}{test['auprc_macro']:>8.4f}"
             f" |{train['macro_f1']:>9.4f}{train['macro_f1'] - test['macro_f1']:>+8.4f}"
             f"{train['roc_auc_macro']:>10.4f}{train['roc_auc_macro'] - test['roc_auc_macro']:>+9.4f}"
             f"{r['fit_seconds']:>7.0f}s"
@@ -384,6 +384,8 @@ def print_results(
         )
         print(f"  {label_to_stage[int(label)]:<18}{scores}{int(first_report[label]['support']):>8}")
     baseline = results.get("logistic") or next(iter(results.values()))
+    if "logistic" in results:
+        print_published_comparison(results["logistic"]["test"], label_to_stage)
     classes = [label_to_stage[c] for c in baseline["test"]["classes"]]
     name = PROBE_LABELS.get("logistic" if "logistic" in results else next(iter(results)), "")
     print("-" * width)
@@ -397,6 +399,41 @@ def print_results(
             "Ces résultats ne sont PAS interprétables médicalement (données et/ou "
             "checkpoint non réels) -- ils valident uniquement que le pipeline tourne."
         )
+
+
+# SleepFM 2024 (Thapa et al., ICML 2024, arXiv 2405.17766), section 4.6,
+# tableau 8 : validation externe sur PhysioNet/CinC 2018, 100 participants
+# en test. Pas de kappa publié sur cette base.
+PUBLISHED_PHYSIONET2018 = {
+    "wake": {"roc_auc": 0.966, "auprc": 0.867, "f1": 0.790},
+    "nonrem1": {"roc_auc": 0.830, "auprc": 0.471, "f1": 0.439},
+    "nonrem2": {"roc_auc": 0.902, "auprc": 0.857, "f1": 0.793},
+    "nonrem3": {"roc_auc": 0.971, "auprc": 0.821, "f1": 0.743},
+    "rem": {"roc_auc": 0.950, "auprc": 0.778, "f1": 0.717},
+    "macro": {"roc_auc": 0.924, "auprc": 0.759, "f1": 0.700},
+}
+
+
+def print_published_comparison(test: dict, label_to_stage: dict) -> None:
+    """Baseline officielle contre le tableau 8 de l'article, stade par stade.
+    Protocole différent (nombre de nuits de test, découpage) : à lire comme un
+    ordre de grandeur, pas comme une reproduction stricte."""
+    rows = {
+        label_to_stage[c]: {
+            **test["per_class_auc"][c],
+            "f1": test["per_class_report"].get(str(c), {}).get("f1-score", float("nan")),
+        }
+        for c in test["classes"]
+        if c in test["per_class_auc"]
+    }
+    rows["macro"] = {"roc_auc": test["roc_auc_macro"], "auprc": test["auprc_macro"], "f1": test["macro_f1"]}
+    print("-" * 96)
+    print("Baseline officielle contre l'article SleepFM 2024 (tableau 8, PhysioNet 2018) : nous / article")
+    print(f"  {'Stade':<10}{'ROC-AUC':>18}{'AUPRC':>18}{'F1':>18}")
+    for stage, ours in rows.items():
+        ref = PUBLISHED_PHYSIONET2018.get(stage)
+        if ref:
+            print(f"  {stage:<10}" + "".join(f"{ours[m]:>10.3f} / {ref[m]:.3f}" for m in ("roc_auc", "auprc", "f1")))
 
 
 def save_results_json(
@@ -416,12 +453,14 @@ def save_results_json(
     label_to_stage = {v: k for k, v in STAGE_NAME_TO_LABEL.items()}
 
     def summarize(metrics: dict) -> dict:
+        aucs = metrics.get("per_class_auc", {})
         per_stage = {
-            label_to_stage[int(label)]: {"f1": m["f1-score"], "support": int(m["support"])}
+            label_to_stage[int(label)]: {"f1": m["f1-score"], "support": int(m["support"])} | aucs.get(int(label), {})
             for label, m in metrics["per_class_report"].items()
             if label.isdigit()
         }
-        return {k: v for k, v in metrics.items() if k != "per_class_report"} | {"per_stage": per_stage}
+        hidden = ("per_class_report", "per_class_auc")
+        return {k: v for k, v in metrics.items() if k not in hidden} | {"per_stage": per_stage}
 
     payload = {
         "data": data_desc,
