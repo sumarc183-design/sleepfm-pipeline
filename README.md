@@ -28,17 +28,20 @@ flowchart LR
 20 de test, 17 818 époques de test), embeddings SleepFM figés, 2026-11-04. Le
 test n'a servi qu'une fois ; IC à 95 % par bootstrap sur les sujets de test.
 
-| Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | Gap F1 train − test |
-|---|---|---|---|---|
-| **Régression logistique pondérée** (baseline officielle) | 0,693 | **0,606** [0,545 ; 0,669] | 0,683 [0,628 ; 0,728] | +0,070 |
-| Régression logistique non pondérée | 0,738 | 0,646 [0,579 ; 0,703] | 0,698 [0,643 ; 0,741] | +0,062 |
-| MLP (retenu face à XGBoost) | 0,714 | 0,623 [0,555 ; 0,685] | 0,683 [0,629 ; 0,726] | +0,085 |
-| **BiGRU sur la nuit** | **0,764** | **0,684** [0,615 ; 0,739] | **0,737** [0,673 ; 0,779] | +0,057 |
+| Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | ROC-AUC | Gap F1 train − test |
+|---|---|---|---|---|---|
+| **Régression logistique pondérée** (baseline officielle) | 0,693 | **0,606** [0,545 ; 0,669] | 0,683 [0,628 ; 0,728] | 0,925 | +0,070 |
+| Régression logistique non pondérée | 0,738 | 0,646 [0,579 ; 0,703] | 0,698 [0,643 ; 0,741] | 0,927 | +0,062 |
+| MLP (retenu face à XGBoost) | 0,714 | 0,623 [0,555 ; 0,685] | 0,683 [0,629 ; 0,726] | 0,924 | +0,085 |
+| **BiGRU sur la nuit** | **0,764** | **0,684** [0,615 ; 0,739] | **0,737** [0,673 ; 0,779] | **0,936** | +0,057 |
 
 - **Le contexte de la nuit est le levier** : le BiGRU, qui voit les époques
   voisines, gagne +0,08 de κ sur la baseline et le meilleur F1 sur chaque
   stade sauf l'éveil (REM 0,80 contre 0,68). Les IC se chevauchent : une
   comparaison appariée sur les mêmes nuits reste à faire pour conclure.
+- **La ROC-AUC (un stade contre tous, moyennée) varie peu** (0,924 à 0,936) :
+  les probabilités classent bien les époques pour toutes les sondes ; elles se
+  distinguent sur la décision finale, que mesurent le κ et le F1.
 - **Une frontière non linéaire n'apporte rien** : le MLP fait jeu égal avec la
   régression logistique. XGBoost, un peu moins bon en validation croisée
   (F1 0,669 contre 0,672), est en plus éliminé pour surapprentissage (gap F1
