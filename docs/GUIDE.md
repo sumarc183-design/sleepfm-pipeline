@@ -96,14 +96,20 @@ train et de test, réglages et convergence, pour comparer deux runs).
 Même notebook, qui détecte Kaggle tout seul. Utile quand le quota GPU de Colab
 est épuisé : Kaggle donne environ 30 h de GPU par semaine.
 `Settings > Accelerator > GPU T4 x2` (pas P100, trop ancien pour PyTorch
-récent) et `Settings > Internet > On`, puis `Run All`.
+récent) et `Settings > Internet > On`. Pour un long run (200 sujets,
+~2 h 30), `Save Version > Save & Run All (Commit)` : le calcul continue
+navigateur fermé (jusqu'à 12 h) et les sorties restent dans l'onglet `Output`
+de la version. `Run All` en session interactive s'arrête si la session expire.
 
-Kaggle n'a pas accès à Google Drive. Pour ne pas recalculer les embeddings
-(~1 h 15 pour 100 sujets), télécharger le dossier
-`sleepfm_embeddings/physionet2018` du Drive, le publier comme Dataset Kaggle
-**privé** et l'ajouter au notebook (`Add Input`) : il est copié dans le
-dossier de travail et le run reprend dessus. Le cache disparaît avec la
-session ; les résultats sont dans le panneau `Output`.
+Le notebook calcule par défaut 200 sujets dans `embeddings/physionet2018_v2`
+(prétraitement version 2, découpage figé). Kaggle n'a pas accès à Google
+Drive : à la fin, les embeddings sont zippés dans `Output`
+(`embeddings_physionet2018_v2.zip`, ~1 Go), avec les résultats et les
+prédictions. Les dézipper dans `embeddings/physionet2018_v2/` permet de
+relancer les sondes sur le Mac sans GPU. Pour ne pas recalculer sur Kaggle,
+publier ce dossier comme Dataset Kaggle **privé** et l'ajouter au notebook
+(`Add Input`) : il n'est copié que si son `manifest.json` correspond au
+prétraitement actuel.
 
 ## Sondes et sélection de modèle
 

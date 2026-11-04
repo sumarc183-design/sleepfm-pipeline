@@ -15,6 +15,9 @@ selon [SemVer](https://semver.org/lang/fr/).
   Enregistré dans le JSON des résultats.
 - **Temps d'origine de chaque époque** (`onset_s`) dans l'extraction et le
   cache ; **raison des rejets** enregistrée.
+- **Notebook** : 200 sujets par défaut, dans `physionet2018_v2` avec le
+  découpage figé ; sur Kaggle, n'importe que des embeddings au même
+  prétraitement, et place prédictions et zip des embeddings dans `Output`.
 - **Prédictions du test sauvegardées** (`<json>.predictions.npz`) : sujet,
   numéro d'époque, vrai stade, prédiction et probabilités de chaque sonde.
 - **Ablation du contexte du BiGRU** (`scripts/ablation_sequence.py`) :
