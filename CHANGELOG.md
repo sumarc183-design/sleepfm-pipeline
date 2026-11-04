@@ -27,6 +27,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - Intervalles de confiance à 95 % du kappa et du F1 macro par bootstrap sur
   les sujets de test.
 - Matrice de confusion de la baseline (sortie et JSON).
+- Notebook utilisable aussi sur Kaggle (détection automatique, import des
+  embeddings depuis un Dataset Kaggle, résultats dans le panneau Output) ;
+  il force aussi la mise à jour du code à la relance.
 - Le JSON de résultats enregistre les sujets de train et de test, les
   réglages (sondes, `max_iter`, plis, seuils de sélection) et la convergence
   de chaque sonde : deux runs se comparent sans relire les logs.

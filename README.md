@@ -4,6 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://docs.astral.sh/ruff/)
 [![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
+[![Ouvrir dans Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
 
 Reproduction et évaluation de [SleepFM](https://github.com/rthapa84/sleepfm-codebase),
 modèle fondamental multimodal du sommeil, sur données ouvertes : stadification
@@ -46,7 +47,7 @@ des sondes (pondérée, MLP ou XGBoost, BiGRU) est décrite dans le
 
 ## Démarrage rapide
 
-**Sans installation** : bouton *Open in Colab* ci-dessus, `GPU T4`, `Tout exécuter`.
+**Sans installation** : bouton *Open in Colab* ci-dessus, `GPU T4`, `Tout exécuter`. Quota Colab épuisé : bouton *Open in Kaggle*, même notebook ([détails](docs/GUIDE.md#kaggle-autre-gpu-gratuit)).
 
 **En local** :
 
@@ -80,7 +81,7 @@ run_baseline.py   point d'entrée : split par sujet -> extraction -> embeddings 
 src/data/         lecture et découpage des PSG en époques
 src/models/       encodeurs SleepFM, sondes (logistique, MLP, XGBoost, BiGRU), backbone OSF
 scripts/          téléchargement PhysioNet, setup SleepFM, générateur de données synthétiques
-notebooks/        notebook Google Colab
+notebooks/        notebook Google Colab / Kaggle
 tests/            tests unitaires, bout-en-bout synthétique, données réelles
 results/          sorties des runs réels
 configs/          conventions de référence (non lues par les scripts)

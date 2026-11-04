@@ -64,6 +64,22 @@ sur Google Drive : une déconnexion ne fait rien perdre. Sorties :
 `results_physionet2018_<N>.txt` (lisible) et `.json` (métriques, sujets de
 train et de test, réglages et convergence, pour comparer deux runs).
 
+### Kaggle (autre GPU gratuit)
+
+[![Ouvrir dans Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
+
+Même notebook, qui détecte Kaggle tout seul. Utile quand le quota GPU de Colab
+est épuisé : Kaggle donne environ 30 h de GPU par semaine.
+`Settings > Accelerator > GPU T4 x2` (pas P100, trop ancien pour PyTorch
+récent) et `Settings > Internet > On`, puis `Run All`.
+
+Kaggle n'a pas accès à Google Drive. Pour ne pas recalculer les embeddings
+(~1 h 15 pour 100 sujets), télécharger le dossier
+`sleepfm_embeddings/physionet2018` du Drive, le publier comme Dataset Kaggle
+**privé** et l'ajouter au notebook (`Add Input`) : il est copié dans le
+dossier de travail et le run reprend dessus. Le cache disparaît avec la
+session ; les résultats sont dans le panneau `Output`.
+
 ## Sondes et sélection de modèle
 
 Toutes les sondes s'entraînent sur les mêmes embeddings figés et le même split
