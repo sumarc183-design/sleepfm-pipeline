@@ -126,7 +126,10 @@ le GRU reçoit la longueur réelle de chaque fenêtre (séquences compactées),
 pour que le rembourrage n'influence pas les vraies époques. La prédiction lit
 la nuit entière. `scripts/ablation_sequence.py` mesure d'où vient le gain :
 contexte à la prédiction (nuit, 1 h, 5 min, 1 époque) et ordre des époques
-mélangé dans chaque nuit. Le BiGRU voit les époques futures : il convient à
+mélangé dans chaque nuit. `scripts/analyse_errors.py` relit un
+`.predictions.npz` et compare deux sondes : matrices de confusion, kappa par
+nuit, précision selon la distance au changement de stade, et détail de N1.
+Le BiGRU voit les époques futures : il convient à
 une analyse après l'enregistrement, pas au temps réel.
 
 **Arrêt précoce sans fuite** : le MLP et le BiGRU s'arrêtent sur ~10 % des

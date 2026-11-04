@@ -50,6 +50,16 @@ sur les sujets de test.
   +0,04 : voir toute la nuit du sujet aide déjà, l'ordre apporte le reste,
   notamment sur N1 (F1 0,42 mélangé contre 0,52). Le BiGRU lit aussi les
   époques futures : analyse après l'enregistrement, pas temps réel.
+- **Où le BiGRU gagne** ([analyse des erreurs](results/errors_sequence_vs_logistic_physionet2018_100.txt)) :
+  surtout sur N2, que la baseline confond avec N3, N1 et REM (N2 bien classé :
+  5 826 époques contre 4 300). Le gain se fait au milieu des segments stables
+  (+0,07 à +0,10 de précision), presque pas aux changements de stade (+0,01),
+  qui restent le point dur (55 % de précision, 21 % des époques). 17 nuits de
+  test sur 20 progressent (gain médian de κ +0,06).
+- **N1 : meilleur F1, mais rappel en baisse** (0,47 contre 0,53) : le BiGRU
+  prédit moins souvent N1 à tort, mais lisse davantage les vraies époques N1
+  en éveil (873 contre 718). Deux nuits restent mauvaises pour les deux
+  modèles (κ ≈ 0,34), à examiner.
 - **La ROC-AUC (un stade contre tous, moyennée) varie peu** (0,924 à 0,936) :
   les probabilités classent bien les époques pour toutes les sondes ; elles se
   distinguent sur la décision finale, que mesurent le κ et le F1.
