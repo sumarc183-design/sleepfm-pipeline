@@ -353,6 +353,18 @@ def print_results(
                 f"  {PROBE_LABELS.get(kind, kind):<20}kappa [{ci['cohen_kappa'][0]:.3f} ; {ci['cohen_kappa'][1]:.3f}]"
                 f"   F1 macro [{ci['macro_f1'][0]:.3f} ; {ci['macro_f1'][1]:.3f}]   ({ci['n_subjects']} sujets)"
             )
+    paired = {kind: r["vs_baseline"] for kind, r in results.items() if "vs_baseline" in r}
+    if paired:
+        print("-" * width)
+        print("Comparaison appariée à la baseline (mêmes nuits de test) : écart, IC 95 %")
+        for kind, d in paired.items():
+            k, f = d["cohen_kappa"], d["macro_f1"]
+            verdict = "significatif" if k["ci95"][0] > 0 or k["ci95"][1] < 0 else "non significatif"
+            print(
+                f"  {PROBE_LABELS.get(kind, kind):<20}kappa {k['diff']:+.3f} "
+                f"[{k['ci95'][0]:+.3f} ; {k['ci95'][1]:+.3f}]   F1 macro {f['diff']:+.3f} "
+                f"[{f['ci95'][0]:+.3f} ; {f['ci95'][1]:+.3f}]   ({verdict} sur le kappa)"
+            )
     for kind, r in results.items():
         if r.get("converged") is False:
             print(
@@ -432,6 +444,7 @@ def save_results_json(
                 "fit_seconds": r["fit_seconds"],
                 "converged": r.get("converged"),
                 "n_iter": r.get("n_iter"),
+                "vs_baseline": r.get("vs_baseline"),
             }
             for kind, r in results.items()
         },

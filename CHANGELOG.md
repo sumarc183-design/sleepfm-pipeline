@@ -30,6 +30,10 @@ selon [SemVer](https://semver.org/lang/fr/).
   +0,32). Mêmes chiffres sur GPU (Kaggle) et CPU (Colab), à 0,001 près.
 
 ### Ajouté
+- Comparaison appariée de chaque sonde à la baseline, sur les mêmes nuits de
+  test (bootstrap sur les sujets) : écart de κ et de F1 macro avec son IC,
+  dans la sortie et le JSON (`vs_baseline`). Gain du BiGRU significatif
+  (κ +0,078 [+0,041 ; +0,117]), pas celui du MLP.
 - Intervalles de confiance à 95 % du kappa et du F1 macro par bootstrap sur
   les sujets de test.
 - Matrice de confusion de la baseline (sortie et JSON).

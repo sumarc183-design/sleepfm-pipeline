@@ -214,3 +214,42 @@ def test_bootstrap_ci_is_ordered_and_exact_on_perfect_predictions():
     noisy = np.where(np.random.default_rng(1).random(200) < 0.3, (y + 1) % 5, y)
     low, high = bootstrap_ci(y, noisy, subjects, n_boot=200)["macro_f1"]
     assert low <= high
+
+
+def test_paired_bootstrap_detects_a_real_gain_and_not_a_null_one():
+    from src.models.linear_probe import paired_bootstrap_diff
+
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 5, 2000)
+    subjects = np.repeat([f"s{i}" for i in range(20)], 100)
+    worse = np.where(rng.random(2000) < 0.4, (y + 1) % 5, y)
+    better = np.where(rng.random(2000) < 0.2, (y + 1) % 5, y)
+
+    gain = paired_bootstrap_diff(y, worse, better, subjects, n_boot=200)
+    assert gain["cohen_kappa"]["diff"] > 0 and gain["cohen_kappa"]["ci95"][0] > 0
+    assert gain["n_subjects"] == 20
+
+    same = paired_bootstrap_diff(y, worse, worse, subjects, n_boot=50)
+    assert same["cohen_kappa"]["diff"] == 0 and same["cohen_kappa"]["ci95"] == [0.0, 0.0]
+
+
+def test_compare_probes_reports_paired_gap_to_baseline():
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 5, 400)
+    X = rng.standard_normal((400, 8))
+    X[np.arange(400), y] += 2.0
+    groups = (np.repeat([f"s{i}" for i in range(8)], 50), np.tile(np.arange(50), 8))
+    train, test = slice(0, 300), slice(300, 400)
+    results = compare_probes(
+        ["logistic", "logistic_unweighted"],
+        X[train],
+        y[train],
+        X[test],
+        y[test],
+        train_groups=(groups[0][train], groups[1][train]),
+        test_groups=(groups[0][test], groups[1][test]),
+    )
+    assert "vs_baseline" not in results["logistic"]
+    paired = results["logistic_unweighted"]["vs_baseline"]
+    low, high = paired["cohen_kappa"]["ci95"]
+    assert low <= paired["cohen_kappa"]["diff"] <= high

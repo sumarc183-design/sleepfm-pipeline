@@ -207,6 +207,43 @@ def bootstrap_ci(
     }
 
 
+def paired_bootstrap_diff(
+    y_true: np.ndarray,
+    pred_a: np.ndarray,
+    pred_b: np.ndarray,
+    subjects: np.ndarray,
+    n_boot: int = 1000,
+    seed: int = 42,
+) -> dict:
+    """Écart b - a du kappa et du F1 macro, avec son IC à 95 %, par bootstrap
+    APPARIÉ sur les sujets : chaque tirage prend les mêmes nuits pour les deux
+    sondes. Bien plus précis que de comparer deux IC séparés, qui se
+    chevauchent presque toujours : la variabilité commune (nuits faciles ou
+    difficiles) s'annule dans la différence. Un écart dont l'IC exclut 0 est
+    significatif."""
+    rng = np.random.default_rng(seed)
+    unique = np.array(sorted(set(subjects)))
+    rows_of = {s: np.flatnonzero(subjects == s) for s in unique}
+    metrics = {"cohen_kappa": cohen_kappa_score, "macro_f1": lambda t, p: f1_score(t, p, average="macro")}
+    draws = {name: [] for name in metrics}
+    for _ in range(n_boot):
+        rows = np.concatenate([rows_of[s] for s in rng.choice(unique, len(unique), replace=True)])
+        for name, metric in metrics.items():
+            draws[name].append(metric(y_true[rows], pred_b[rows]) - metric(y_true[rows], pred_a[rows]))
+    result = {
+        name: {
+            "diff": float(metric(y_true, pred_b) - metric(y_true, pred_a)),
+            "ci95": [float(np.percentile(draws[name], 2.5)), float(np.percentile(draws[name], 97.5))],
+        }
+        for name, metric in metrics.items()
+    }
+    return result | {"n_boot": n_boot, "n_subjects": len(unique)}
+
+
+def predict_labels(model, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray] | None = None) -> np.ndarray:
+    return model.predict(X, groups) if getattr(model, "needs_groups", False) else model.predict(X)
+
+
 def evaluate_probe(
     model,
     X_test: np.ndarray,
@@ -216,10 +253,11 @@ def evaluate_probe(
 ) -> dict:
     """`with_ci=True` (et `groups` fourni) ajoute les intervalles de confiance
     par bootstrap sur les sujets : à réserver à l'évaluation finale."""
+    y_pred = predict_labels(model, X_test, groups)
     if getattr(model, "needs_groups", False):
-        y_pred, proba = model.predict(X_test, groups), model.predict_proba(X_test, groups)
+        proba = model.predict_proba(X_test, groups)
     else:
-        y_pred, proba = model.predict(X_test), model.predict_proba(X_test)
+        proba = model.predict_proba(X_test)
     results = {
         "accuracy": float((y_pred == y_test).mean()),
         "cohen_kappa": float(cohen_kappa_score(y_test, y_pred)),
@@ -329,8 +367,11 @@ def compare_probes(
 ) -> dict:
     """Entraîne chaque sonde sur le même train, l'évalue sur le train ET le
     test : l'écart (gap) train - test mesure le surapprentissage.
-    `*_groups` = (sujet, numéro d'époque) par ligne, requis par "sequence"."""
-    results = {}
+    `*_groups` = (sujet, numéro d'époque) par ligne, requis par "sequence".
+    Si la baseline "logistic" est évaluée, chaque autre sonde reçoit
+    "vs_baseline" : son écart à la baseline sur les mêmes nuits de test
+    (paired_bootstrap_diff)."""
+    results, test_preds = {}, {}
     for kind in kinds:
         start = time.time()
         model = train_probe(kind, X_train, y_train, max_iter=max_iter, seed=seed, device=device, groups=train_groups)
@@ -342,6 +383,13 @@ def compare_probes(
             "converged": getattr(model, "converged_", None),
             "n_iter": getattr(model, "n_iter_used_", None),
         }
+        test_preds[kind] = predict_labels(model, X_test, test_groups)
+    if "logistic" in results and test_groups is not None:
+        for kind in results:
+            if kind != "logistic":
+                results[kind]["vs_baseline"] = paired_bootstrap_diff(
+                    y_test, test_preds["logistic"], test_preds[kind], test_groups[0], seed=seed
+                )
     return results
 
 

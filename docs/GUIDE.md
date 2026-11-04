@@ -101,6 +101,12 @@ macro (bootstrap sur les sujets de test : on tire des nuits entières, pas des
 époques, qui ne sont pas indépendantes) et la **matrice de confusion** de la
 baseline. Hyperparamètres fixes, jamais réglés sur le test.
 
+**Comparaison appariée** : pour chaque sonde, l'écart de κ et de F1 macro à
+la baseline, avec son IC à 95 %, par bootstrap sur les **mêmes** nuits de
+test pour les deux sondes. Deux IC séparés se chevauchent presque toujours ;
+l'écart apparié retire la variabilité commune (nuits faciles ou
+difficiles). Un écart dont l'IC exclut 0 est significatif.
+
 **Baseline officielle et convergence** : le dépôt officiel entraîne
 `LogisticRegression(class_weight="balanced")` (`sleepfm/utils.py::train_model`).
 Son option `--max_iter` n'est pas transmise au modèle, qui garde 100

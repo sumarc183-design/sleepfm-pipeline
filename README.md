@@ -37,8 +37,10 @@ test n'a servi qu'une fois ; IC à 95 % par bootstrap sur les sujets de test.
 
 - **Le contexte de la nuit est le levier** : le BiGRU, qui voit les époques
   voisines, gagne +0,08 de κ sur la baseline et le meilleur F1 sur chaque
-  stade sauf l'éveil (REM 0,80 contre 0,68). Les IC se chevauchent : une
-  comparaison appariée sur les mêmes nuits reste à faire pour conclure.
+  stade sauf l'éveil (REM 0,80 contre 0,68). Le gain est **significatif** en
+  comparaison appariée (mêmes nuits de test, bootstrap sur les sujets) :
+  κ +0,078 [+0,041 ; +0,117], F1 macro +0,056 [+0,024 ; +0,086]. Celui du MLP
+  ne l'est pas : κ +0,015 [−0,005 ; +0,036].
 - **La ROC-AUC (un stade contre tous, moyennée) varie peu** (0,924 à 0,936) :
   les probabilités classent bien les époques pour toutes les sondes ; elles se
   distinguent sur la décision finale, que mesurent le κ et le F1.
@@ -56,7 +58,8 @@ test n'a servi qu'une fois ; IC à 95 % par bootstrap sur les sujets de test.
   les mêmes chiffres à 0,001 près.
 
 Sorties brutes dans [`results/`](results/) : texte, JSON (sujets de test,
-réglages, matrices de confusion) et le run CPU.
+réglages, matrices de confusion), le run CPU, et le run local avec la
+comparaison appariée (`…_paired`).
 
 Avant le 2026-11-04 : κ 0,584 (20 sujets) puis 0,622 (100 sujets, split
 75/25), avec la régression **non pondérée**, qui n'est pas le protocole
