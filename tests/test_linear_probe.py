@@ -302,3 +302,28 @@ def test_sequence_probe_class_weight_option():
     assert model.predict(X, groups).shape == (60,)
     with pytest.raises(ValueError):
         SequenceProbe(epochs=1, class_weight="inconnu").fit(X, y, groups)
+
+
+def test_nights_are_split_at_recording_gaps():
+    from src.models.sequence_probe import split_into_nights
+
+    subjects = np.array(["a"] * 4 + ["b"] * 2)
+    epoch_idx = np.array([0, 1, 2, 3, 0, 1])
+    onsets = np.array([0.0, 30.0, 900.0, 930.0, 0.0, 30.0])
+    segments = split_into_nights(subjects, epoch_idx, onsets)
+    assert [list(s) for s in segments] == [[0, 1], [2, 3], [4, 5]]
+    # Sans temps d'origine : une nuit = un segment.
+    assert len(split_into_nights(subjects, epoch_idx)) == 2
+    assert len(split_into_nights(subjects, epoch_idx, np.full(6, np.nan))) == 2
+
+
+def test_sequence_probe_accepts_onsets_and_keeps_nights_together():
+    from src.models.sequence_probe import SequenceProbe
+
+    rng = np.random.default_rng(0)
+    X, y = rng.standard_normal((120, 4)).astype(np.float32), rng.integers(0, 3, 120)
+    subjects = np.repeat([f"s{i}" for i in range(6)], 20)
+    epoch_idx = np.tile(np.arange(20), 6)
+    onsets = np.tile(np.r_[np.arange(10) * 30.0, 1200 + np.arange(10) * 30.0], 6)  # un trou par nuit
+    model = SequenceProbe(epochs=1).fit(X, y, (subjects, epoch_idx, onsets))
+    assert model.predict(X, (subjects, epoch_idx, onsets)).shape == (120,)

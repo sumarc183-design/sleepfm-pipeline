@@ -59,8 +59,9 @@ train − test. Résultats à jour : [README](../README.md#résultats).
 - **Variabilité** : avec 20 à 25 sujets de test, les chiffres peuvent varier
   de quelques centièmes selon le tirage des sujets ; d'où les intervalles de
   confiance par bootstrap sur les sujets.
-- **Résultats** (2026-11-04, protocole officiel) : κ 0,606 [0,545 ; 0,669]
-  pour la baseline, 0,684 [0,615 ; 0,739] pour le BiGRU. Les résultats du
+- **Résultats** (2026-11-04, protocole officiel, run de référence) : κ 0,607
+  [0,545 ; 0,669] pour la baseline, 0,685 [0,613 ; 0,740] pour le BiGRU
+  (0,666 à 0,684 sur 3 graines d'entraînement). Les résultats du
   2026-11-02/03 (κ 0,584 et 0,622) utilisaient une régression non pondérée.
 
 ## Considérations éthiques

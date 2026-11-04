@@ -118,32 +118,64 @@ def split_subjects_train_test(raw_dir: Path, test_fraction: float, seed: int) ->
     return split_subject_ids([p.name for p in raw_dir.iterdir() if p.is_dir()], test_fraction, seed)
 
 
+def validate_split(frozen: dict, source: str) -> None:
+    """Refuse un découpage incohérent : clés manquantes, doublons, ou sujet
+    présent à la fois en train et en test."""
+    if not isinstance(frozen, dict) or set(frozen) != {"train", "test"}:
+        raise SystemExit(f'{source} : attendu {{"train": [...], "test": [...]}}')
+    for role in ("train", "test"):
+        if not all(isinstance(s, str) for s in frozen[role]):
+            raise SystemExit(f"{source} : identifiants de sujets non textuels dans {role!r}")
+        duplicates = sorted({s for s in frozen[role] if frozen[role].count(s) > 1})
+        if duplicates:
+            raise SystemExit(f"{source} : sujet(s) en double dans {role!r} : {duplicates}")
+    overlap = sorted(set(frozen["train"]) & set(frozen["test"]))
+    if overlap:
+        raise SystemExit(f"{source} : sujet(s) à la fois en train et en test : {overlap}")
+
+
 def load_or_extend_split(
     path: Path | None, subjects: list[str], test_fraction: float, seed: int
 ) -> tuple[list[str], list[str]]:
     """Découpage figé dans un fichier JSON ({"train": [...], "test": [...]}).
-    Un sujet déjà listé garde toujours son rôle ; seuls les nouveaux sujets
-    sont répartis (même fraction, même graine) puis ajoutés au fichier. Passer
-    de 100 à 200 sujets ne change donc pas le rôle des 100 premiers. Sans
-    fichier (`path=None`), découpage aléatoire habituel."""
+    Un sujet déjà listé garde toujours son rôle. Les nouveaux sujets sont
+    répartis de façon à ramener la part du test à `test_fraction` sur
+    l'ensemble (tirés au hasard avec la graine), puis ajoutés au fichier,
+    écrit d'un bloc (fichier temporaire renommé). Passer de 100 à 200 sujets
+    ne change donc pas le rôle des 100 premiers. Sans fichier (`path=None`),
+    découpage aléatoire habituel."""
+    if not 0 < test_fraction < 1:
+        raise SystemExit(f"--test-fraction doit être entre 0 et 1 (reçu {test_fraction})")
     if path is None:
         return split_subject_ids(subjects, test_fraction, seed)
     frozen = json.loads(path.read_text()) if path.exists() else {"train": [], "test": []}
+    validate_split(frozen, str(path))
     known = set(frozen["train"]) | set(frozen["test"])
-    new = [s for s in subjects if s not in known]
+    new = sorted(set(subjects) - known)
     if new:
-        if frozen["train"] and not frozen["test"]:
-            raise SystemExit(f"{path} : aucun sujet de test, fichier incohérent")
-        new_train, new_test = split_subject_ids(new, test_fraction, seed) if len(new) > 1 else (new, [])
-        frozen = {"train": sorted(frozen["train"] + new_train), "test": sorted(frozen["test"] + new_test)}
+        total = len(known) + len(new)
+        n_test = min(len(new), max(0, round(total * test_fraction) - len(frozen["test"])))
+        rng = np.random.default_rng(seed)
+        new_test = set(rng.permutation(new)[:n_test].tolist())
+        frozen = {
+            "train": sorted(frozen["train"] + [s for s in new if s not in new_test]),
+            "test": sorted(frozen["test"] + sorted(new_test)),
+        }
+        validate_split(frozen, str(path))
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(frozen, indent=2) + "\n")
-        print(f"Découpage figé : {len(new)} nouveau(x) sujet(s) ajouté(s) à {path}")
+        tmp = path.with_suffix(".tmp.json")
+        tmp.write_text(json.dumps(frozen, indent=2) + "\n")
+        os.replace(tmp, path)
+        print(f"Découpage figé : {len(new)} nouveau(x) sujet(s) ajouté(s) à {path} ({len(new_test)} en test)")
     available = set(subjects)
     missing = sorted(known - available)
     if missing:
         print(f"ATTENTION : {len(missing)} sujet(s) du découpage figé indisponible(s), ignoré(s) : {missing[:5]}...")
-    return [s for s in frozen["train"] if s in available], [s for s in frozen["test"] if s in available]
+    train = [s for s in frozen["train"] if s in available]
+    test = [s for s in frozen["test"] if s in available]
+    if not train or not test:
+        raise SystemExit(f"{path} : aucun sujet disponible en {'train' if not train else 'test'}")
+    return train, test
 
 
 def split_subject_ids(subjects: list[str], test_fraction: float, seed: int) -> tuple[list[str], list[str]]:
@@ -159,10 +191,10 @@ def split_subject_ids(subjects: list[str], test_fraction: float, seed: int) -> t
 def collect_embeddings(
     encoders: SleepFMEncoders, processed_dir: Path, batch_size: int = 32, device: str = "cpu", num_workers: int = 0
 ):
-    """Renvoie X, y et groups = (sujet, numéro d'époque) de chaque ligne."""
+    """Renvoie X, y et groups = (sujet, numéro d'époque, début en s) de chaque ligne."""
     dataset = PhysioNet2018EpochDataset(processed_dir)
     X, y = embed_dataset(encoders, dataset, batch_size, device, num_workers)
-    return X, y, epoch_groups(dataset)
+    return X, y, (*epoch_groups(dataset), epoch_onsets(dataset, processed_dir))
 
 
 def epoch_groups(dataset: PhysioNet2018EpochDataset) -> tuple[np.ndarray, np.ndarray]:
@@ -274,6 +306,7 @@ def embed_subjects_in_chunks(
     batch_size: int,
     device: str,
     manifest: dict | None = None,
+    retry_skipped: bool = False,
 ) -> dict | None:
     """Traite les sujets par lots : brut -> époques -> embeddings, un
     <id>.npz par sujet dans embeddings_dir, puis supprime brut et époques.
@@ -293,9 +326,13 @@ def embed_subjects_in_chunks(
         leftover.unlink()  # écriture interrompue lors d'un run précédent
     for subject in subject_ids:
         cached = embeddings_dir / f"{subject}.npz"
-        if cached.exists() and not is_valid_cache(cached):
-            print(f"[{subject}] cache illisible (écriture interrompue ?) : supprimé, sera recalculé")
+        problem = cache_problem(cached) if cached.exists() else None
+        if problem:
+            print(f"[{subject}] cache inutilisable ({problem}) : supprimé, sera recalculé")
             cached.unlink()
+    if retry_skipped:
+        for marker in embeddings_dir.glob("*.skipped"):
+            marker.unlink()  # sujets rejetés retentés (après une correction de l'extraction)
     todo = [
         s
         for s in subject_ids
@@ -345,20 +382,57 @@ def embed_subjects_in_chunks(
     return manifest
 
 
-def is_valid_cache(path: Path) -> bool:
-    """Le .npz se relit en entier et X, y ont le même nombre de lignes."""
+EMBEDDING_DIM = 3 * 512  # respiratoire + stades + ECG
+
+
+def cache_problem(path: Path) -> str | None:
+    """Raison pour laquelle un cache d'embeddings est inutilisable, ou None.
+    Vérifie forme et dimension de X, valeurs finies, stades connus, et la
+    cohérence de epoch_idx (unique) et onset_s quand ils sont présents."""
     try:
         with np.load(path) as data:
-            return len(data["X"]) == len(data["y"]) > 0
-    except Exception:
-        return False
+            X, y = data["X"], data["y"]
+            n = len(y)
+            if n == 0:
+                return "aucune époque"
+            if X.ndim != 2 or X.shape != (n, EMBEDDING_DIM):
+                return f"X de forme {X.shape}, attendu ({n}, {EMBEDDING_DIM})"
+            if not np.isfinite(X).all():
+                return "X contient des valeurs non finies"
+            if not np.isin(y, list(STAGE_NAME_TO_LABEL.values())).all():
+                return f"stades inconnus : {sorted(set(y.tolist()) - set(STAGE_NAME_TO_LABEL.values()))}"
+            if "epoch_idx" in data:
+                idx = data["epoch_idx"]
+                if len(idx) != n or len(np.unique(idx)) != n:
+                    return "epoch_idx de mauvaise longueur ou avec doublons"
+                if "onset_s" in data:
+                    onsets = data["onset_s"]
+                    if len(onsets) != n:
+                        return "onset_s de mauvaise longueur"
+                    ordered = onsets[np.argsort(idx)]
+                    if np.isfinite(ordered).all() and (np.diff(ordered) <= 0).any():
+                        return "onset_s ne croît pas avec epoch_idx"
+    except Exception as exc:
+        return f"illisible ({exc.__class__.__name__})"
+    return None
+
+
+def is_valid_cache(path: Path) -> bool:
+    return cache_problem(path) is None
 
 
 def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
-    """Renvoie X, y et groups = (sujet, numéro d'époque) de chaque ligne."""
-    X, y, groups_subject, groups_epoch = [], [], [], []
+    """Renvoie X, y et groups = (sujet, numéro d'époque, début en s) de chaque
+    ligne. Le début (onset_s) vaut NaN pour un cache qui ne l'a pas : la nuit
+    est alors supposée continue. Un cache invalide arrête le run."""
+    X, y, groups_subject, groups_epoch, groups_onset = [], [], [], [], []
+    without_onsets = 0
     for subject in subjects:
-        with np.load(embeddings_dir / f"{subject}.npz") as data:
+        path = embeddings_dir / f"{subject}.npz"
+        problem = cache_problem(path)
+        if problem:
+            raise SystemExit(f"{path} : cache inutilisable ({problem})")
+        with np.load(path) as data:
             X.append(data["X"])
             y.append(data["y"])
             if "epoch_idx" in data:
@@ -369,9 +443,34 @@ def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
                 # l'extraction), on retrouve donc le numéro de chaque ligne.
                 n = len(data["y"])
                 epoch_idx = np.array(sorted(range(n), key=lambda i: f"{subject}_{i}.npy"))
+            onsets = data["onset_s"] if "onset_s" in data else np.full(len(epoch_idx), np.nan)
+        without_onsets += int(np.isnan(onsets).all())
         groups_subject.append(np.full(len(epoch_idx), subject))
         groups_epoch.append(epoch_idx)
-    return np.concatenate(X), np.concatenate(y), (np.concatenate(groups_subject), np.concatenate(groups_epoch))
+        groups_onset.append(onsets.astype(float))
+    if without_onsets:
+        print(
+            f"ATTENTION : {without_onsets} cache(s) sans temps d'origine (onset_s) : "
+            "nuits supposées continues, sans trou d'enregistrement"
+        )
+    groups = (np.concatenate(groups_subject), np.concatenate(groups_epoch), np.concatenate(groups_onset))
+    return np.concatenate(X), np.concatenate(y), groups
+
+
+def load_verified_split(
+    embeddings_dir: Path,
+    split_file: Path | None,
+    checkpoint: Path | None,
+    test_fraction: float = 0.2,
+    seed: int = 42,
+):
+    """Chargement commun aux scripts d'analyse : contrôle du manifeste du cache
+    (même checkpoint), découpage figé validé, caches vérifiés. Renvoie
+    (X_train, y_train, train_groups), (X_test, y_test, test_groups)."""
+    check_embeddings_manifest(embeddings_dir, embeddings_manifest(checkpoint), n_to_compute=0)
+    subjects = sorted(p.name.removesuffix(".npz") for p in embeddings_dir.glob("*.npz") if ".tmp." not in p.name)
+    train, test = load_or_extend_split(split_file, subjects, test_fraction, seed)
+    return load_cached_embeddings(embeddings_dir, train), load_cached_embeddings(embeddings_dir, test)
 
 
 def select_and_evaluate(args, X_train, y_train, train_groups, X_test, y_test, test_groups) -> tuple[dict, dict | None]:
@@ -625,6 +724,8 @@ def save_test_predictions(path: Path, results: dict, y_test: np.ndarray, test_gr
     époque, avec le sujet et le numéro d'époque : IC, comparaisons appariées
     et analyse d'erreurs se recalculent sans réentraîner (environ 1 Mo)."""
     arrays = {"y_true": y_test, "subject": np.asarray(test_groups[0]), "epoch_idx": np.asarray(test_groups[1])}
+    if len(test_groups) > 2:
+        arrays["onset_s"] = np.asarray(test_groups[2])
     for kind, r in results.items():
         out = r.get("test_outputs")
         if out is not None:
@@ -666,7 +767,16 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         args.batch_size,
         args.device,
         manifest=embeddings_manifest(args.checkpoint),
+        retry_skipped=args.retry_skipped,
     )
+    if args.embed_only:
+        n_done = sum((args.embeddings_dir / f"{s}.npz").exists() for s in subject_ids)
+        n_rejected = sum((args.embeddings_dir / f"{s}.skipped").exists() for s in subject_ids)
+        print(
+            f"Embeddings seulement : {n_done} sujet(s) en cache, {n_rejected} rejeté(s), dans {args.embeddings_dir}. "
+            "Sondes à lancer ensuite, sans GPU, sur ce dossier."
+        )
+        return
 
     cached = [s for s in subject_ids if (args.embeddings_dir / f"{s}.npz").exists()]
     n_skipped = len(subject_ids) - len(cached)
@@ -743,6 +853,17 @@ def main() -> None:
     )
     parser.add_argument("--chunk-size", type=int, default=8, help="Sujets par lot en mode --embeddings-dir")
     parser.add_argument(
+        "--embed-only",
+        action="store_true",
+        help="Mode par lots : calcule seulement les embeddings, sans entraîner les sondes. Sur GPU loué ou "
+        "à quota (Kaggle, Colab), les sondes tournent ensuite sur CPU à partir du cache : GPU économisé.",
+    )
+    parser.add_argument(
+        "--retry-skipped",
+        action="store_true",
+        help="Mode par lots : retente les sujets rejetés (<sujet>.skipped), par exemple après une correction",
+    )
+    parser.add_argument(
         "--split-file",
         type=Path,
         default=None,
@@ -793,6 +914,8 @@ def main() -> None:
         parser.error("--physionet-subjects nécessite --embeddings-dir")
     if args.physionet_subjects and args.raw_data is not None:
         parser.error("--physionet-subjects et --raw-data sont exclusifs")
+    if args.embed_only and args.embeddings_dir is None:
+        parser.error("--embed-only demande --embeddings-dir (mode par lots)")
 
     is_synthetic = args.raw_data is None
     is_random_checkpoint = args.checkpoint is None

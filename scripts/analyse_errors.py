@@ -27,6 +27,7 @@ from sklearn.metrics import cohen_kappa_score, confusion_matrix
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data.epoch_dataset import STAGE_NAME_TO_LABEL  # noqa: E402
+from src.models.sequence_probe import split_into_nights  # noqa: E402
 
 STAGES = {0: "Wake", 1: "N1", 2: "N2", 3: "N3", 4: "REM"}
 assert set(STAGES) == set(STAGE_NAME_TO_LABEL.values())
@@ -76,11 +77,17 @@ def main() -> None:
 
     data = np.load(args.predictions)
     y, subjects, epoch_idx = data["y_true"], data["subject"], data["epoch_idx"]
+    onsets = data["onset_s"] if "onset_s" in data.files else None
+    segments = split_into_nights(subjects, epoch_idx, onsets)  # coupés aux trous d'enregistrement
+    if onsets is None or np.isnan(onsets).any():
+        gaps_note = "temps d'origine absents : nuits supposées continues"
+    else:
+        gaps_note = f"{len(segments) - len(set(subjects))} trou(s) d'enregistrement pris en compte"
     ref, probe = data[f"pred_{args.reference}"], data[f"pred_{args.probe}"]
     names = {args.reference: ref, args.probe: probe}
     width = 100
     print("=" * width)
-    print(f"Analyse des erreurs : {args.probe} contre {args.reference} ({len(y)} époques de test)")
+    print(f"Analyse des erreurs : {args.probe} contre {args.reference} ({len(y)} époques de test ; {gaps_note})")
     print("-" * width)
     print_confusions(y, names)
 
@@ -88,8 +95,9 @@ def main() -> None:
     print("2. Kappa par nuit (trié par gain)")
     per_night = []
     distance = np.zeros(len(y), dtype=int)
-    for rows in nights(subjects, epoch_idx):
+    for rows in segments:  # aucune transition comptée à travers un trou d'enregistrement
         distance[rows] = distance_to_transition(y[rows])
+    for rows in nights(subjects, epoch_idx):
         k_ref, k_probe = cohen_kappa_score(y[rows], ref[rows]), cohen_kappa_score(y[rows], probe[rows])
         n1 = (y[rows] == 1).mean()
         per_night.append((subjects[rows[0]], len(rows), k_ref, k_probe, n1))

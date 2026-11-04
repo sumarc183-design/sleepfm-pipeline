@@ -24,31 +24,40 @@ flowchart LR
 
 ## Résultats
 
-100 sujets PhysioNet 2018, split 80/20 **par sujet** (80 nuits d'entraînement,
-20 de test, 17 818 époques de test), embeddings SleepFM figés, 2026-11-04. Le
-test ne sert jamais au choix d'un modèle ou d'un réglage, mais les mêmes 20
-nuits ont été évaluées par plusieurs runs successifs ; IC à 95 % par bootstrap
+100 sujets PhysioNet 2018, découpage **par sujet** figé
+([`configs/split_physionet2018.json`](configs/split_physionet2018.json) :
+80 nuits d'entraînement, 20 de test, 17 818 époques de test), embeddings
+SleepFM figés. Run de référence du 2026-11-04
+([`results/…_auprc`](results/results_physionet2018_100_auprc.txt), avec les
+prédictions du test époque par époque). Le test ne sert à aucun choix de
+modèle ou de réglage, mais les mêmes 20 nuits ont été évaluées par plusieurs
+runs : les analyses ci-dessous restent exploratoires. IC à 95 % par bootstrap
 sur les sujets de test.
 
-| Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | ROC-AUC | Gap F1 train − test |
-|---|---|---|---|---|---|
-| **Régression logistique pondérée** (baseline officielle) | 0,693 | **0,606** [0,545 ; 0,669] | 0,683 [0,628 ; 0,728] | 0,925 | +0,070 |
-| Régression logistique non pondérée | 0,738 | 0,646 [0,579 ; 0,703] | 0,698 [0,643 ; 0,741] | 0,927 | +0,062 |
-| MLP (retenu face à XGBoost) | 0,714 | 0,623 [0,555 ; 0,685] | 0,683 [0,629 ; 0,726] | 0,924 | +0,085 |
-| **BiGRU sur la nuit** | **0,764** | **0,684** [0,615 ; 0,739] | **0,737** [0,673 ; 0,779] | **0,936** | +0,057 |
+| Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | ROC-AUC | AUPRC | Gap F1 train − test |
+|---|---|---|---|---|---|---|
+| **Régression logistique pondérée** (baseline officielle) | 0,694 | **0,607** [0,545 ; 0,669] | 0,683 [0,629 ; 0,729] | 0,925 | 0,770 | +0,069 |
+| Régression logistique non pondérée | 0,737 | 0,645 [0,577 ; 0,702] | 0,697 [0,642 ; 0,741] | 0,927 | 0,771 | +0,064 |
+| MLP (retenu face à XGBoost) | 0,714 | 0,623 [0,556 ; 0,684] | 0,683 [0,629 ; 0,726] | 0,924 | 0,762 | +0,084 |
+| **BiGRU sur la nuit** | **0,765** | **0,685** [0,613 ; 0,740] | **0,739** [0,674 ; 0,784] | **0,936** | **0,801** | +0,055 |
 
-- **Le contexte de la nuit est le levier** : le BiGRU, qui voit les époques
-  voisines, gagne +0,08 de κ sur la baseline et le meilleur F1 sur chaque
-  stade sauf l'éveil (REM 0,80 contre 0,68). Le gain est **significatif** en
-  comparaison appariée (mêmes nuits de test, bootstrap sur les sujets) :
-  κ +0,078 [+0,041 ; +0,117], F1 macro +0,056 [+0,024 ; +0,086]. Celui du MLP
-  ne l'est pas : κ +0,015 [−0,005 ; +0,036].
-- **Le gain vient du contexte, pour moitié de l'ordre chronologique**
-  ([ablation](results/ablation_sequence_physionet2018_100.txt)) : il grandit
-  avec le contexte lu à la prédiction (κ +0,04 avec 5 min, +0,07 avec 1 h,
-  +0,08 avec la nuit). Avec les époques mélangées dans chaque nuit, il reste
-  +0,04 : voir toute la nuit du sujet aide déjà, l'ordre apporte le reste,
-  notamment sur N1 (F1 0,42 mélangé contre 0,52). Le BiGRU lit aussi les
+AUPRC = *average precision* (scikit-learn), un stade contre tous, moyennée.
+
+- **Le contexte de la nuit est le levier** : le gain du BiGRU sur la baseline
+  est **significatif** en comparaison appariée (mêmes nuits, bootstrap sur les
+  sujets) : κ +0,078 [+0,042 ; +0,114], F1 macro +0,056 [+0,026 ; +0,085].
+  Celui du MLP ne l'est pas : κ +0,016 [−0,006 ; +0,038].
+- **Il tient d'une graine à l'autre, avec une marge**
+  ([ablation, 3 graines](results/ablation_sequence_physionet2018_100.txt)) :
+  κ du BiGRU de 0,666 à 0,684, gain de +0,060 à +0,077, significatif à
+  chaque fois. Le 0,685 du run de référence est donc plutôt haut ; compter
+  environ ±0,01 de variation due à l'entraînement.
+- **D'où vient le gain** : il grandit avec le contexte lu à la prédiction
+  (+0,02 à +0,03 avec 5 min, +0,06 à +0,07 avec 1 h, +0,06 à +0,08 avec la
+  nuit). Avec les époques mélangées dans chaque nuit, il reste +0,03 à +0,04 :
+  voir toute la nuit du sujet aide déjà. L'ordre chronologique ajoute
+  +0,02 à +0,04 en comparaison directe, significatif sur une graine sur trois
+  seulement : sa part exacte n'est pas établie. Le BiGRU lit aussi les
   époques futures : analyse après l'enregistrement, pas temps réel.
 - **Où le BiGRU gagne** ([analyse des erreurs](results/errors_sequence_vs_logistic_physionet2018_100.txt)) :
   surtout sur N2, que la baseline confond avec N3, N1 et REM (N2 bien classé :
@@ -56,36 +65,36 @@ sur les sujets de test.
   (+0,07 à +0,10 de précision), presque pas aux changements de stade (+0,01),
   qui restent le point dur (55 % de précision, 21 % des époques). 17 nuits de
   test sur 20 progressent (gain médian de κ +0,06).
-- **N1 : meilleur F1, mais rappel en baisse** (0,47 contre 0,53) : le BiGRU
-  prédit moins souvent N1 à tort, mais lisse davantage les vraies époques N1
-  en éveil (873 contre 718). Deux nuits restent mauvaises pour les deux
-  modèles (κ ≈ 0,34), à examiner.
+- **N1 : pas de gain établi.** Dans le run de référence, F1 0,52 contre 0,51
+  pour la baseline, mais 0,46 à 0,48 sur les 3 graines de l'ablation. Le
+  rappel baisse (0,47 contre 0,53) : le BiGRU lisse davantage les vraies
+  époques N1 en éveil (873 contre 718). Deux nuits restent mauvaises pour les
+  deux modèles (κ ≈ 0,34), à examiner.
 - **Pondérer les stades dans le BiGRU ne paie pas**
   ([essai](results/bigru_pondere_physionet2018_100.txt)) : le rappel de N1
   remonte (0,58 contre 0,47) mais son F1 ne bouge pas (0,52), N2 recule
   (0,74 contre 0,83) et le κ perd 0,056 [−0,083 ; −0,033]. Même compromis que
   pour la régression logistique : le BiGRU reste non pondéré.
-- **La ROC-AUC (un stade contre tous, moyennée) varie peu** (0,924 à 0,936) :
-  les probabilités classent bien les époques pour toutes les sondes ; elles se
-  distinguent sur la décision finale, que mesurent le κ et le F1.
-- **Une frontière non linéaire n'apporte rien** : le MLP fait jeu égal avec la
-  régression logistique. XGBoost, un peu moins bon en validation croisée
-  (F1 0,669 contre 0,672), est en plus éliminé pour surapprentissage (gap F1
-  +0,32).
+- **La ROC-AUC varie peu** (0,924 à 0,936) : les probabilités classent bien
+  les époques pour toutes les sondes ; elles se distinguent sur la décision
+  finale, que mesurent le κ et le F1.
+- **Le MLP essayé n'apporte rien** : il fait jeu égal avec la régression
+  logistique (une autre architecture non linéaire n'est pas exclue). XGBoost,
+  un peu moins bon en validation croisée (F1 0,669 contre 0,672), est en plus
+  éliminé pour surapprentissage (gap F1 +0,32).
 - **Pondérer les classes déplace les erreurs** : la baseline officielle
   reconnaît mieux N1 (F1 0,51 contre 0,45), mais confond davantage N2 avec
-  N3, N1 et REM, d'où un κ plus bas (0,606 contre 0,646).
+  N3, N1 et REM, d'où un κ plus bas (0,607 contre 0,645).
 - **N1 reste le stade le plus difficile** (F1 ≈ 0,51), confondu surtout avec
-  l'éveil (715 époques sur 2 571) et le REM (304). C'est aussi le stade le
+  l'éveil (718 époques sur 2 571) et le REM (308). C'est aussi le stade le
   moins concordant entre experts humains.
-- **Reproductible** : le même run sur GPU (Kaggle) et sur CPU (Colab) donne
-  les mêmes chiffres à 0,001 près.
+- **Reproductible** : un même run donne les mêmes chiffres sur GPU (Kaggle)
+  et sur CPU (Colab, Mac), à 0,001 près.
 
-Sorties brutes dans [`results/`](results/) : texte, JSON (sujets de test,
-réglages, matrices de confusion), le run CPU, le run local avec la
-comparaison appariée (`…_paired`), celui avec l'AUPRC et le BiGRU corrigé
-(`…_auprc`, avec les prédictions du test époque par époque) et l'ablation du
-contexte.
+Sorties brutes dans [`results/`](results/) : texte, JSON (sujets, réglages,
+matrices de confusion), prédictions du test, ablation (avec ses prédictions)
+et analyse d'erreurs. Runs antérieurs gardés pour l'historique : `…_100`
+(Kaggle), `…_cpu`, `…_paired`.
 
 Avant le 2026-11-04 : κ 0,584 (20 sujets) puis 0,622 (100 sujets, split
 75/25), avec la régression **non pondérée**, qui n'est pas le protocole
@@ -94,8 +103,11 @@ officiel ([détail](results/results_physionet2018_100_v0.1.0_non_pondere.txt)).
 ### Comparaison à l'article
 
 L'article SleepFM 2024 ([Thapa et al., ICML 2024](https://arxiv.org/abs/2405.17766),
-section 4.6, tableau 8) évalue le même checkpoint sur PhysioNet 2018, en
-validation externe, avec 100 participants en test. Ses résultats principaux
+section 4.6, tableau 8) évalue SleepFM sur PhysioNet 2018, en validation
+externe, avec 100 participants en test. Nous utilisons le checkpoint public
+`best.pt` du dépôt officiel ; rien ne garantit qu'il soit identique aux
+poids de l'article (son empreinte SHA-256 est enregistrée dans le manifeste
+du cache). Ses résultats principaux
 portent sur les données internes de Stanford, non publiques ; MESA n'y
 apparaît pas. Il ne publie pas de κ sur PhysioNet 2018.
 
@@ -117,9 +129,8 @@ apparaît pas. Il ne publie pas de κ sur PhysioNet 2018.
   découpage, et l'article ne précise ni le nombre de nuits d'entraînement ni
   la sonde utilisée pour cette évaluation.
 
-Chiffres du run local
-([`results/…_auprc`](results/results_physionet2018_100_auprc.txt), mêmes
-nuits que le tableau ci-dessus, écarts d'au plus 0,002). La sortie du script
+Chiffres du run de référence ci-dessus. L'AUPRC de l'article n'indique pas
+sa méthode de calcul ; la nôtre est l'*average precision*. La sortie du script
 compare la baseline au tableau 8 stade par stade. Sondes et règle de
 sélection : [guide](docs/GUIDE.md#sondes-et-sélection-de-modèle).
 

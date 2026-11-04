@@ -41,17 +41,32 @@ class _BiGRUTagger(nn.Module):
         return self.classify(out)
 
 
-def split_into_nights(subjects: np.ndarray, epoch_idx: np.ndarray) -> list[np.ndarray]:
-    """Indices de lignes de chaque nuit, triés par numéro d'époque."""
-    nights = []
+EPOCH_SECONDS = 30.0
+MAX_STEP_SECONDS = EPOCH_SECONDS + 1.0  # au-delà : trou d'enregistrement
+
+
+def split_into_nights(
+    subjects: np.ndarray, epoch_idx: np.ndarray, onset_s: np.ndarray | None = None
+) -> list[np.ndarray]:
+    """Indices de lignes de chaque segment continu, triés par numéro d'époque.
+    Sans temps d'origine (`onset_s` absent ou NaN), une nuit = un segment.
+    Avec, la nuit est coupée là où deux époques consécutives sont séparées de
+    plus de 31 s : le BiGRU ne relie pas deux époques de part et d'autre d'une
+    période retirée (non annotée)."""
+    segments = []
     for subject in dict.fromkeys(subjects):  # ordre d'apparition, déterministe
         rows = np.flatnonzero(subjects == subject)
-        nights.append(rows[np.argsort(epoch_idx[rows], kind="stable")])
-    return nights
+        rows = rows[np.argsort(epoch_idx[rows], kind="stable")]
+        if onset_s is None or np.isnan(onset_s[rows]).any():
+            segments.append(rows)
+            continue
+        breaks = np.flatnonzero(np.diff(onset_s[rows]) > MAX_STEP_SECONDS) + 1
+        segments += [part for part in np.split(rows, breaks) if len(part)]
+    return segments
 
 
 class SequenceProbe:
-    needs_groups = True  # predict/predict_proba prennent (sujets, numéros d'époque)
+    needs_groups = True  # predict/predict_proba prennent (sujets, numéros d'époque[, débuts en s])
 
     def __init__(
         self,
@@ -96,17 +111,22 @@ class SequenceProbe:
             lengths = torch.tensor([len(w) for w in batch])
             yield torch.from_numpy(xb).to(self.device), torch.from_numpy(yb).to(self.device), lengths
 
-    def fit(self, X: np.ndarray, y: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> SequenceProbe:
+    def fit(self, X: np.ndarray, y: np.ndarray, groups: tuple) -> SequenceProbe:
         torch.manual_seed(self.seed)
         rng = np.random.default_rng(self.seed)
         self.classes_, y_encoded = np.unique(y, return_inverse=True)
-        nights = split_into_nights(*groups)
+        segments = split_into_nights(*groups)
 
-        # Arrêt précoce sur ~10 % des nuits du TRAIN (jamais le test).
-        order = rng.permutation(len(nights))
-        n_val = max(1, len(nights) // 10) if len(nights) >= 5 else 0
-        val_nights = [nights[i] for i in order[:n_val]]
-        train_nights = [nights[i] for i in order[n_val:]]
+        # Arrêt précoce sur ~10 % des nuits du TRAIN (jamais le test), tirées
+        # par sujet : tous les segments d'une nuit vont du même côté.
+        subjects = list(dict.fromkeys(groups[0]))
+        order = rng.permutation(len(subjects))
+        n_val = max(1, len(subjects) // 10) if len(subjects) >= 5 else 0
+        by_subject: dict = {}
+        for rows in segments:
+            by_subject.setdefault(groups[0][rows[0]], []).append(rows)
+        val_nights = [rows for i in order[:n_val] for rows in by_subject[subjects[i]]]
+        train_nights = [rows for i in order[n_val:] for rows in by_subject[subjects[i]]]
 
         self.model_ = _BiGRUTagger(X.shape[1], self.hidden_dim, len(self.classes_), self.dropout).to(self.device)
         optimizer = torch.optim.AdamW(self.model_.parameters(), lr=self.lr, weight_decay=1e-2)
@@ -149,7 +169,7 @@ class SequenceProbe:
         return self.model_(torch.from_numpy(X_night.astype(np.float32))[None].to(self.device))[0]
 
     @torch.no_grad()
-    def predict_proba(self, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+    def predict_proba(self, X: np.ndarray, groups: tuple) -> np.ndarray:
         proba = np.zeros((len(X), len(self.classes_)), dtype=np.float32)
         for night in split_into_nights(*groups):
             step = self.context or len(night)  # par défaut, nuit entière d'un coup
@@ -158,5 +178,5 @@ class SequenceProbe:
                 proba[rows] = torch.softmax(self._logits(X[rows]), dim=-1).cpu().numpy()
         return proba
 
-    def predict(self, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+    def predict(self, X: np.ndarray, groups: tuple) -> np.ndarray:
         return self.classes_[self.predict_proba(X, groups).argmax(axis=1)]

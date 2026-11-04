@@ -17,6 +17,9 @@ selon [SemVer](https://semver.org/lang/fr/).
   cache ; **raison des rejets** enregistrée.
 - **BiGRU pondéré** : option `class_weight="balanced"` de la sonde
   séquentielle et `scripts/compare_weighted_sequence.py`.
+- **`--embed-only`** (mode par lots) : calcule seulement les embeddings. Le
+  notebook l'active par défaut : le GPU ne sert qu'à SleepFM, les sondes
+  tournent ensuite sur le Mac (~20 à 25 min de GPU économisées par run).
 - **Notebook** : 200 sujets par défaut, dans `physionet2018_v2` avec le
   découpage figé ; sur Kaggle, n'importe que des embeddings au même
   prétraitement, et place prédictions et zip des embeddings dans `Output`.
@@ -32,6 +35,25 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Découpage figé validé** : sujet en double ou à la fois en train et en
+  test refusé ; écriture atomique ; les nouveaux sujets ramènent la part du
+  test à la fraction voulue (ajoutés un par un, ils allaient tous au train).
+- **Caches vérifiés** : dimension, valeurs finies, stades connus, numéros
+  d'époque uniques et temps croissants ; un cache invalide arrête le run.
+- **Fin d'extraction** : fichiers de stades et de temps écrits de façon
+  atomique et relus avant de sauter un sujet ; `--retry-skipped` retente les
+  sujets rejetés.
+- **Trous d'enregistrement** : le BiGRU et l'analyse d'erreurs coupent la
+  nuit quand deux époques consécutives sont séparées de plus de 31 s (temps
+  d'origine `onset_s`) ; sans ces temps (caches actuels), la nuit est
+  supposée continue, avec un avertissement.
+- **Scripts d'analyse** (ablation, BiGRU pondéré) : même chargement vérifié
+  que le run principal (manifeste, découpage figé, caches).
+- **Notebook** : s'arrête en erreur si le run n'a rien produit (le `| tee`
+  masquait le code d'erreur).
+- **Doc** : un seul run de référence dans le README ; formulations
+  nuancées (checkpoint public non certifié identique à celui de l'article,
+  « MLP essayé » plutôt que « frontière non linéaire »).
 - **Début utile de l'enregistrement** (prétraitement version 2) : fin de la
   période « undefined » initiale, colonne désignée par son nom, comme le code
   officiel, au lieu du premier changement de la dernière colonne (« wake »).
@@ -72,9 +94,12 @@ selon [SemVer](https://semver.org/lang/fr/).
   baseline officielle ROC-AUC 0,925 / AUPRC 0,770 / F1 0,683, contre
   0,924 / 0,759 / 0,700 publiés. Le profil du F1 par stade de la logistique
   non pondérée est le plus proche de l'article.
-- Ablation du BiGRU : κ +0,078 sur la baseline avec la nuit entière, +0,070
-  avec 1 h, +0,039 avec 5 min ; +0,041 avec l'ordre mélangé. Environ la
-  moitié du gain vient de l'ordre chronologique.
+- Ablation du BiGRU sur 3 graines : gain de κ sur la baseline de +0,060 à
+  +0,077 avec la nuit entière (toujours significatif), +0,03 à +0,04 avec
+  l'ordre mélangé. L'ordre chronologique ajoute +0,02 à +0,04 en comparaison
+  directe, significatif sur une graine sur trois : sa part exacte n'est pas
+  établie (l'estimation « la moitié du gain » d'une seule graine est retirée).
+  F1 de N1 du BiGRU : 0,46 à 0,48 selon la graine, pas de gain établi.
 - Erreurs du BiGRU : gain surtout sur N2 et au milieu des segments stables,
   presque nul aux changements de stade ; rappel de N1 en baisse (0,47 contre
   0,53), plus souvent lissé en éveil.

@@ -106,6 +106,30 @@ def reject(path_to_save: str, subject_id: str, reason: str) -> None:
         f.write(reason + "\n")
 
 
+def is_extracted(path_to_x: str, path_to_y: str, path_to_t: str) -> bool:
+    """Sujet complètement extrait : Y et T se relisent, et chaque époque
+    listée dans Y existe dans X. Un Y vide ou tronqué ne suffit pas."""
+    try:
+        with open(path_to_y, "rb") as f:
+            labels = pickle.load(f)
+        with open(path_to_t) as f:
+            onsets = json.load(f)
+    except Exception:
+        return False
+    if not labels or set(labels) != set(onsets) or not os.path.isdir(path_to_x):
+        return False
+    return set(labels) <= set(os.listdir(path_to_x))
+
+
+def write_atomic(path: str, write) -> None:
+    """Écrit dans un fichier temporaire puis renomme : une interruption ne
+    laisse jamais un fichier tronqué sous le nom final."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f"{path}.tmp"
+    write(tmp)
+    os.replace(tmp, path)
+
+
 def process_labels_to_events(labels: np.ndarray) -> List[list]:
     """Regroupe les labels one-hot par échantillon en segments
     (début, durée, id_stade).
@@ -141,10 +165,14 @@ def process_one_subject(
     path_to_x = os.path.join(path_to_save, "X", subject_id)
     path_to_y = os.path.join(path_to_save, "Y", f"{subject_id}.pickle")
     path_to_t = os.path.join(path_to_save, "T", f"{subject_id}.json")
-    if os.path.exists(path_to_y):
-        return  # déjà traité (Y est écrit en dernier)
+    if is_extracted(path_to_x, path_to_y, path_to_t):
+        return  # déjà traité
+    # Extraction interrompue ou incohérente : on recommence ce sujet.
+    for leftover in (path_to_y, path_to_t):
+        if os.path.exists(leftover):
+            os.remove(leftover)
     if os.path.exists(path_to_x):
-        shutil.rmtree(path_to_x)  # extraction interrompue : on recommence ce sujet
+        shutil.rmtree(path_to_x)
 
     try:
         channel_names, sample_rate, _ = import_signal_names(hea_path)
@@ -216,11 +244,16 @@ def process_one_subject(
         # (époques « undefined » retirées en cours de nuit).
         onsets[file_name] = start / sample_rate + float(epochs.events[idx, 0]) / raw.info["sfreq"]
 
-    os.makedirs(os.path.dirname(path_to_t), exist_ok=True)
-    with open(path_to_t, "w") as f:
-        json.dump(onsets, f)
-    with open(path_to_y, "wb") as f:  # en dernier : marque le sujet comme terminé
-        pickle.dump(labels_out, f)
+    def dump_json(tmp):
+        with open(tmp, "w") as f:
+            json.dump(onsets, f)
+
+    def dump_pickle(tmp):
+        with open(tmp, "wb") as f:
+            pickle.dump(labels_out, f)
+
+    write_atomic(path_to_t, dump_json)
+    write_atomic(path_to_y, dump_pickle)  # en dernier : marque le sujet comme terminé
 
 
 def _worker(args: tuple) -> None:

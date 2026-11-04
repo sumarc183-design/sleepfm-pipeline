@@ -1,9 +1,35 @@
-80 nuits train / 20 test, 71458 / 17818 époques
---------------------------------------------------------------------------------------------------------
-Variante                                      Kappa  F1 macro  F1 N1   écart κ à la baseline [IC 95 %]
-Baseline officielle (logistique pondérée)     0.607     0.683  0.508
-Contexte à la prédiction : nuit entière       0.685     0.739  0.518   +0.078 [+0.042 ; +0.114] significatif
-Contexte à la prédiction : blocs d'1 h        0.677     0.733  0.511   +0.070 [+0.036 ; +0.104] significatif
-Contexte à la prédiction : blocs de 5 min     0.647     0.705  0.489   +0.039 [+0.011 ; +0.073] significatif
-Contexte à la prédiction : 1 époque           0.490     0.522  0.352   -0.117 [-0.181 ; -0.051] significatif
-Ordre mélangé (entraînement et test)          0.648     0.698  0.424   +0.041 [+0.020 ; +0.067] significatif
+ATTENTION : cache fait avec preprocessing_version=1 (code actuel : preprocessing_version=2) ; résultats valables pour cette version du cache
+ATTENTION : 80 cache(s) sans temps d'origine (onset_s) : nuits supposées continues, sans trou d'enregistrement
+ATTENTION : 20 cache(s) sans temps d'origine (onset_s) : nuits supposées continues, sans trou d'enregistrement
+80 nuits train / 20 test, 17818 époques de test
+================================================================================================================
+Baseline officielle (logistique pondérée) : κ 0.607, F1 macro 0.683, F1 N1 0.507
+----------------------------------------------------------------------------------------------------------------
+Graine 42
+  Variante                                      Kappa  F1 macro  F1 N1   écart κ à la baseline [IC 95 %]
+  Contexte à la prédiction : nuit entière       0.684     0.731  0.484   +0.077 [+0.048 ; +0.107]
+  Contexte à la prédiction : blocs d'1 h        0.674     0.725  0.476   +0.068 [+0.038 ; +0.098]
+  Contexte à la prédiction : blocs de 5 min     0.640     0.693  0.444   +0.033 [+0.003 ; +0.066]
+  Contexte à la prédiction : 1 époque           0.488     0.513  0.296   -0.119 [-0.184 ; -0.052]
+  Ordre mélangé (entraînement et test)          0.646     0.693  0.416   +0.039 [+0.003 ; +0.077]
+  Ordre réel moins ordre mélangé (nuit entière) : κ +0.038 [+0.008 ; +0.064], F1 macro +0.038 [+0.012 ; +0.061]
+----------------------------------------------------------------------------------------------------------------
+Graine 43
+  Variante                                      Kappa  F1 macro  F1 N1   écart κ à la baseline [IC 95 %]
+  Contexte à la prédiction : nuit entière       0.672     0.723  0.473   +0.065 [+0.025 ; +0.110]
+  Contexte à la prédiction : blocs d'1 h        0.664     0.717  0.468   +0.057 [+0.018 ; +0.099]
+  Contexte à la prédiction : blocs de 5 min     0.629     0.684  0.447   +0.023 [-0.016 ; +0.062]
+  Contexte à la prédiction : 1 époque           0.469     0.489  0.319   -0.137 [-0.218 ; -0.065]
+  Ordre mélangé (entraînement et test)          0.639     0.696  0.437   +0.032 [+0.000 ; +0.066]
+  Ordre réel moins ordre mélangé (nuit entière) : κ +0.033 [+0.000 ; +0.067], F1 macro +0.028 [-0.000 ; +0.055]
+----------------------------------------------------------------------------------------------------------------
+Graine 44
+  Variante                                      Kappa  F1 macro  F1 N1   écart κ à la baseline [IC 95 %]
+  Contexte à la prédiction : nuit entière       0.666     0.718  0.456   +0.060 [+0.030 ; +0.086]
+  Contexte à la prédiction : blocs d'1 h        0.663     0.716  0.454   +0.057 [+0.029 ; +0.082]
+  Contexte à la prédiction : blocs de 5 min     0.634     0.689  0.421   +0.028 [-0.000 ; +0.057]
+  Contexte à la prédiction : 1 époque           0.485     0.516  0.258   -0.122 [-0.189 ; -0.058]
+  Ordre mélangé (entraînement et test)          0.649     0.704  0.449   +0.042 [+0.007 ; +0.083]
+  Ordre réel moins ordre mélangé (nuit entière) : κ +0.017 [-0.029 ; +0.057], F1 macro +0.014 [-0.025 ; +0.045]
+Prédictions des variantes : results/ablation_sequence_physionet2018_100.predictions.npz
+================================================================================================================

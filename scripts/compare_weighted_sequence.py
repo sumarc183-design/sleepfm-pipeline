@@ -20,7 +20,7 @@ from sklearn.metrics import cohen_kappa_score, f1_score, precision_score, recall
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from run_baseline import load_cached_embeddings, load_or_extend_split  # noqa: E402
+from run_baseline import load_verified_split  # noqa: E402
 from src.models.linear_probe import paired_bootstrap_diff  # noqa: E402
 from src.models.sequence_probe import SequenceProbe  # noqa: E402
 
@@ -40,20 +40,24 @@ def main() -> None:
     parser.add_argument("--embeddings-dir", type=Path, required=True)
     parser.add_argument("--predictions", type=Path, required=True)
     parser.add_argument("--split-file", type=Path, default=Path("configs/split_physionet2018.json"))
+    parser.add_argument("--checkpoint", type=Path, default=Path("third_party/sleepfm/sleepfm/checkpoint/best.pt"))
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    subjects = sorted(p.stem for p in args.embeddings_dir.glob("*.npz"))
-    train, test = load_or_extend_split(args.split_file, subjects, 0.2, args.seed)
+    (X_train, y_train, train_groups), (X_test, y_test, test_groups) = load_verified_split(
+        args.embeddings_dir, args.split_file, args.checkpoint, seed=args.seed
+    )
     saved = np.load(args.predictions)
-    order = list(dict.fromkeys(saved["subject"]))  # ordre des nuits dans les prédictions sauvegardées
-    if sorted(order) != sorted(test):
-        raise SystemExit("Les prédictions sauvegardées ne portent pas sur les nuits de test du découpage figé")
-    X_train, y_train, train_groups = load_cached_embeddings(args.embeddings_dir, train)
-    X_test, y_test, test_groups = load_cached_embeddings(args.embeddings_dir, order)
-    assert np.array_equal(saved["y_true"], y_test) and np.array_equal(saved["epoch_idx"], test_groups[1])
+    # Réaligne les prédictions sauvegardées sur l'ordre des époques chargées.
+    position = {(s, int(i)): k for k, (s, i) in enumerate(zip(saved["subject"], saved["epoch_idx"], strict=True))}
+    try:
+        rows = np.array([position[(s, int(i))] for s, i in zip(test_groups[0], test_groups[1], strict=True)])
+    except KeyError as exc:
+        raise SystemExit(f"Prédictions sauvegardées sans l'époque de test {exc} : autres nuits de test ?") from exc
+    if len(rows) != len(saved["y_true"]) or not np.array_equal(saved["y_true"][rows], y_test):
+        raise SystemExit("Les prédictions sauvegardées ne correspondent pas aux nuits de test du découpage figé")
 
-    baseline, plain = saved["pred_logistic"], saved["pred_sequence"]
+    baseline, plain = saved["pred_logistic"][rows], saved["pred_sequence"][rows]
     model = SequenceProbe(seed=args.seed, class_weight="balanced").fit(X_train, y_train, train_groups)
     weighted = model.predict(X_test, test_groups)
 

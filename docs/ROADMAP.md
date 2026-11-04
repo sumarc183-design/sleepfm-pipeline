@@ -2,7 +2,7 @@
 
 ## J30 — Reproduction
 - [x] Pipeline officiel SleepFM opérationnel sur PhysioNet Challenge 2018
-- [x] Premier κ de stadification au protocole officiel (régression pondérée) : 0,606 [IC 95 % 0,545 ; 0,669] sur 100 sujets PhysioNet 2018, 20 sujets de test (2026-11-04) ; BiGRU sur la nuit 0,684. Premiers essais (non pondérés) : 0,584 puis 0,622
+- [x] Premier κ de stadification au protocole officiel (régression pondérée) : 0,607 [IC 95 % 0,545 ; 0,669] sur 100 sujets PhysioNet 2018, 20 sujets de test (2026-11-04) ; BiGRU sur la nuit 0,685 (0,666 à 0,684 sur 3 graines). Premiers essais (non pondérés) : 0,584 puis 0,622
 - [ ] Comparaison à l'article SleepFM 2024 (tableau 8, PhysioNet 2018 : ROC-AUC 0,924, AUPRC 0,759, F1 0,700, 100 participants en test ; pas de κ publié)
   - [x] Premier ordre de grandeur : ROC-AUC 0,925 et F1 0,683 avec la baseline officielle
   - [x] AUPRC (0,770 contre 0,759) et comparaison stade par stade : le profil du F1 de la logistique non pondérée colle à celui de l'article (hypothèse à vérifier)

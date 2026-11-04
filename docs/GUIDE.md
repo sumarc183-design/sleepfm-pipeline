@@ -102,7 +102,12 @@ navigateur fermé (jusqu'à 12 h) et les sorties restent dans l'onglet `Output`
 de la version. `Run All` en session interactive s'arrête si la session expire.
 
 Le notebook calcule par défaut 200 sujets dans `embeddings/physionet2018_v2`
-(prétraitement version 2, découpage figé). Kaggle n'a pas accès à Google
+(prétraitement version 2, découpage figé), en mode **embeddings seulement**
+(`EMBED_ONLY = True`, option `--embed-only`) : le GPU ne sert qu'à SleepFM,
+et les sondes, qui n'en ont pas besoin, tournent ensuite sur le Mac. Cela
+économise ~20 à 25 min de GPU par run. Le téléchargement des nuits PhysioNet
+compte aussi dans le quota, puisque la session tourne pendant ce temps : ne
+recalculer que les sujets manquants, en important les embeddings déjà faits. Kaggle n'a pas accès à Google
 Drive : à la fin, les embeddings sont zippés dans `Output`
 (`embeddings_physionet2018_v2.zip`, ~1 Go), avec les résultats et les
 prédictions. Les dézipper dans `embeddings/physionet2018_v2/` permet de

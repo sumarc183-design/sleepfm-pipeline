@@ -147,7 +147,7 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     processed = tmp_path / "processed"
     extract(raw_dir, processed, num_threads=1)
     reference = PhysioNet2018EpochDataset(processed)
-    X, y, (group_subjects, epoch_idx) = load_cached_embeddings(embeddings_dir, subjects)
+    X, y, (group_subjects, epoch_idx, _) = load_cached_embeddings(embeddings_dir, subjects)
     assert X.shape == (len(reference), 3 * 512)
     reference_idx = [int(f.stem.rsplit("_", 1)[1]) for f, _ in reference.samples]
     assert list(epoch_idx) == reference_idx and list(group_subjects) == [f.parent.name for f, _ in reference.samples]
@@ -158,7 +158,8 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
         with np.load(npz) as data:
             legacy = {"X": data["X"], "y": data["y"]}
         np.savez(npz, **legacy)
-    _, _, (_, legacy_idx) = load_cached_embeddings(embeddings_dir, subjects)
+    _, _, (_, legacy_idx, legacy_onsets) = load_cached_embeddings(embeddings_dir, subjects)
+    assert np.isnan(legacy_onsets).all()  # ancien cache : pas de temps d'origine
     assert list(legacy_idx) == reference_idx
     assert X.dtype == np.float32
     assert list(y) == [reference[i][1] for i in range(len(reference))]
@@ -293,3 +294,82 @@ def test_embeddings_manifest_refuses_mixing_checkpoints_or_preprocessing(tmp_pat
     fresh.mkdir()
     assert check_embeddings_manifest(fresh, expected, n_to_compute=5) == expected
     assert check_embeddings_manifest(fresh, expected, n_to_compute=5) == expected
+
+
+def test_split_file_rejects_overlap_duplicates_and_keeps_test_fraction(tmp_path):
+    import json
+
+    from run_baseline import load_or_extend_split
+
+    bad = tmp_path / "bad.json"
+    for content in ({"train": ["s1"], "test": ["s1"]}, {"train": ["s1", "s1"], "test": ["s2"]}, {"train": []}):
+        bad.write_text(json.dumps(content))
+        with pytest.raises(SystemExit):
+            load_or_extend_split(bad, ["s1", "s2"], 0.2, seed=42)
+    with pytest.raises(SystemExit):
+        load_or_extend_split(None, ["s1", "s2"], 1.5, seed=42)
+    # Sujets ajoutés un par un : la part du test reste proche de 20 %.
+    path = tmp_path / "split.json"
+    load_or_extend_split(path, [f"s{i:02d}" for i in range(10)], 0.2, seed=42)
+    for n in range(11, 31):
+        train, test = load_or_extend_split(path, [f"s{i:02d}" for i in range(n)], 0.2, seed=42)
+    assert len(test) == 6 and len(train) == 24
+    assert not list(tmp_path.glob("*.tmp.json"))  # écriture atomique
+
+
+def test_cache_validation_rejects_corrupt_contents(tmp_path):
+    from run_baseline import cache_problem
+
+    good = {"X": np.zeros((3, 1536), np.float32), "y": np.array([0, 1, 4]), "epoch_idx": np.arange(3)}
+    np.savez(tmp_path / "ok.npz", **good, onset_s=np.array([0.0, 30.0, 60.0]))
+    assert cache_problem(tmp_path / "ok.npz") is None
+    corrupt = {
+        "dim": good | {"X": np.zeros((3, 8), np.float32)},
+        "nan": good | {"X": np.full((3, 1536), np.nan, np.float32)},
+        "label": good | {"y": np.array([0, 99, 1])},
+        "dup": good | {"epoch_idx": np.array([0, 0, 1])},
+        "onset": good | {"onset_s": np.array([0.0, 60.0, 30.0])},
+    }
+    for name, arrays in corrupt.items():
+        np.savez(tmp_path / f"{name}.npz", **arrays)
+        assert cache_problem(tmp_path / f"{name}.npz") is not None, name
+
+
+def test_extraction_is_redone_when_labels_file_is_empty(tmp_path):
+    from src.data.extract_physionet2018 import is_extracted
+
+    x_dir, y_path, t_path = tmp_path / "X" / "s1", tmp_path / "Y" / "s1.pickle", tmp_path / "T" / "s1.json"
+    y_path.parent.mkdir()
+    y_path.write_bytes(b"")  # pickle vide : extraction interrompue
+    assert not is_extracted(str(x_dir), str(y_path), str(t_path))
+
+
+def test_embed_only_computes_embeddings_without_training_probes(tmp_path, monkeypatch, capsys):
+    """--embed-only : le GPU ne sert qu'aux embeddings, aucune sonde n'est
+    entraînée et aucun résultat n'est écrit."""
+    import run_baseline
+
+    embeddings_dir, results = tmp_path / "embeddings", tmp_path / "run.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_baseline.py",
+            "--embeddings-dir",
+            str(embeddings_dir),
+            "--embed-only",
+            "--num-synthetic-subjects",
+            "3",
+            "--num-threads",
+            "1",
+            "--device",
+            "cpu",
+            "--results-json",
+            str(results),
+        ],
+    )
+    monkeypatch.setattr(run_baseline, "select_and_evaluate", lambda *a, **k: pytest.fail("sondes entraînées"))
+    run_baseline.main()
+    assert len(list(embeddings_dir.glob("*.npz"))) == 3 and (embeddings_dir / "manifest.json").exists()
+    assert not results.exists()
+    assert "Embeddings seulement" in capsys.readouterr().out

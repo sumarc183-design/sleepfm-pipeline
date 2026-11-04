@@ -1,5 +1,5 @@
 ====================================================================================================
-Analyse des erreurs : sequence contre logistic (17818 époques de test)
+Analyse des erreurs : sequence contre logistic (17818 époques de test ; temps d'origine absents : nuits supposées continues)
 ----------------------------------------------------------------------------------------------------
 1. Matrices de confusion (lignes = stade réel, colonnes = stade prédit), logistic | sequence
            Wake     N1     N2     N3    REM   |      Wake     N1     N2     N3    REM        n
