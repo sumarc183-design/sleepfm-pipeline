@@ -15,6 +15,8 @@ selon [SemVer](https://semver.org/lang/fr/).
   Enregistré dans le JSON des résultats.
 - **Temps d'origine de chaque époque** (`onset_s`) dans l'extraction et le
   cache ; **raison des rejets** enregistrée.
+- **BiGRU pondéré** : option `class_weight="balanced"` de la sonde
+  séquentielle et `scripts/compare_weighted_sequence.py`.
 - **Notebook** : 200 sujets par défaut, dans `physionet2018_v2` avec le
   découpage figé ; sur Kaggle, n'importe que des embeddings au même
   prétraitement, et place prédictions et zip des embeddings dans `Output`.
@@ -76,6 +78,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - Erreurs du BiGRU : gain surtout sur N2 et au milieu des segments stables,
   presque nul aux changements de stade ; rappel de N1 en baisse (0,47 contre
   0,53), plus souvent lissé en éveil.
+- BiGRU pondéré : rappel de N1 0,58 (contre 0,47), F1 de N1 inchangé, κ
+  0,629, soit −0,056 [−0,083 ; −0,033] face au BiGRU non pondéré, qui reste
+  la référence.
 - 100 sujets, split 80/20 par sujet, protocole officiel (2026-11-04) :
   baseline pondérée κ 0,606 [0,545 ; 0,669], non pondérée 0,646, MLP 0,623,
   BiGRU 0,684 [0,615 ; 0,739]. XGBoost éliminé par la sélection (gap F1

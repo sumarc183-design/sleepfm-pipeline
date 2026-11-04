@@ -290,3 +290,15 @@ def test_bigru_padding_does_not_leak_into_real_epochs():
     # sans elles, le sens retour lisait le rembourrage.
     assert torch.allclose(alone, packed, atol=1e-6)
     assert not torch.allclose(alone, unpacked, atol=1e-4)
+
+
+def test_sequence_probe_class_weight_option():
+    from src.models.sequence_probe import SequenceProbe
+
+    rng = np.random.default_rng(0)
+    X, y = rng.standard_normal((60, 4)).astype(np.float32), rng.integers(0, 3, 60)
+    groups = (np.repeat(["a", "b", "c"], 20), np.tile(np.arange(20), 3))
+    model = SequenceProbe(epochs=1, class_weight="balanced").fit(X, y, groups)
+    assert model.predict(X, groups).shape == (60,)
+    with pytest.raises(ValueError):
+        SequenceProbe(epochs=1, class_weight="inconnu").fit(X, y, groups)

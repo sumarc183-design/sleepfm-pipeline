@@ -60,6 +60,11 @@ sur les sujets de test.
   prédit moins souvent N1 à tort, mais lisse davantage les vraies époques N1
   en éveil (873 contre 718). Deux nuits restent mauvaises pour les deux
   modèles (κ ≈ 0,34), à examiner.
+- **Pondérer les stades dans le BiGRU ne paie pas**
+  ([essai](results/bigru_pondere_physionet2018_100.txt)) : le rappel de N1
+  remonte (0,58 contre 0,47) mais son F1 ne bouge pas (0,52), N2 recule
+  (0,74 contre 0,83) et le κ perd 0,056 [−0,083 ; −0,033]. Même compromis que
+  pour la régression logistique : le BiGRU reste non pondéré.
 - **La ROC-AUC (un stade contre tous, moyennée) varie peu** (0,924 à 0,936) :
   les probabilités classent bien les époques pour toutes les sondes ; elles se
   distinguent sur la décision finale, que mesurent le κ et le F1.

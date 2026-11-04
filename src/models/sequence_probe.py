@@ -64,6 +64,7 @@ class SequenceProbe:
         device: str = "cpu",
         seed: int = 42,
         context: int | None = None,
+        class_weight: str | None = None,
     ):
         # window = 120 époques = 1 h de contexte par exemple d'entraînement ;
         # à la prédiction, le BiGRU lit la nuit entière (context=None), ou des
@@ -71,6 +72,9 @@ class SequenceProbe:
         self.hidden_dim, self.epochs, self.lr, self.dropout = hidden_dim, epochs, lr, dropout
         self.window, self.batch_size, self.device, self.seed = window, batch_size, device, seed
         self.context = context
+        # "balanced" : poids de chaque stade inversement proportionnel à sa
+        # fréquence dans le train, comme la régression logistique officielle.
+        self.class_weight = class_weight
 
     def _windows(self, X: np.ndarray, y: np.ndarray, nights: list[np.ndarray], rng: np.random.Generator):
         """Découpe chaque nuit en fenêtres consécutives, avec un décalage
@@ -106,7 +110,14 @@ class SequenceProbe:
 
         self.model_ = _BiGRUTagger(X.shape[1], self.hidden_dim, len(self.classes_), self.dropout).to(self.device)
         optimizer = torch.optim.AdamW(self.model_.parameters(), lr=self.lr, weight_decay=1e-2)
-        criterion = nn.CrossEntropyLoss(ignore_index=-100)
+        weight = None
+        if self.class_weight == "balanced":
+            counts = np.bincount(y_encoded, minlength=len(self.classes_))
+            weight = torch.tensor(len(y_encoded) / (len(self.classes_) * np.maximum(counts, 1)), dtype=torch.float32)
+            weight = weight.to(self.device)
+        elif self.class_weight is not None:
+            raise ValueError(f"class_weight inconnu : {self.class_weight!r}")
+        criterion = nn.CrossEntropyLoss(weight=weight, ignore_index=-100)
         best_loss, best_state = float("inf"), None
         for _ in range(self.epochs):
             self.model_.train()

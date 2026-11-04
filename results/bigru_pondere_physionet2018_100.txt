@@ -1,0 +1,7 @@
+BiGRU avec perte pondérée par stade (class_weight="balanced") — 100 sujets, mêmes 20 nuits de test, 2026-11-05
+F1/stade : Wake N1 N2 N3 REM ; écarts appariés par bootstrap sur les sujets (IC 95 %)
+Baseline        κ 0.607  F1 0.683  F1/stade 0.77 0.51 0.71 0.75 0.68  N1 rappel 0.53 précision 0.49
+BiGRU           κ 0.685  F1 0.739  F1/stade 0.76 0.52 0.83 0.79 0.80  N1 rappel 0.47 précision 0.58
+BiGRU pondéré   κ 0.629  F1 0.707  F1/stade 0.75 0.52 0.74 0.74 0.79  N1 rappel 0.58 précision 0.46
+Pondéré - baseline : κ +0.022 [-0.011 ; +0.052]   F1 macro +0.023 [-0.002 ; +0.047]
+Pondéré - BiGRU : κ -0.056 [-0.083 ; -0.033]   F1 macro -0.033 [-0.054 ; -0.014]
