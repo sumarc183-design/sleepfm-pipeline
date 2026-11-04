@@ -6,11 +6,19 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Prédictions du test sauvegardées** (`<json>.predictions.npz`) : sujet,
+  numéro d'époque, vrai stade, prédiction et probabilités de chaque sonde.
+- **Ablation du contexte du BiGRU** (`scripts/ablation_sequence.py`) :
+  contexte à la prédiction (nuit, 1 h, 5 min, 1 époque) et ordre mélangé.
 - **AUPRC** (macro et par stade) et ROC-AUC par stade, dans la sortie et le
   JSON. La sortie compare la baseline officielle au tableau 8 de l'article
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **BiGRU** : le rembourrage des fenêtres courtes passait dans le GRU et
+  influençait les vraies époques (sens retour). Le GRU reçoit maintenant la
+  longueur réelle de chaque fenêtre. Effet mesuré négligeable (κ 0,6845 →
+  0,6853).
 - **Référence à l'article** : la documentation affirmait que SleepFM ne
   publiait pas de résultat sur PhysioNet 2018 et que la comparaison
   attendait MESA. L'article SleepFM 2024 évalue pourtant PhysioNet 2018
@@ -40,6 +48,9 @@ selon [SemVer](https://semver.org/lang/fr/).
   baseline officielle ROC-AUC 0,925 / AUPRC 0,770 / F1 0,683, contre
   0,924 / 0,759 / 0,700 publiés. Le profil du F1 par stade de la logistique
   non pondérée est le plus proche de l'article.
+- Ablation du BiGRU : κ +0,078 sur la baseline avec la nuit entière, +0,070
+  avec 1 h, +0,039 avec 5 min ; +0,041 avec l'ordre mélangé. Environ la
+  moitié du gain vient de l'ordre chronologique.
 - 100 sujets, split 80/20 par sujet, protocole officiel (2026-11-04) :
   baseline pondérée κ 0,606 [0,545 ; 0,669], non pondérée 0,646, MLP 0,623,
   BiGRU 0,684 [0,615 ; 0,739]. XGBoost éliminé par la sélection (gap F1

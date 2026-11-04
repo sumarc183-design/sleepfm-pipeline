@@ -94,8 +94,8 @@ même nuit se ressemblent, les séparer gonflerait les scores.
 | `mlp` | Frontière non linéaire par réseau (1 couche cachée de 256), plus rapide |
 | `sequence` | Contexte temporel : BiGRU sur la suite des embeddings de la nuit (`src/models/sequence_probe.py`) |
 
-Métriques pour chacune : accuracy, kappa de Cohen, F1 macro, ROC-AUC
-un-contre-tous, F1 par stade, le **gap** train − test (un gap élevé signale du
+Métriques pour chacune : accuracy, kappa de Cohen, F1 macro, ROC-AUC et
+AUPRC un-contre-tous (macro et par stade), F1 par stade, le **gap** train − test (un gap élevé signale du
 surapprentissage), l'**intervalle de confiance à 95 %** du kappa et du F1
 macro (bootstrap sur les sujets de test : on tire des nuits entières, pas des
 époques, qui ne sont pas indépendantes) et la **matrice de confusion** de la
@@ -113,6 +113,21 @@ Son option `--max_iter` n'est pas transmise au modèle, qui garde 100
 itérations sans garantie de convergence. Ici, `--max-iter` vaut 1 000 et la
 sortie affiche le nombre d'itérations utilisées, ou un avertissement explicite
 si le modèle n'a pas convergé.
+
+**Prédictions sauvegardées** : avec `--results-json run.json`, le script écrit
+aussi `run.predictions.npz` : pour chaque époque de test, le sujet, le numéro
+d'époque, le vrai stade, puis la prédiction et les probabilités de chaque
+sonde. IC, comparaisons appariées et analyse d'erreurs se recalculent sans
+réentraîner.
+
+**BiGRU : longueurs réelles et ablation du contexte**. L'entraînement se fait
+sur des fenêtres d'1 h (120 époques), complétées par des zéros dans un lot ;
+le GRU reçoit la longueur réelle de chaque fenêtre (séquences compactées),
+pour que le rembourrage n'influence pas les vraies époques. La prédiction lit
+la nuit entière. `scripts/ablation_sequence.py` mesure d'où vient le gain :
+contexte à la prédiction (nuit, 1 h, 5 min, 1 époque) et ordre des époques
+mélangé dans chaque nuit. Le BiGRU voit les époques futures : il convient à
+une analyse après l'enregistrement, pas au temps réel.
 
 **Arrêt précoce sans fuite** : le MLP et le BiGRU s'arrêtent sur ~10 % des
 **nuits** du train mises à part. L'arrêt précoce intégré de scikit-learn

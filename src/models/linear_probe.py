@@ -260,6 +260,10 @@ def predict_labels(model, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray] |
     return model.predict(X, groups) if getattr(model, "needs_groups", False) else model.predict(X)
 
 
+def predict_probabilities(model, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray] | None = None) -> np.ndarray:
+    return model.predict_proba(X, groups) if getattr(model, "needs_groups", False) else model.predict_proba(X)
+
+
 def evaluate_probe(
     model,
     X_test: np.ndarray,
@@ -270,10 +274,7 @@ def evaluate_probe(
     """`with_ci=True` (et `groups` fourni) ajoute les intervalles de confiance
     par bootstrap sur les sujets : à réserver à l'évaluation finale."""
     y_pred = predict_labels(model, X_test, groups)
-    if getattr(model, "needs_groups", False):
-        proba = model.predict_proba(X_test, groups)
-    else:
-        proba = model.predict_proba(X_test)
+    proba = predict_probabilities(model, X_test, groups)
     results = {
         "accuracy": float((y_pred == y_test).mean()),
         "cohen_kappa": float(cohen_kappa_score(y_test, y_pred)),
@@ -403,6 +404,9 @@ def compare_probes(
             "n_iter": getattr(model, "n_iter_used_", None),
         }
         test_preds[kind] = predict_labels(model, X_test, test_groups)
+        proba = predict_probabilities(model, X_test, test_groups)
+        # Sorties brutes du test, pour recalculer IC et comparaisons appariées sans réentraîner.
+        results[kind]["test_outputs"] = {"pred": test_preds[kind], "proba": proba, "classes": model.classes_}
     if "logistic" in results and test_groups is not None:
         for kind in results:
             if kind != "logistic":

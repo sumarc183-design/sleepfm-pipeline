@@ -270,3 +270,23 @@ def test_per_class_auc_perfect_random_and_rare_stage():
     assert flat[1]["auprc"] == pytest.approx(0.3)
     # Un stade absent du test n'a pas de score.
     assert 2 not in per_class_auc(np.full((10, 3), 1 / 3), np.array([0, 1, 2]), y)
+
+
+def test_bigru_padding_does_not_leak_into_real_epochs():
+    import torch
+
+    from src.models.sequence_probe import _BiGRUTagger
+
+    torch.manual_seed(0)
+    model = _BiGRUTagger(embedding_dim=8, hidden_dim=6, num_classes=5, dropout=0.0).eval()
+    short, long_ = torch.randn(3, 8), torch.randn(7, 8)
+    batch = torch.zeros(2, 7, 8)
+    batch[0, :3], batch[1] = short, long_
+    with torch.no_grad():
+        alone = model(short[None])[0]
+        packed = model(batch, torch.tensor([3, 7]))[0, :3]
+        unpacked = model(batch)[0, :3]
+    # Avec les longueurs, la séquence courte donne la même sortie que seule ;
+    # sans elles, le sens retour lisait le rembourrage.
+    assert torch.allclose(alone, packed, atol=1e-6)
+    assert not torch.allclose(alone, unpacked, atol=1e-4)

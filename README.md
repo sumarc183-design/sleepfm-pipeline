@@ -43,6 +43,13 @@ sur les sujets de test.
   comparaison appariée (mêmes nuits de test, bootstrap sur les sujets) :
   κ +0,078 [+0,041 ; +0,117], F1 macro +0,056 [+0,024 ; +0,086]. Celui du MLP
   ne l'est pas : κ +0,015 [−0,005 ; +0,036].
+- **Le gain vient du contexte, pour moitié de l'ordre chronologique**
+  ([ablation](results/ablation_sequence_physionet2018_100.txt)) : il grandit
+  avec le contexte lu à la prédiction (κ +0,04 avec 5 min, +0,07 avec 1 h,
+  +0,08 avec la nuit). Avec les époques mélangées dans chaque nuit, il reste
+  +0,04 : voir toute la nuit du sujet aide déjà, l'ordre apporte le reste,
+  notamment sur N1 (F1 0,42 mélangé contre 0,52). Le BiGRU lit aussi les
+  époques futures : analyse après l'enregistrement, pas temps réel.
 - **La ROC-AUC (un stade contre tous, moyennée) varie peu** (0,924 à 0,936) :
   les probabilités classent bien les époques pour toutes les sondes ; elles se
   distinguent sur la décision finale, que mesurent le κ et le F1.
@@ -61,7 +68,9 @@ sur les sujets de test.
 
 Sorties brutes dans [`results/`](results/) : texte, JSON (sujets de test,
 réglages, matrices de confusion), le run CPU, le run local avec la
-comparaison appariée (`…_paired`) et celui avec l'AUPRC (`…_auprc`).
+comparaison appariée (`…_paired`), celui avec l'AUPRC et le BiGRU corrigé
+(`…_auprc`, avec les prédictions du test époque par époque) et l'ablation du
+contexte.
 
 Avant le 2026-11-04 : κ 0,584 (20 sujets) puis 0,622 (100 sujets, split
 75/25), avec la régression **non pondérée**, qui n'est pas le protocole
@@ -80,7 +89,7 @@ apparaît pas. Il ne publie pas de κ sur PhysioNet 2018.
 | Article (tableau 8) | 0,924 | 0,759 | 0,700 | 0,79 / 0,44 / 0,79 / 0,74 / 0,72 |
 | Logistique pondérée (baseline officielle) | 0,925 | 0,770 | 0,683 | 0,77 / 0,51 / 0,71 / 0,75 / 0,68 |
 | Logistique non pondérée | 0,927 | 0,771 | 0,697 | 0,77 / 0,45 / 0,81 / 0,76 / 0,70 |
-| BiGRU sur la nuit | 0,936 | 0,800 | 0,739 | 0,76 / 0,52 / 0,83 / 0,79 / 0,80 |
+| BiGRU sur la nuit | 0,936 | 0,801 | 0,739 | 0,76 / 0,52 / 0,83 / 0,79 / 0,80 |
 
 - **Même ordre de grandeur que l'article** : ROC-AUC et AUPRC macro au niveau
   publié, ou légèrement au-dessus.

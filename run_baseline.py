@@ -445,6 +445,8 @@ def save_results_json(
     args,
     train_subjects: list[str],
     test_subjects: list[str],
+    y_test: np.ndarray | None = None,
+    test_groups: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> None:
     """Métriques au format JSON, pour comparer des runs sans relire les logs.
     `per_class_report` est réduit au F1 et à l'effectif de chaque stade.
@@ -494,6 +496,23 @@ def save_results_json(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
     print(f"Résultats JSON : {path}")
+    if y_test is not None and test_groups is not None:
+        save_test_predictions(path.with_suffix(".predictions.npz"), results, y_test, test_groups)
+
+
+def save_test_predictions(path: Path, results: dict, y_test: np.ndarray, test_groups) -> None:
+    """Prédictions et probabilités de chaque sonde sur le test, époque par
+    époque, avec le sujet et le numéro d'époque : IC, comparaisons appariées
+    et analyse d'erreurs se recalculent sans réentraîner (environ 1 Mo)."""
+    arrays = {"y_true": y_test, "subject": np.asarray(test_groups[0]), "epoch_idx": np.asarray(test_groups[1])}
+    for kind, r in results.items():
+        out = r.get("test_outputs")
+        if out is not None:
+            arrays[f"pred_{kind}"] = out["pred"]
+            arrays[f"proba_{kind}"] = out["proba"].astype(np.float32)
+            arrays[f"classes_{kind}"] = np.asarray(out["classes"])
+    np.savez_compressed(path, **arrays)
+    print(f"Prédictions du test : {path}")
 
 
 def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
@@ -547,7 +566,16 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
     )
     if args.results_json is not None:
         save_results_json(
-            args.results_json, results, selection, data_desc, checkpoint_desc, args, train_subjects, test_subjects
+            args.results_json,
+            results,
+            selection,
+            data_desc,
+            checkpoint_desc,
+            args,
+            train_subjects,
+            test_subjects,
+            y_test,
+            test_groups,
         )
 
 
@@ -701,7 +729,16 @@ def main() -> None:
     print_results(results, data_desc, checkpoint_desc, is_synthetic or is_random_checkpoint, selection)
     if args.results_json is not None:
         save_results_json(
-            args.results_json, results, selection, data_desc, checkpoint_desc, args, train_subjects, test_subjects
+            args.results_json,
+            results,
+            selection,
+            data_desc,
+            checkpoint_desc,
+            args,
+            train_subjects,
+            test_subjects,
+            y_test,
+            test_groups,
         )
 
 

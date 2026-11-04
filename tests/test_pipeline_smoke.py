@@ -196,13 +196,19 @@ def test_results_json_records_subjects_settings_and_convergence(tmp_path):
         test_fraction=0.2, seed=42, probes=["logistic"], max_iter=1000, cv_folds=5, min_gain=0.02, max_gap=0.15
     )
     path = tmp_path / "run.json"
-    save_results_json(path, results, None, "desc", "ckpt", args, ["s2", "s1"], ["s3"])
+    groups = (np.repeat(["s3", "s4"], 25), np.tile(np.arange(25), 2))
+    save_results_json(path, results, None, "desc", "ckpt", args, ["s2", "s1"], ["s3"], y[150:], groups)
 
     payload = json.loads(path.read_text())
     assert payload["train_subjects"] == ["s1", "s2"] and payload["test_subjects"] == ["s3"]
     assert payload["settings"]["max_gap"] == 0.15
     assert payload["probes"]["logistic"]["converged"] is True
     assert payload["probes"]["logistic"]["n_iter"] > 0
+    # Prédictions du test époque par époque, à côté du JSON.
+    with np.load(tmp_path / "run.predictions.npz") as preds:
+        assert np.array_equal(preds["y_true"], y[150:])
+        assert preds["proba_logistic"].shape == (50, 5) and len(preds["pred_logistic"]) == 50
+        assert list(preds["subject"][:2]) == ["s3", "s3"] and preds["epoch_idx"][25] == 0
 
 
 @pytest.mark.slow

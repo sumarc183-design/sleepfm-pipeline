@@ -1,0 +1,9 @@
+80 nuits train / 20 test, 71458 / 17818 époques
+--------------------------------------------------------------------------------------------------------
+Variante                                      Kappa  F1 macro  F1 N1   écart κ à la baseline [IC 95 %]
+Baseline officielle (logistique pondérée)     0.607     0.683  0.508
+Contexte à la prédiction : nuit entière       0.685     0.739  0.518   +0.078 [+0.042 ; +0.114] significatif
+Contexte à la prédiction : blocs d'1 h        0.677     0.733  0.511   +0.070 [+0.036 ; +0.104] significatif
+Contexte à la prédiction : blocs de 5 min     0.647     0.705  0.489   +0.039 [+0.011 ; +0.073] significatif
+Contexte à la prédiction : 1 époque           0.490     0.522  0.352   -0.117 [-0.181 ; -0.051] significatif
+Ordre mélangé (entraînement et test)          0.648     0.698  0.424   +0.041 [+0.020 ; +0.067] significatif

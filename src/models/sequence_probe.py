@@ -17,6 +17,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 class _BiGRUTagger(nn.Module):
@@ -26,8 +27,17 @@ class _BiGRUTagger(nn.Module):
         self.gru = nn.GRU(hidden_dim, hidden_dim, batch_first=True, bidirectional=True)
         self.classify = nn.Sequential(nn.Dropout(dropout), nn.Linear(2 * hidden_dim, num_classes))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # (batch, time, dim) -> (batch, time, classes)
-        out, _ = self.gru(self.project(x))
+    def forward(self, x: torch.Tensor, lengths: torch.Tensor | None = None) -> torch.Tensor:
+        """(batch, time, dim) -> (batch, time, classes). `lengths` = longueur
+        réelle de chaque séquence d'un lot complété par des zéros : le GRU
+        s'arrête à la fin de chacune. Sans elle, le sens retour démarrait sur
+        le rembourrage, qui influençait alors les vraies époques."""
+        h = self.project(x)
+        if lengths is None:
+            out, _ = self.gru(h)
+        else:
+            packed = pack_padded_sequence(h, lengths.cpu(), batch_first=True, enforce_sorted=False)
+            out, _ = pad_packed_sequence(self.gru(packed)[0], batch_first=True, total_length=x.shape[1])
         return self.classify(out)
 
 
@@ -53,11 +63,14 @@ class SequenceProbe:
         batch_size: int = 16,
         device: str = "cpu",
         seed: int = 42,
+        context: int | None = None,
     ):
         # window = 120 époques = 1 h de contexte par exemple d'entraînement ;
-        # à la prédiction, le BiGRU lit la nuit entière.
+        # à la prédiction, le BiGRU lit la nuit entière (context=None), ou des
+        # blocs consécutifs de `context` époques (ablation du contexte).
         self.hidden_dim, self.epochs, self.lr, self.dropout = hidden_dim, epochs, lr, dropout
         self.window, self.batch_size, self.device, self.seed = window, batch_size, device, seed
+        self.context = context
 
     def _windows(self, X: np.ndarray, y: np.ndarray, nights: list[np.ndarray], rng: np.random.Generator):
         """Découpe chaque nuit en fenêtres consécutives, avec un décalage
@@ -76,7 +89,8 @@ class SequenceProbe:
             for j, w in enumerate(batch):
                 xb[j, : len(w)] = X[w]
                 yb[j, : len(w)] = y[w]
-            yield torch.from_numpy(xb).to(self.device), torch.from_numpy(yb).to(self.device)
+            lengths = torch.tensor([len(w) for w in batch])
+            yield torch.from_numpy(xb).to(self.device), torch.from_numpy(yb).to(self.device), lengths
 
     def fit(self, X: np.ndarray, y: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> SequenceProbe:
         torch.manual_seed(self.seed)
@@ -96,9 +110,9 @@ class SequenceProbe:
         best_loss, best_state = float("inf"), None
         for _ in range(self.epochs):
             self.model_.train()
-            for xb, yb in self._windows(X, y_encoded, train_nights, rng):
+            for xb, yb, lengths in self._windows(X, y_encoded, train_nights, rng):
                 optimizer.zero_grad()
-                loss = criterion(self.model_(xb).flatten(0, 1), yb.flatten())
+                loss = criterion(self.model_(xb, lengths).flatten(0, 1), yb.flatten())
                 loss.backward()
                 optimizer.step()
             if val_nights:
@@ -126,8 +140,11 @@ class SequenceProbe:
     @torch.no_grad()
     def predict_proba(self, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
         proba = np.zeros((len(X), len(self.classes_)), dtype=np.float32)
-        for rows in split_into_nights(*groups):  # nuit entière d'un coup : contexte complet
-            proba[rows] = torch.softmax(self._logits(X[rows]), dim=-1).cpu().numpy()
+        for night in split_into_nights(*groups):
+            step = self.context or len(night)  # par défaut, nuit entière d'un coup
+            for start in range(0, len(night), step):
+                rows = night[start : start + step]
+                proba[rows] = torch.softmax(self._logits(X[rows]), dim=-1).cpu().numpy()
         return proba
 
     def predict(self, X: np.ndarray, groups: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
