@@ -20,6 +20,10 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Notebook renommé** `notebooks/sleepfm_embeddings_physionet2018.ipynb`
   (« SleepFM — embeddings PhysioNet 2018 (GPU) ») ; règle de nommage des
   notebooks dans le GUIDE.
+- **Comparaison de deux caches** (`scripts/compare_embedding_caches.py`) :
+  mêmes époques, mêmes stades, embeddings identiques sur les sujets communs
+  (pour vérifier le prétraitement version 2 sur les 100 premiers sujets).
+- **CI** : tests aussi en Python 3.10, version minimale annoncée.
 - **Examen des signaux bruts** (`scripts/inspect_night_signals.py`) : qualité
   des canaux et physiologie par stade (tonus du menton, mouvements oculaires,
   alpha). Deux nuits ratées : REM pris pour de l'éveil, EMG du menton quasi
@@ -42,6 +46,9 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Chargement OSF strict** : poids lus avec `weights_only=True`, et une clé
+  manquante ou inattendue arrête le chargement (`allow_key_mismatch=True`
+  pour un essai explicite).
 - **Découpage figé validé** : sujet en double ou à la fois en train et en
   test refusé ; écriture atomique ; les nouveaux sujets ramènent la part du
   test à la fraction voulue (ajoutés un par un, ils allaient tous au train).

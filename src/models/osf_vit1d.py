@@ -154,20 +154,29 @@ def vit_base(num_leads: int, seq_len: int = 1920, patch_size: int = 64, **kwargs
     )
 
 
-def load_osf_backbone(checkpoint_path: str | Path) -> OSFViT1D:
+def load_osf_backbone(checkpoint_path: str | Path, allow_key_mismatch: bool = False) -> OSFViT1D:
+    """Charge le backbone OSF publié, figé. Poids lus avec `weights_only=True`
+    (aucun code embarqué exécuté). Une clé manquante ou inattendue arrête le
+    chargement : un poids non chargé resterait aléatoire sans que les scores
+    le montrent. `allow_key_mismatch=True` seulement pour un essai explicite."""
     checkpoint_path = Path(checkpoint_path)
     if not checkpoint_path.exists():
         raise FileNotFoundError(
             f"Checkpoint OSF introuvable : {checkpoint_path}. "
             "Télécharger osf_backbone.pth depuis https://huggingface.co/yang-ai-lab/OSF-Base"
         )
-    payload = torch.load(checkpoint_path, map_location="cpu")
+    payload = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
     meta = payload["metadata"]
     if meta.get("lead_wise", 0) != 0:
         raise NotImplementedError("lead_wise=1 (2D patchify) checkpoints not supported by this minimal loader.")
 
     model = vit_base(num_leads=meta["num_leads"], seq_len=meta["seq_len"], patch_size=meta["patch_size_time"])
     missing, unexpected = model.load_state_dict(payload["state_dict"], strict=False)
+    if (missing or unexpected) and not allow_key_mismatch:
+        raise ValueError(
+            f"Checkpoint OSF incompatible : {len(missing)} clé(s) manquante(s) {list(missing)[:5]}, "
+            f"{len(unexpected)} inattendue(s) {list(unexpected)[:5]}"
+        )
     print(f"OSF backbone loaded -- missing: {len(missing)} keys, unexpected: {len(unexpected)} keys")
     for param in model.parameters():
         param.requires_grad = False

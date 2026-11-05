@@ -27,3 +27,18 @@ def test_osf_checkpoint_roundtrip(tmp_path):
     cls_a, _ = model.forward_encoding(x)
     cls_b, _ = loaded.forward_encoding(x)
     assert torch.allclose(cls_a, cls_b, atol=1e-5)
+
+
+def test_osf_loading_refuses_missing_or_unexpected_keys(tmp_path):
+    import pytest
+
+    model = vit_base(num_leads=12, seq_len=1920, patch_size=64)
+    state = model.state_dict()
+    state.pop(next(iter(state)))  # une clé manquante
+    state["poids_inconnu"] = torch.zeros(1)  # une clé inattendue
+    ckpt_path = tmp_path / "osf_backbone.pth"
+    meta = {"num_leads": 12, "seq_len": 1920, "patch_size_time": 64, "lead_wise": 0, "patch_size_ch": 4}
+    torch.save({"metadata": meta, "state_dict": state}, ckpt_path)
+    with pytest.raises(ValueError, match="incompatible"):
+        load_osf_backbone(ckpt_path)
+    assert load_osf_backbone(ckpt_path, allow_key_mismatch=True) is not None

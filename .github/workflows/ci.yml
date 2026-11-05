@@ -24,11 +24,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 : version minimale annoncée (pyproject, README) ; 3.11 : version de Colab et Kaggle
+        python-version: ["3.10", "3.11"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Installer les dépendances
         run: pip install -r requirements-dev.txt
