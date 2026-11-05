@@ -127,6 +127,13 @@ selon [SemVer](https://semver.org/lang/fr/).
   supprimé et recalculé au démarrage.
 
 ### Résultats
+- **500 sujets, 400 / 100 nuits** (2026-11-05), même nombre de nuits de test
+  que l'article : baseline pondérée κ 0,599 [0,570 ; 0,627], non pondérée
+  0,613, MLP 0,591, BiGRU 0,664 [0,634 ; 0,694] (+0,065 [+0,047 ; +0,083],
+  81 nuits sur 100). Article : ROC-AUC 0,921 / AUPRC 0,750 / F1 0,686 contre
+  0,924 / 0,759 / 0,700. Sur les 40 nuits de test du run à 200 sujets,
+  l'entraînement sur 400 nuits fait mieux (baseline 0,616 contre 0,587,
+  BiGRU 0,672 contre 0,656).
 - 200 sujets, découpage figé étendu à 160 / 40 (2026-11-05), embeddings en
   prétraitement v2 calculés sur Kaggle : baseline pondérée κ 0,587
   [0,533 ; 0,643], non pondérée 0,608, MLP 0,586, BiGRU 0,656

@@ -28,11 +28,11 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
 
 - **PhysioNet/CinC Challenge 2018** (accès libre) : polysomnographies adultes
   annotées par des experts (stades AASM), 13 canaux rééchantillonnés à 256 Hz.
-  Les 200 premiers sujets d'entraînement du challenge **par identifiant**
+  Les 500 premiers sujets d'entraînement du challenge **par identifiant**
   (pas un tirage aléatoire parmi les 994) ont été utilisés.
-- **Split par sujet** (jamais par époque), figé : 160 nuits d'entraînement
-  et 40 de test (36 163 époques). Les 80 / 20 nuits du run à 100 sujets
-  gardent leur rôle. Les sondes non linéaires sont départagées
+- **Split par sujet** (jamais par époque), figé : 400 nuits d'entraînement
+  et 100 de test (89 132 époques), comme l'article. Les nuits des runs à 100
+  et 200 sujets gardent leur rôle. Les sondes non linéaires sont départagées
   par validation croisée par sujet sur le train ; le test ne sert à aucun
   choix, mais les 20 premières nuits de test ont été évaluées par plusieurs
   runs.
@@ -58,14 +58,16 @@ train − test. Résultats à jour : [README](../README.md#résultats).
   montages.
 - **Canaux** : le montage 13 canaux est requis ; un enregistrement auquel il
   manque un canal est rejeté à l'extraction.
-- **Variabilité** : avec 20 à 40 sujets de test, les chiffres peuvent varier
+- **Variabilité** : avec 20 à 100 sujets de test, les chiffres peuvent varier
   de quelques centièmes selon le tirage des sujets ; d'où les intervalles de
   confiance par bootstrap sur les sujets.
-- **Résultats** (2026-11-05, protocole officiel, run de référence à 200
-  sujets) : κ 0,587 [0,533 ; 0,643] pour la baseline, 0,656 [0,594 ; 0,713]
-  pour le BiGRU. Deux nuits de test à l'hypnogramme atypique (κ 0,04 et
-  0,12) pèsent sur le total. À 100 sujets (2026-11-04) : 0,607 et 0,685
-  (BiGRU de 0,666 à 0,684 sur 3 graines d'entraînement). Les résultats du
+- **Résultats** (2026-11-05, protocole officiel, run de référence à 500
+  sujets) : κ 0,599 [0,570 ; 0,627] pour la baseline, 0,664 [0,634 ; 0,694]
+  pour le BiGRU ; ROC-AUC 0,921, AUPRC 0,750, F1 0,686 pour la baseline,
+  contre 0,924 / 0,759 / 0,700 dans l'article. Quelques nuits de test
+  atypiques (5 sur 100 sous κ 0,3) pèsent sur le total. À 200 sujets : 0,587
+  et 0,656 ; à 100 sujets : 0,607 et 0,685 (BiGRU de 0,666 à 0,684 sur 3
+  graines d'entraînement). Les résultats du
   2026-11-02/03 (κ 0,584 et 0,622) utilisaient une régression non pondérée.
 
 ## Considérations éthiques

@@ -1,0 +1,19 @@
+κ [IC 95 %, bootstrap sur les sujets]
+Nuits de test                        époques                  Baseline                     BiGRU
+40 anciennes (run précédent)           36163     0.587 [0.533 ; 0.643]     0.656 [0.594 ; 0.713]
+40 anciennes (ce run)                  36163     0.616 [0.571 ; 0.659]     0.672 [0.619 ; 0.723]
+60 nouvelles (ce run)                  52969     0.588 [0.552 ; 0.622]     0.659 [0.623 ; 0.689]
+100 (ce run)                           89132     0.599 [0.570 ; 0.627]     0.664 [0.634 ; 0.694]
+κ médian par nuit, baseline, nuits anciennes : 0.627
+κ médian par nuit, baseline, nuits nouvelles : 0.561
+BiGRU au-dessus de la baseline sur 81 nuits sur 100
+
+Nuits au κ le plus bas (part des stades selon l'expert, W/N1/N2/N3/REM)
+  tr03-1292  ancienne  baseline 0.083  BiGRU 0.023  0.69 0.28 0.01 0.00 0.02
+  tr04-0133  ancienne  baseline 0.237  BiGRU 0.140  0.12 0.76 0.10 0.00 0.02
+  tr05-0857  nouvelle  baseline 0.256  BiGRU 0.416  0.30 0.15 0.48 0.08 0.00
+  tr05-0570  nouvelle  baseline 0.257  BiGRU 0.187  0.55 0.41 0.04 0.00 0.00
+  tr05-0400  nouvelle  baseline 0.282  BiGRU 0.404  0.14 0.07 0.44 0.20 0.15
+  tr05-0074  nouvelle  baseline 0.304  BiGRU 0.249  0.09 0.16 0.59 0.01 0.15
+  tr04-0741  nouvelle  baseline 0.333  BiGRU 0.376  0.63 0.31 0.06 0.00 0.00
+  tr05-0348  nouvelle  baseline 0.342  BiGRU 0.635  0.18 0.13 0.61 0.01 0.08

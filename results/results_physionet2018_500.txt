@@ -1,0 +1,54 @@
+Embeddings sur : cpu
+500 sujet(s) déjà en cache, 0 à traiter
+Découpage figé : 300 nouveau(x) sujet(s) ajouté(s) à configs/split_physionet2018.json (60 en test)
+================================================================================================
+Données    : RÉELLES (400 sujet(s) train / 100 test, 359841 / 89132 époques ; 0 sujet(s) rejeté(s) à l'extraction)
+Checkpoint : third_party/sleepfm/sleepfm/checkpoint/best.pt
+------------------------------------------------------------------------------------------------
+2. Évaluation finale sur le test (jamais utilisé pour la sélection)
+Modèle (test)    Accuracy   Kappa  F1 macro  ROC-AUC   AUPRC | F1 train  Gap F1 AUC train  Gap AUC   Durée
+Log. officielle    0.6907  0.5994    0.6856   0.9209  0.7496 |   0.7223 +0.0368    0.9385  +0.0176    238s
+Log. non pond.     0.7157  0.6126    0.6881   0.9213  0.7511 |   0.7323 +0.0442    0.9391  +0.0178    279s
+MLP                0.7038  0.5912    0.6664   0.9165  0.7358 |   0.7023 +0.0358    0.9331  +0.0167   2088s
+BiGRU (nuit)       0.7526  0.6642    0.7315   0.9404  0.8004 |   0.7715 +0.0400    0.9564  +0.0160   1083s
+------------------------------------------------------------------------------------------------
+Intervalles de confiance à 95 % (bootstrap sur les sujets de test)
+  Log. officielle     kappa [0.570 ; 0.627]   F1 macro [0.664 ; 0.707]   (100 sujets)
+  Log. non pond.      kappa [0.581 ; 0.641]   F1 macro [0.666 ; 0.708]   (100 sujets)
+  MLP                 kappa [0.558 ; 0.621]   F1 macro [0.643 ; 0.688]   (100 sujets)
+  BiGRU (nuit)        kappa [0.634 ; 0.694]   F1 macro [0.708 ; 0.752]   (100 sujets)
+------------------------------------------------------------------------------------------------
+Comparaison appariée à la baseline (mêmes nuits de test) : écart, IC 95 %
+  Log. non pond.      kappa +0.013 [-0.001 ; +0.027]   F1 macro +0.003 [-0.008 ; +0.014]   (non significatif sur le kappa)
+  MLP                 kappa -0.008 [-0.027 ; +0.012]   F1 macro -0.019 [-0.034 ; -0.003]   (non significatif sur le kappa)
+  BiGRU (nuit)        kappa +0.065 [+0.047 ; +0.083]   F1 macro +0.046 [+0.031 ; +0.062]   (significatif sur le kappa)
+  Log. officielle : convergé en 396 itérations
+  Log. non pond. : convergé en 375 itérations
+------------------------------------------------------------------------------------------------
+F1 par stade (test)  Log. officielle  Log. non pond.             MLP    BiGRU (nuit)       n
+  wake                        0.7702          0.7747          0.7721          0.7950   18247
+  nonrem1                     0.4998          0.4506          0.4246          0.5046   14760
+  nonrem2                     0.7165          0.7760          0.7709          0.8052   35248
+  nonrem3                     0.7427          0.7353          0.6874          0.7517   10133
+  rem                         0.6986          0.7039          0.6773          0.8009   10744
+------------------------------------------------------------------------------------------------
+Baseline officielle contre l'article SleepFM 2024 (tableau 8, PhysioNet 2018) : nous / article
+  Stade                ROC-AUC             AUPRC                F1
+  wake           0.956 / 0.966     0.848 / 0.867     0.770 / 0.790
+  nonrem1        0.839 / 0.830     0.471 / 0.471     0.500 / 0.439
+  nonrem2        0.891 / 0.902     0.834 / 0.857     0.717 / 0.793
+  nonrem3        0.967 / 0.971     0.813 / 0.821     0.743 / 0.743
+  rem            0.950 / 0.950     0.782 / 0.778     0.699 / 0.717
+  macro          0.921 / 0.924     0.750 / 0.759     0.686 / 0.700
+------------------------------------------------------------------------------------------------
+Matrice de confusion (test, Log. officielle) : lignes = stade réel, colonnes = stade prédit
+                  wake   nonrem1   nonrem2   nonrem3       rem
+  wake           14024      3278       663        56       226
+  nonrem1         2721      7764      2130        41      2104
+  nonrem2          999      4326     22272      4672      2979
+  nonrem3           84        24      1081      8822       122
+  rem              342       915       772        32      8683
+================================================================================================
+Résultats JSON : results/results_physionet2018_500.json
+Prédictions du test : results/results_physionet2018_500.predictions.npz
+Sondes exportées : models/physionet2018_500 (logistic, logistic_unweighted, mlp, sequence)
