@@ -1,0 +1,46 @@
+Deux nuits de test ratées par les deux modèles (κ ≈ 0,34) — examen du 2026-11-05
+Sources : results/results_physionet2018_100_auprc.predictions.npz (prédictions) et
+scripts/inspect_night_signals.py (signaux bruts PhysioNet, non versionnés).
+
+1. Ce qui se passe (prédictions du BiGRU ; la baseline fait la même erreur)
+  tr03-0592 : 1 % d'éveil selon l'expert, 46 % prédit. REM pris pour de l'éveil :
+              210 époques sur 214 ; N1 pris pour de l'éveil : 38 sur 41.
+  tr03-0485 : 9 % d'éveil selon l'expert, 46 % prédit. REM pris pour de l'éveil :
+              99 sur 100 ; N1 pris pour de l'éveil : 205 sur 212.
+  Les embeddings de ces nuits ne sont pas atypiques (écart moyen à la
+  distribution du train dans la plage des autres nuits).
+
+2. Signaux bruts (tr03-0167 et tr03-0567 : deux des meilleures nuits de test,
+   κ 0,85 et 0,84 ; tr03-0005 : nuit d'entraînement, pour référence)
+1. Qualité des signaux
+  tr03-0592   époques plates : SaO2 13% ; amplitude C3 / E1 / menton : 20.3 / 17.4 / 1.0
+  tr03-0485   époques plates : SaO2 12% ; amplitude C3 / E1 / menton : 11.6 / 11.2 / 5.5
+  tr03-0167   époques plates : SaO2 13% ; amplitude C3 / E1 / menton : 13.1 / 18.8 / 9.3
+  tr03-0567   époques plates : SaO2 9% ; amplitude C3 / E1 / menton : 14.7 / 12.1 / 6.4
+  tr03-0005   époques plates : SaO2 13% ; amplitude C3 / E1 / menton : 12.8 / 13.2 / 4.9
+2. Physiologie par stade, en rapport à N2 de la même nuit (médianes)
+  nuit           menton REM    menton W    yeux REM    alpha W    alpha REM
+  tr03-0592            0.85       24.67       33.60       0.22         0.83
+  tr03-0485            0.52        1.33        0.74       2.35         1.53
+  tr03-0167            0.10        2.59        4.72       2.93         1.46
+  tr03-0567            0.35        2.20        0.41       2.14         1.50
+  tr03-0005            1.06        1.40        1.86       5.45         1.40
+
+3. Lecture
+  - tr03-0592 : l'EMG du menton est presque plat sur toute la nuit (amplitude
+    médiane 1,0 contre 4,9 à 9,3 ailleurs). Or la chute du tonus du menton
+    (atonie) est le principal indice qui sépare le REM de l'éveil : il manque
+    ici. L'alpha occipital est aussi atypique (plus faible à l'éveil qu'en
+    N2). Problème de signal probable (électrode du menton).
+  - tr03-0485 : pas de défaut de signal visible. Le REM de cette nuit
+    ressemble à l'éveil : atonie partielle (0,52 contre 0,10 à 0,35 dans les
+    bonnes nuits), pas de bouffées de mouvements oculaires (0,74), alpha
+    élevé (1,53). REM atypique ou annotation difficile : à montrer au
+    médecin du sommeil.
+  - Limite : le tonus du menton seul ne suffit pas à expliquer un échec
+    (tr03-0005 a aussi peu d'atonie). Ces constats sont des pistes, pas une
+    démonstration.
+  - Conséquence : ces deux nuits ne sont pas retirées du test (ce serait
+    choisir les nuits après coup), mais elles pèsent sur le κ moyen ; un
+    contrôle qualité du menton (EMG quasi plat) serait utile avant de
+    publier un score par nuit.

@@ -79,9 +79,19 @@ manquants, aucun stade annoté…). Une extraction interrompue ne laisse pas de
 sujet à moitié traité : un sujet n'est terminé qu'une fois son fichier de
 stades écrit, en dernier.
 
+### Notebooks
+
+Un notebook par usage, nommé `sleepfm_<rôle>_<données>.ipynb`, avec le même
+titre en tête (« SleepFM — <rôle> <données> ») : sur Kaggle ou Colab, donner
+ce titre au notebook importé pour s'y retrouver.
+
+| Fichier | Titre | Rôle |
+|---|---|---|
+| `notebooks/sleepfm_embeddings_physionet2018.ipynb` | SleepFM — embeddings PhysioNet 2018 (GPU) | Calcule les embeddings SleepFM sur GPU (Kaggle ou Colab) ; sondes ensuite sur le Mac, ou ici avec `EMBED_ONLY = False` |
+
 ### Google Colab (GPU gratuit)
 
-[![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
+[![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/sleepfm_embeddings_physionet2018.ipynb)
 
 Sélectionner `GPU T4` dans le type d'exécution, puis `Tout exécuter`. Le
 notebook utilise le mode par lots (100 sujets par défaut) avec les embeddings
@@ -91,7 +101,7 @@ train et de test, réglages et convergence, pour comparer deux runs).
 
 ### Kaggle (autre GPU gratuit)
 
-[![Ouvrir dans Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
+[![Ouvrir dans Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/sleepfm_embeddings_physionet2018.ipynb)
 
 Même notebook, qui détecte Kaggle tout seul. Utile quand le quota GPU de Colab
 est épuisé : Kaggle donne environ 30 h de GPU par semaine.

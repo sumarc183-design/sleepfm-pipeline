@@ -17,6 +17,13 @@ selon [SemVer](https://semver.org/lang/fr/).
   cache ; **raison des rejets** enregistrée.
 - **BiGRU pondéré** : option `class_weight="balanced"` de la sonde
   séquentielle et `scripts/compare_weighted_sequence.py`.
+- **Notebook renommé** `notebooks/sleepfm_embeddings_physionet2018.ipynb`
+  (« SleepFM — embeddings PhysioNet 2018 (GPU) ») ; règle de nommage des
+  notebooks dans le GUIDE.
+- **Examen des signaux bruts** (`scripts/inspect_night_signals.py`) : qualité
+  des canaux et physiologie par stade (tonus du menton, mouvements oculaires,
+  alpha). Deux nuits ratées : REM pris pour de l'éveil, EMG du menton quasi
+  plat dans l'une, REM atypique dans l'autre.
 - **`--embed-only`** (mode par lots) : calcule seulement les embeddings. Le
   notebook l'active par défaut : le GPU ne sert qu'à SleepFM, les sondes
   tournent ensuite sur le Mac (~20 à 25 min de GPU économisées par run).

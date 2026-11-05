@@ -3,8 +3,8 @@
 [![CI](https://github.com/sumarc183-design/sleepfm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/sumarc183-design/sleepfm-pipeline/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://docs.astral.sh/ruff/)
-[![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
-[![Ouvrir dans Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/colab_baseline_physionet2018.ipynb)
+[![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/sleepfm_embeddings_physionet2018.ipynb)
+[![Ouvrir dans Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://kaggle.com/kernels/welcome?src=https://github.com/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/sleepfm_embeddings_physionet2018.ipynb)
 
 Reproduction et évaluation de [SleepFM](https://github.com/rthapa84/sleepfm-codebase),
 modèle fondamental multimodal du sommeil, sur données ouvertes : stadification
@@ -68,8 +68,13 @@ AUPRC = *average precision* (scikit-learn), un stade contre tous, moyennée.
 - **N1 : pas de gain établi.** Dans le run de référence, F1 0,52 contre 0,51
   pour la baseline, mais 0,46 à 0,48 sur les 3 graines de l'ablation. Le
   rappel baisse (0,47 contre 0,53) : le BiGRU lisse davantage les vraies
-  époques N1 en éveil (873 contre 718). Deux nuits restent mauvaises pour les
-  deux modèles (κ ≈ 0,34), à examiner.
+  époques N1 en éveil (873 contre 718).
+- **Deux nuits ratées par les deux modèles** (κ ≈ 0,34,
+  [examen](results/nuits_ratees_physionet2018_100.txt)) : presque tout leur
+  REM est pris pour de l'éveil. Dans l'une, l'EMG du menton est
+  quasi plat (électrode probable) ; dans l'autre, le REM ressemble à l'éveil
+  (peu d'atonie, pas de mouvements oculaires), à montrer au médecin du
+  sommeil.
 - **Pondérer les stades dans le BiGRU ne paie pas**
   ([essai](results/bigru_pondere_physionet2018_100.txt)) : le rappel de N1
   remonte (0,58 contre 0,47) mais son F1 ne bouge pas (0,52), N2 recule
