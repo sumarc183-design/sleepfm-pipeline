@@ -66,13 +66,20 @@ sujets refait tout le tirage et change les nuits de test.
 **Provenance du cache** : le dossier garde un `manifest.json` (empreinte
 SHA-256 du checkpoint, version du prétraitement, canaux, fréquence). Un autre
 checkpoint est refusé ; un autre prétraitement aussi, dès qu'il reste des
-sujets à calculer, pour ne jamais mélanger deux versions. Les 100 caches
-actuels datent d'avant le manifeste : ils sont déclarés en version 1 (début
-utile pris sur la colonne « wake »). La version 2 prend la fin de la période
-« undefined », colonne désignée par son nom, comme le code officiel ; sur les
-3 enregistrements bruts vérifiés, le résultat est identique. Pour 200 sujets,
-utiliser un nouveau dossier (`physionet2018_v2`) : les 200 sont alors calculés
-avec la même version.
+sujets à calculer, pour ne jamais mélanger deux versions. Les 100 caches de
+`embeddings/physionet2018` datent d'avant le manifeste : ils sont déclarés en
+version 1 (début utile pris sur la colonne « wake »). La version 2 prend la fin
+de la période « undefined », colonne désignée par son nom, comme le code
+officiel. Sur les 100 mêmes nuits, 91 sont identiques et les 9 autres récupèrent
+480 époques de début de nuit. Le run de référence utilise uniquement
+`embeddings/physionet2018_v2` (500 sujets en version 2).
+
+**Contrat du cache** : checkpoint, prétraitement, canaux dans le même ordre et
+fréquence. Il est comparé en entier pour réunir des caches
+(`src/data/cache_contract.py`, utilisé par l'import Kaggle) et pour prédire avec
+des sondes exportées. Chaque fichier est aussi vérifié : formes, valeurs finies,
+indices d'époque entiers et uniques, temps tous finis et croissants ou tous
+absents (cache historique). Un temps manquant isolé est refusé.
 
 **Sujets rejetés** : la raison est écrite dans `<sujet>.skipped` (canaux
 manquants, aucun stade annoté…). Une extraction interrompue ne laisse pas de
@@ -94,7 +101,7 @@ ce titre au notebook importé pour s'y retrouver.
 [![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/sleepfm_embeddings_physionet2018.ipynb)
 
 Sélectionner `GPU T4` dans le type d'exécution, puis `Tout exécuter`. Le
-notebook utilise le mode par lots (100 sujets par défaut) avec les embeddings
+notebook utilise le mode par lots (500 sujets par défaut) avec les embeddings
 sur Google Drive : une déconnexion ne fait rien perdre. Sorties :
 `results_physionet2018_<N>.txt` (lisible) et `.json` (métriques, sujets de
 train et de test, réglages et convergence, pour comparer deux runs).
@@ -132,7 +139,7 @@ prétraitement actuel.
 ## Sondes et sélection de modèle
 
 Toutes les sondes s'entraînent sur les mêmes embeddings figés et le même split
-**80/20 par sujet** (`--test-fraction`), jamais par époque : les époques d'une
+**par sujet** (20 % de test par défaut, `--test-fraction`), jamais par époque : les époques d'une
 même nuit se ressemblent, les séparer gonflerait les scores.
 
 | Sonde (`--probes`) | Levier testé |
@@ -165,12 +172,15 @@ si le modèle n'a pas convergé.
 
 **Sondes exportées** (`--save-models DIR`, avec `--results-json`) : chaque
 sonde entraînée est écrite dans `DIR/<sonde>.joblib`, avec un
-`manifest.json` (contrat d'entrée : dimension, empreinte du checkpoint et
-version du prétraitement des embeddings ; classes ; hyperparamètres ; commit
-et versions). `scripts/predict_night.py` les recharge et écrit l'hypnogramme
-prédit d'une nuit en CSV (stade et probabilités par époque), après avoir
-vérifié que les embeddings viennent du même checkpoint et du même
-prétraitement. Les `.joblib` sont des pickles : ne charger que nos exports.
+`manifest.json` (contrat d'entrée et dimension des embeddings ; classes ;
+paramètres effectifs, nuits de validation et meilleur passage de chaque sonde ;
+commit et versions). `scripts/predict_night.py` les recharge et écrit
+l'hypnogramme prédit d'une nuit en CSV (stade et probabilités par époque). Il
+refuse tout cache au contrat absent, incomplet ou différent, sauf
+`--allow-unverified-provenance`, réservé aux caches historiques. Les stades du
+cache sont facultatifs pour prédire, mais une PSG brute jamais annotée n'est pas
+encore prise en charge : l'extraction choisit ses fenêtres à partir des
+annotations. Les `.joblib` sont des pickles : ne charger que nos exports.
 
 **Réutiliser les embeddings sur Kaggle** : publier le zip
 `embeddings_physionet2018_v2.zip` comme Dataset Kaggle privé, puis l'ajouter
@@ -243,9 +253,14 @@ Vérifie le format des époques extraites (845 époques de 30 s pour
 sonde avec des poids aléatoires : plomberie, pas performance. Sauté si
 `data/processed/train` est absent (CI).
 
-**Mac Intel avec Anaconda** : XGBoost multithread plante (segfault) une fois
-PyTorch chargé dans le même processus (deux runtimes OpenMP). Préfixer les
-commandes par `OMP_NUM_THREADS=1`. Sans effet sur Colab/Linux.
+**Mac Intel avec Anaconda** : XGBoost plante ou se bloque une fois que PyTorch a
+calculé dans le même processus (deux runtimes OpenMP), même avec `n_jobs=1`.
+`run_baseline.py` le retire donc des sondes sur Mac, avec un avertissement, et
+ses tests y sont sautés. Lancer XGBoost sur Linux (Colab, Kaggle, CI).
+
+**Environnement restreint** : si le DataLoader ne peut pas lancer de processus
+(`torch_shm_manager: Operation not permitted`), ajouter `--num-workers 0`. Par
+défaut, le nombre de workers des embeddings suit `--num-threads`.
 
 **Réseau d'entreprise** : si le téléchargement Python de PhysioNet est bloqué
 par un proxy, chaque sujet ne demande que 3 fichiers, téléchargeables au
@@ -271,10 +286,11 @@ ceux d'un réentraînement complet), pas une erreur introduite ici.
   valeur par défaut (256) ; une autre valeur donnerait un double
   rééchantillonnage. Hérité du prétraitement officiel, gardé tel quel pour
   rester comparable.
-- **Reprise de l'extraction en mode classique** : un sujet dont le dossier
-  `X/<id>/` n'est pas vide est considéré comme traité ; si une extraction a
-  été interrompue en cours d'écriture, supprimer ce dossier avant de
-  relancer. Le mode par lots n'est pas concerné (dossiers temporaires).
+- **Reprise de l'extraction en mode classique** : un sujet est considéré comme
+  traité si ses fichiers `Y/` et `T/` se relisent et que ses fichiers d'époques
+  existent. Le contenu de chaque fichier `X/` n'est pas relu : après une
+  corruption, supprimer le dossier du sujet. Le mode par lots n'est pas concerné
+  (dossiers temporaires).
 - **Sous-ensemble de sujets** : `--physionet-subjects N` prend les N premiers
   sujets par identifiant, pas un tirage aléatoire.
 

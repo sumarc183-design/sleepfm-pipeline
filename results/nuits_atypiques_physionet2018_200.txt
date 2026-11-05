@@ -1,3 +1,8 @@
+CORRIGÉ le 2026-11-05 : ne plus citer ce fichier, remplacé par nuits_atypiques_physionet2018_500.txt.
+Le tableau spectral ci-dessous omet 2-4 Hz, le « 80 % » additionne deux médianes, « signaux propres »
+et « pas de canal plat » sont trop forts (SaO2 plat sur 15 % de tr03-1292), et « les modèles ne se
+trompent pas » est une hypothèse. Gardé tel quel pour l'historique.
+
 Deux nouvelles nuits de test atypiques (run à 200 sujets) — examen du 2026-11-05
 Sources : results/results_physionet2018_200.predictions.npz (prédictions du
 BiGRU, la baseline fait les mêmes erreurs), scripts/inspect_night_signals.py et

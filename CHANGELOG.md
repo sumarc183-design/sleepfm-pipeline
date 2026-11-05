@@ -6,6 +6,19 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Protocole de confirmation** (`docs/PROTOCOLE_CONFIRMATION.md`), écrit avant
+  d'ouvrir les 494 sujets réservés : modèles figés par empreinte, critère
+  principal, exclusions et historique d'utilisation du test. À valider.
+- **Import sûr des caches** (`src/data/cache_contract.py`) : le notebook compare
+  le contrat complet de chaque source, signale tout conflit de fichier et garde
+  la provenance de chaque fichier importé.
+- **`--num-workers`** : workers du DataLoader séparés de `--num-threads`, 0 possible.
+- **Traçabilité** : paramètres effectifs, nuits de validation et meilleur passage
+  dans l'export (format 2) ; commit, état du code, versions et empreinte du
+  découpage dans le JSON des résultats ; contrat aussi dans l'export du mode classique.
+- **Prédiction sans stades** : `predict_night.py` accepte un cache sans `y`.
+- **Écart apparié entre deux runs** dans `compare_test_nights.py`, seulement si
+  les époques et les stades sont identiques.
 - **Spectre de l'EEG par groupe d'époques** (`scripts/eeg_spectra_by_group.py`) :
   bandes de C3, alpha occipital et tonus du menton, par couple stade de
   l'expert / stade prédit, pour comprendre un désaccord.
@@ -61,6 +74,26 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Conclusions trop fortes** : le run à 500 sujets est présenté comme une
+  évaluation élargie avec réutilisation partielle du test, pas comme une
+  reproduction stricte ni un protocole aligné. L'effet du volume n'est établi que
+  pour la baseline entre 160 et 400 nuits. Les nuits atypiques séparent mesures et
+  hypothèses (`results/nuits_atypiques_physionet2018_500.txt`).
+- **Spectre** : la plage 2-4 Hz manquait, et le « 80 % » additionnait deux
+  médianes. Le delta couvre 0,5-4 Hz et la puissance lente se calcule par époque.
+- **Arrondis du README** : un seul arrondi depuis le JSON (F1 du BiGRU 0,731, ROC-AUC du MLP 0,916).
+- **Contrat d'inférence obligatoire** : manifeste absent ou incomplet, checkpoint,
+  prétraitement, canaux, fréquence, classes ou dimension différents sont refusés
+  avant de prédire, sauf `--allow-unverified-provenance`.
+- **Import Kaggle** : deux sources de checkpoints différents pouvaient se mélanger
+  sous un seul manifeste. Aucun mélange dans les résultats actuels, issus d'une seule source.
+- **Validation des caches et du découpage** : temps partiellement manquants ou
+  infinis, indices non entiers ou négatifs, labels à deux dimensions et partitions
+  qui ne sont pas des listes sont refusés. Le BiGRU refuse aussi un temps manquant isolé.
+- **Téléchargement** : fichier `.part` renommé à la fin et délai de réponse ; un
+  transfert interrompu n'est plus pris pour un fichier complet.
+- **Notebook** : le vrai code de retour du script est vérifié, et un run incomplet
+  ou un JSON ancien ne produisent plus de message de succès.
 - **Export des sondes** (`--save-models`) : le MLP, qui a aussi un attribut
   `model_`, était pris pour le BiGRU et l'export plantait. Seul un module
   torch est désormais déplacé sur CPU ; le test d'export couvre le MLP.
@@ -127,25 +160,26 @@ selon [SemVer](https://semver.org/lang/fr/).
   supprimé et recalculé au démarrage.
 
 ### Résultats
-- **500 sujets, 400 / 100 nuits** (2026-11-05), même nombre de nuits de test
-  que l'article : baseline pondérée κ 0,599 [0,570 ; 0,627], non pondérée
+- **500 sujets, 400 / 100 nuits** (2026-11-05), évaluation élargie, même nombre de
+  nuits de test que l'article mais 40 déjà examinées : baseline pondérée κ 0,599 [0,570 ; 0,627], non pondérée
   0,613, MLP 0,591, BiGRU 0,664 [0,634 ; 0,694] (+0,065 [+0,047 ; +0,083],
   81 nuits sur 100). Article : ROC-AUC 0,921 / AUPRC 0,750 / F1 0,686 contre
-  0,924 / 0,759 / 0,700. Sur les 40 nuits de test du run à 200 sujets,
-  l'entraînement sur 400 nuits fait mieux (baseline 0,616 contre 0,587,
-  BiGRU 0,672 contre 0,656).
+  0,924 / 0,759 / 0,700. Sur les mêmes 36 163 époques du run à 200 sujets, écart
+  apparié de 160 à 400 nuits, pour une graine par run : baseline +0,029
+  [+0,008 ; +0,049], BiGRU +0,016 [−0,001 ; +0,031].
 - 200 sujets, découpage figé étendu à 160 / 40 (2026-11-05), embeddings en
   prétraitement v2 calculés sur Kaggle : baseline pondérée κ 0,587
   [0,533 ; 0,643], non pondérée 0,608, MLP 0,586, BiGRU 0,656
   [0,594 ; 0,713] (+0,069 [+0,045 ; +0,096] sur la baseline, 33 nuits sur
-  40). Sur les 20 anciennes nuits de test, l'entraînement sur 160 nuits fait
-  mieux qu'à 100 sujets (baseline 0,620 contre 0,607, BiGRU 0,706 contre
-  0,685) ; la baisse globale vient de deux nouvelles nuits à l'hypnogramme
-  atypique (κ 0,04 et 0,12), gardées dans le test. Article : ROC-AUC 0,916 /
+  40). Sur les 20 anciennes nuits de test, les scores sont plus hauts qu'à 100
+  sujets (baseline 0,620 contre 0,607, BiGRU 0,706 contre 0,685), avec un
+  prétraitement également modifié (125 époques de plus) : comparaison
+  descriptive. Deux nouvelles nuits de fort désaccord (κ 0,04 et 0,12) pèsent
+  sur le total ; elles restent dans le test. Article : ROC-AUC 0,916 /
   AUPRC 0,750 / F1 0,679 contre 0,924 / 0,759 / 0,700.
-- Les deux nuits atypiques ont des signaux propres : tr03-1292 a un EEG de
-  sommeil sur 557 époques notées en éveil (annotation à vérifier),
-  tr04-0133 un sommeil léger et fragmenté noté en N1.
+- Deux nuits de fort désaccord examinées : tr03-1292 et tr04-0133. Mesures et
+  hypothèses dans `results/nuits_atypiques_physionet2018_500.txt` ; ni erreur
+  d'annotation ni erreur de modèle ne sont établies.
 - Embeddings v2 contre v1 sur les 100 premières nuits : identiques sur 91 ;
   sur les 9 autres, la v2 récupère 480 époques de début de nuit, mêmes
   stades sur les époques communes.

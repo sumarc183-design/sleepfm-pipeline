@@ -16,11 +16,14 @@ https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
 """
 
 import argparse
+import os
+import shutil
 import time
 import urllib.request
 from pathlib import Path
 
 PHYSIONET_2018_URL = "https://physionet.org/files/challenge-2018/1.0.0"
+DOWNLOAD_TIMEOUT_SECONDS = 120  # sans réponse du serveur pendant ce délai : nouvel essai
 
 
 def list_subjects(split: str = "training") -> list[str]:
@@ -33,19 +36,28 @@ def download_subject(subject_id: str, dest_dir: str | Path, split: str = "traini
     """Télécharge les 3 fichiers d'un sujet (.hea, .mat, -arousal.mat) en HTTPS
     direct vers dest_dir/<subject_id>/, sans passer par wfdb (-arousal.mat est
     un fichier MATLAB, pas un enregistrement WFDB). Les fichiers déjà présents
-    ne sont pas retéléchargés."""
+    ne sont pas retéléchargés. Écriture dans un `.part` renommé à la fin : un
+    transfert interrompu n'est jamais pris pour un fichier complet."""
     subject_dir = Path(dest_dir) / subject_id
     subject_dir.mkdir(parents=True, exist_ok=True)
     for name in (f"{subject_id}.hea", f"{subject_id}.mat", f"{subject_id}-arousal.mat"):
         dest = subject_dir / name
+        partial = subject_dir / f"{name}.part"
         if dest.exists() and dest.stat().st_size > 0:
             continue
         for attempt in range(retries):
             try:
-                urllib.request.urlretrieve(f"{PHYSIONET_2018_URL}/{split}/{subject_id}/{name}", dest)
+                with (
+                    urllib.request.urlopen(
+                        f"{PHYSIONET_2018_URL}/{split}/{subject_id}/{name}", timeout=DOWNLOAD_TIMEOUT_SECONDS
+                    ) as response,
+                    open(partial, "wb") as out,
+                ):
+                    shutil.copyfileobj(response, out)
+                os.replace(partial, dest)
                 break
             except OSError:
-                dest.unlink(missing_ok=True)
+                partial.unlink(missing_ok=True)
                 if attempt == retries - 1:
                     raise
                 time.sleep(2**attempt)

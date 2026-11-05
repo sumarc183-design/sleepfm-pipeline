@@ -49,7 +49,8 @@ def split_into_nights(
     subjects: np.ndarray, epoch_idx: np.ndarray, onset_s: np.ndarray | None = None
 ) -> list[np.ndarray]:
     """Indices de lignes de chaque segment continu, triés par numéro d'époque.
-    Sans temps d'origine (`onset_s` absent ou NaN), une nuit = un segment.
+    Sans temps d'origine (`onset_s` absent ou entièrement NaN), une nuit = un
+    segment. Un temps manquant isolé est refusé : il masquerait les trous.
     Avec, la nuit est coupée là où deux époques consécutives sont séparées de
     plus de 31 s : le BiGRU ne relie pas deux époques de part et d'autre d'une
     période retirée (non annotée)."""
@@ -57,9 +58,11 @@ def split_into_nights(
     for subject in dict.fromkeys(subjects):  # ordre d'apparition, déterministe
         rows = np.flatnonzero(subjects == subject)
         rows = rows[np.argsort(epoch_idx[rows], kind="stable")]
-        if onset_s is None or np.isnan(onset_s[rows]).any():
+        if onset_s is None or np.isnan(onset_s[rows]).all():
             segments.append(rows)
             continue
+        if not np.isfinite(onset_s[rows]).all():
+            raise ValueError(f"{subject} : temps d'origine partiellement manquants ou infinis")
         breaks = np.flatnonzero(np.diff(onset_s[rows]) > MAX_STEP_SECONDS) + 1
         segments += [part for part in np.split(rows, breaks) if len(part)]
     return segments
@@ -90,6 +93,10 @@ class SequenceProbe:
         # "balanced" : poids de chaque stade inversement proportionnel à sa
         # fréquence dans le train, comme la régression logistique officielle.
         self.class_weight = class_weight
+
+    def get_params(self) -> dict:
+        keys = ("hidden_dim", "epochs", "lr", "dropout", "window", "batch_size", "seed", "context", "class_weight")
+        return {key: getattr(self, key) for key in keys}
 
     def _windows(self, X: np.ndarray, y: np.ndarray, nights: list[np.ndarray], rng: np.random.Generator):
         """Découpe chaque nuit en fenêtres consécutives, avec un décalage
@@ -138,8 +145,8 @@ class SequenceProbe:
         elif self.class_weight is not None:
             raise ValueError(f"class_weight inconnu : {self.class_weight!r}")
         criterion = nn.CrossEntropyLoss(weight=weight, ignore_index=-100)
-        best_loss, best_state = float("inf"), None
-        for _ in range(self.epochs):
+        best_loss, best_state, best_epoch = float("inf"), None, None
+        for epoch in range(self.epochs):
             self.model_.train()
             for xb, yb, lengths in self._windows(X, y_encoded, train_nights, rng):
                 optimizer.zero_grad()
@@ -149,11 +156,16 @@ class SequenceProbe:
             if val_nights:
                 val_loss = self._loss(X, y_encoded, val_nights, criterion)
                 if val_loss < best_loss:
-                    best_loss = val_loss
+                    best_loss, best_epoch = val_loss, epoch + 1
                     best_state = {k: v.detach().clone() for k, v in self.model_.state_dict().items()}
         if best_state is not None:
             self.model_.load_state_dict(best_state)
         self.model_.eval()
+        self.fit_info_ = {
+            "validation_subjects": sorted(str(subjects[i]) for i in order[:n_val]),
+            "best_epoch": best_epoch,
+            "best_validation_loss": None if best_state is None else float(best_loss),
+        }
         return self
 
     @torch.no_grad()

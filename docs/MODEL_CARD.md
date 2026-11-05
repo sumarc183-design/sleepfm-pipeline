@@ -45,13 +45,16 @@ train − test. Résultats à jour : [README](../README.md#résultats).
 
 ## Limites connues
 
-- **Comparaison à l'article encore approximative** : l'article SleepFM 2024
+- **Pas une reproduction stricte de l'article** : l'article SleepFM 2024
   (section 4.6, tableau 8) évalue PhysioNet 2018 avec 100 participants en test
-  (ROC-AUC 0,924, F1 0,700). La baseline obtient 0,925 et 0,683, mais sur 20
-  nuits de test et avec un autre découpage : même ordre de grandeur, pas une
-  reproduction stricte.
-- **N1 mal reconnu** (F1 ≈ 0,51 avec la baseline et le BiGRU, 0,45 sans
-  pondération), confondu surtout avec l'éveil : stade de transition, rare et peu
+  (ROC-AUC 0,924, AUPRC 0,759, F1 0,700). La baseline obtient 0,921, 0,750 et
+  0,686 sur 100 nuits : même effectif et même ordre de grandeur, mais sujets,
+  découpage et sonde peuvent différer, et 40 de ces nuits avaient déjà été
+  examinées. Confirmation prévue : [protocole](PROTOCOLE_CONFIRMATION.md).
+- **Sujets non tirés au hasard** : les 500 premiers par identifiant. Les
+  résultats ne valent pas pour les 494 autres avant d'y être mesurés.
+- **N1 mal reconnu** (F1 0,50 avec la baseline et le BiGRU, 0,45 sans
+  pondération, run à 500 sujets), confondu surtout avec l'éveil : stade de transition, rare et peu
   concordant même entre experts.
 - **Population** : adultes d'un seul centre (PhysioNet 2018). Aucune
   évaluation en pédiatrie (CHAT, phase 2), ni sur d'autres appareils ou
@@ -64,10 +67,11 @@ train − test. Résultats à jour : [README](../README.md#résultats).
 - **Résultats** (2026-11-05, protocole officiel, run de référence à 500
   sujets) : κ 0,599 [0,570 ; 0,627] pour la baseline, 0,664 [0,634 ; 0,694]
   pour le BiGRU ; ROC-AUC 0,921, AUPRC 0,750, F1 0,686 pour la baseline,
-  contre 0,924 / 0,759 / 0,700 dans l'article. Quelques nuits de test
-  atypiques (5 sur 100 sous κ 0,3) pèsent sur le total. À 200 sujets : 0,587
-  et 0,656 ; à 100 sujets : 0,607 et 0,685 (BiGRU de 0,666 à 0,684 sur 3
-  graines d'entraînement). Les résultats du
+  contre 0,924 / 0,759 / 0,700 dans l'article. Écart apparié du BiGRU : κ
+  +0,065 [+0,047 ; +0,083], une seule graine à 500 sujets. 5 nuits sur 100 sont
+  sous κ 0,3 avec la baseline. Historique : à 200 sujets (2026-11-05), 0,587 et
+  0,656 ; à 100 sujets en prétraitement version 1 (2026-11-04), 0,607 et 0,685
+  (BiGRU de 0,666 à 0,684 sur 3 graines d'entraînement). Les résultats du
   2026-11-02/03 (κ 0,584 et 0,622) utilisaient une régression non pondérée.
 
 ## Considérations éthiques

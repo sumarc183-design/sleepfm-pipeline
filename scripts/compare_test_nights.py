@@ -7,6 +7,11 @@ baseline et du BiGRU sur les anciennes nuits de test, les nouvelles et
 l'ensemble, avec IC à 95 % par bootstrap sur les sujets ; liste les nuits au
 κ le plus bas avec leur répartition des stades (selon l'expert).
 
+Le script vérifie si les anciennes nuits ont exactement les mêmes époques et
+les mêmes stades dans les deux runs. Si oui, il donne l'écart apparié entre les
+deux runs, pour une graine d'entraînement chacun. Sinon, la comparaison reste
+descriptive : les entrées du test ont changé en même temps que l'entraînement.
+
     python scripts/compare_test_nights.py \
         --predictions results/results_physionet2018_200.predictions.npz \
         --old-predictions results/results_physionet2018_100_auprc.predictions.npz
@@ -23,7 +28,7 @@ from sklearn.metrics import cohen_kappa_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.models.linear_probe import bootstrap_ci  # noqa: E402
+from src.models.linear_probe import bootstrap_ci, paired_bootstrap_diff  # noqa: E402
 
 PROBES = {"logistic": "Baseline", "sequence": "BiGRU"}
 STAGES = "W/N1/N2/N3/REM"
@@ -32,6 +37,38 @@ STAGES = "W/N1/N2/N3/REM"
 def kappa_with_ci(y: np.ndarray, pred: np.ndarray, subjects: np.ndarray) -> str:
     low, high = bootstrap_ci(y, pred, subjects)["cohen_kappa"]
     return f"{cohen_kappa_score(y, pred):.3f} [{low:.3f} ; {high:.3f}]"
+
+
+def sorted_rows(subjects: np.ndarray, epoch_idx: np.ndarray) -> np.ndarray:
+    return np.lexsort((epoch_idx, subjects))
+
+
+def compare_same_epochs(old, new, is_old: np.ndarray) -> None:
+    """Écart apparié entre les deux runs, seulement si les époques sont identiques."""
+    rows_old = sorted_rows(old["subject"], old["epoch_idx"])
+    rows_new = np.flatnonzero(is_old)[sorted_rows(new["subject"][is_old], new["epoch_idx"][is_old])]
+    same = (
+        len(rows_old) == len(rows_new)
+        and np.array_equal(old["subject"][rows_old], new["subject"][rows_new])
+        and np.array_equal(old["epoch_idx"][rows_old], new["epoch_idx"][rows_new])
+        and np.array_equal(old["y_true"][rows_old], new["y_true"][rows_new])
+    )
+    if not same:
+        print(
+            f"Époques des anciennes nuits DIFFÉRENTES entre les runs ({len(rows_old)} contre {len(rows_new)}) : "
+            "comparaison descriptive, pas d'écart attribuable au seul entraînement"
+        )
+        return
+    print(f"Époques et stades des anciennes nuits identiques entre les runs ({len(rows_old)} époques)")
+    y, subjects = old["y_true"][rows_old], old["subject"][rows_old]
+    for probe, name in PROBES.items():
+        diff = paired_bootstrap_diff(
+            y, old[f"pred_{probe}"][rows_old], new[f"pred_{probe}"][rows_new], subjects, seed=42
+        )["cohen_kappa"]
+        print(
+            f"  {name} : κ ce run moins run précédent {diff['diff']:+.3f} "
+            f"[{diff['ci95'][0]:+.3f} ; {diff['ci95'][1]:+.3f}] (une graine par run)"
+        )
 
 
 def main() -> None:
@@ -62,6 +99,8 @@ def main() -> None:
             f"{label:<36}{mask.sum():>8}"
             + "".join(f"{kappa_with_ci(y, new[f'pred_{p}'][mask], subjects):>26}" for p in PROBES)
         )
+
+    compare_same_epochs(old, new, is_old)
 
     nights = []
     for subject in sorted(set(new["subject"])):

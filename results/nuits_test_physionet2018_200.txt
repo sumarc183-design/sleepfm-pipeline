@@ -4,6 +4,7 @@ Nuits de test                        époques                  Baseline         
 20 anciennes (ce run)                  17943     0.620 [0.565 ; 0.677]     0.706 [0.661 ; 0.743]
 20 nouvelles (ce run)                  18220     0.552 [0.442 ; 0.645]     0.605 [0.487 ; 0.713]
 40 (ce run)                            36163     0.587 [0.533 ; 0.643]     0.656 [0.594 ; 0.713]
+Époques des anciennes nuits DIFFÉRENTES entre les runs (17818 contre 17943) : comparaison descriptive, pas d'écart attribuable au seul entraînement
 κ médian par nuit, baseline, nuits anciennes : 0.610
 κ médian par nuit, baseline, nuits nouvelles : 0.630
 BiGRU au-dessus de la baseline sur 33 nuits sur 40

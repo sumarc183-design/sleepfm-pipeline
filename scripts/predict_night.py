@@ -1,12 +1,17 @@
 """Prédit l'hypnogramme d'une ou plusieurs nuits avec des sondes exportées.
 
 Lit des sondes exportées par `run_baseline.py --save-models DIR` et des
-embeddings en cache (`<sujet>.npz` du mode par lots), vérifie qu'ils viennent
-du même checkpoint et du même prétraitement, puis écrit un CSV par nuit :
-numéro d'époque, début (s), stade prédit et probabilités, pour chaque sonde.
+embeddings en cache (`<sujet>.npz` du mode par lots, avec ou sans stades),
+exige le même contrat (checkpoint, prétraitement, canaux, fréquence, dimension),
+puis écrit un CSV par nuit : numéro d'époque, début (s), stade prédit et
+probabilités, pour chaque sonde.
 
-    python scripts/predict_night.py --models models/physionet2018 \
-        --embeddings-dir embeddings/physionet2018 tr03-0005 --out predictions/
+Le cache doit déjà exister : l'extraction actuelle choisit ses fenêtres à partir
+des annotations. Prédire sur une PSG brute jamais annotée reste à construire.
+Le BiGRU lit aussi les époques futures : traitement après enregistrement.
+
+    python scripts/predict_night.py --models models/physionet2018_500 \
+        --embeddings-dir embeddings/physionet2018_v2 tr03-0005 --out predictions/
 """
 
 from __future__ import annotations
@@ -35,14 +40,22 @@ def main() -> None:
     parser.add_argument("--models", type=Path, required=True)
     parser.add_argument("--embeddings-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--allow-unverified-provenance",
+        action="store_true",
+        help="Cache historique sans contrat complet : prédit quand même, avec un avertissement.",
+    )
     args = parser.parse_args()
 
     manifest_path = args.embeddings_dir / "manifest.json"
     cache_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
-    models, _ = load_probes(args.models, cache_manifest)
+    models, export = load_probes(args.models, cache_manifest, args.allow_unverified_provenance)
+    expected_dim = export["input"]["embedding_dim"]
     args.out.mkdir(parents=True, exist_ok=True)
     for subject in args.subjects:
-        X, _, groups = load_cached_embeddings(args.embeddings_dir, [subject])
+        X, _, groups = load_cached_embeddings(args.embeddings_dir, [subject], require_labels=False)
+        if X.shape[1] != expected_dim:
+            raise SystemExit(f"{subject} : embeddings de dimension {X.shape[1]}, {expected_dim} à l'entraînement")
         order = np.argsort(groups[1])
         columns = {"epoch_idx": groups[1][order], "onset_s": groups[2][order]}
         for kind, model in models.items():

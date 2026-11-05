@@ -80,8 +80,15 @@ class _NightEarlyStoppingMLP:
     hasard, issues des mêmes nuits que l'entraînement (fuite), et s'arrêterait
     trop tard. Garde l'état du meilleur passage (perte de validation)."""
 
+    hidden_layer_sizes = (256,)
+    alpha = 1e-3
+
     def __init__(self, seed: int = 42, max_epochs: int = 100, patience: int = 10) -> None:
         self.seed, self.max_epochs, self.patience = seed, max_epochs, patience
+
+    def get_params(self) -> dict:
+        keys = ("seed", "max_epochs", "patience", "hidden_layer_sizes", "alpha")
+        return {key: getattr(self, key) for key in keys}
 
     def fit(self, X: np.ndarray, y: np.ndarray, subjects: np.ndarray) -> _NightEarlyStoppingMLP:
         self.classes_ = np.unique(y)
@@ -91,20 +98,25 @@ class _NightEarlyStoppingMLP:
         is_val = np.isin(subjects, list(val_nights))
         X_fit, y_fit = X[~is_val], y[~is_val]
 
-        model = MLPClassifier(hidden_layer_sizes=(256,), alpha=1e-3, random_state=self.seed)
-        best_loss, best_model, stale = float("inf"), None, 0
-        for _ in range(self.max_epochs):
+        model = MLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes, alpha=self.alpha, random_state=self.seed)
+        best_loss, best_model, best_pass, stale = float("inf"), None, None, 0
+        for n_pass in range(1, self.max_epochs + 1):
             model.partial_fit(X_fit, y_fit, classes=self.classes_)  # une passe sur le train
             if not is_val.any():
                 continue
             val_loss = log_loss(y[is_val], model.predict_proba(X[is_val]), labels=self.classes_)
             if val_loss < best_loss - 1e-4:
-                best_loss, best_model, stale = val_loss, copy.deepcopy(model), 0
+                best_loss, best_model, best_pass, stale = val_loss, copy.deepcopy(model), n_pass, 0
             else:
                 stale += 1
                 if stale >= self.patience:
                     break
         self.model_ = best_model or model
+        self.fit_info_ = {
+            "validation_subjects": sorted(str(s) for s in val_nights),
+            "best_pass": best_pass,
+            "best_validation_loss": None if best_model is None else float(best_loss),
+        }
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -122,6 +134,9 @@ class _EncodedXGBClassifier:
         from xgboost import XGBClassifier  # import paresseux : dépendance optionnelle
 
         self.model = XGBClassifier(**params)
+
+    def get_params(self) -> dict:
+        return self.model.get_params()
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> _EncodedXGBClassifier:
         self.classes_, y_encoded = np.unique(y, return_inverse=True)

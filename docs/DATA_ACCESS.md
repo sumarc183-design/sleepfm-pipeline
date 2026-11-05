@@ -33,7 +33,11 @@ processus peut évoluer)
 2. **SHHS** — en parallèle ou juste après (évaluation à plus grande échelle)
 3. **CHAT** — phase 2 (pédiatrie)
 
-## Action immédiate
+## État
+
+Demande MESA et SHHS déposée le 2026-11-04, réponse attendue.
+
+## Pourquoi ne pas attendre
 
 Créer le compte sleepdata.org et déposer la demande MESA ne dépend
 d'aucune autre étape technique — c'est purement administratif et c'est le

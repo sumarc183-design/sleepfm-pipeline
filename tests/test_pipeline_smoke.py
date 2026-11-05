@@ -5,6 +5,7 @@ Marqué "slow" : exclure avec `pytest -m "not slow"` pour n'avoir que les
 tests unitaires rapides.
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -363,6 +364,8 @@ def test_embed_only_computes_embeddings_without_training_probes(tmp_path, monkey
             "3",
             "--num-threads",
             "1",
+            "--num-workers",
+            "0",
             "--device",
             "cpu",
             "--results-json",
@@ -397,7 +400,7 @@ def test_exported_probes_reload_and_predict_identically(tmp_path):
         train_groups=(groups[0][tr], groups[1][tr]),
         test_groups=(groups[0][te], groups[1][te]),
     )
-    manifest = {"checkpoint_sha256": "aaa", "preprocessing_version": 2}
+    manifest = {"checkpoint_sha256": "aaa", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
     save_probes(tmp_path, {k: r["model"] for k, r in results.items()}, 8, manifest)
     models, exported = load_probes(tmp_path, manifest)
     assert exported["probes"]["sequence"]["needs_groups"] and exported["input"]["embedding_dim"] == 8
@@ -406,3 +409,162 @@ def test_exported_probes_reload_and_predict_identically(tmp_path):
         np.testing.assert_allclose(predict_probabilities(models[kind], X[te], test_groups), r["test_outputs"]["proba"])
     with pytest.raises(ValueError, match="incompatibles"):
         load_probes(tmp_path, manifest | {"checkpoint_sha256": "bbb"})
+
+
+def _cache(path, n=4, **overrides):
+    arrays = {
+        "X": np.zeros((n, 1536), dtype=np.float32),
+        "y": np.zeros(n, dtype=np.int64),
+        "epoch_idx": np.arange(n),
+        "onset_s": 30.0 * np.arange(n),
+    }
+    arrays.update(overrides)
+    np.savez(path, **{key: value for key, value in arrays.items() if value is not None})
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"onset_s": np.array([0, 30, np.nan, 1800.0])},
+        {"onset_s": np.array([0, 30, np.inf, 1800.0])},
+        {"epoch_idx": np.array([0.0, 1.5, 2.0, 3.0])},
+        {"epoch_idx": np.array([-1, 0, 1, 2])},
+        {"y": np.zeros((4, 1), dtype=np.int64)},
+        {"X": np.zeros((4, 1536, 1), dtype=np.float32)},
+        {"epoch_idx": None},  # onset_s sans epoch_idx
+    ],
+)
+def test_cache_validation_rejects_inconsistent_shapes_and_times(tmp_path, overrides):
+    from run_baseline import cache_problem
+
+    path = tmp_path / "s.npz"
+    _cache(path, **overrides)
+    assert cache_problem(path) is not None
+
+
+def test_legacy_cache_without_times_stays_valid_and_labels_are_optional_to_predict(tmp_path):
+    from run_baseline import cache_problem, load_cached_embeddings
+
+    legacy = tmp_path / "legacy.npz"
+    _cache(legacy, onset_s=np.full(4, np.nan))
+    assert cache_problem(legacy) is None
+
+    unlabeled = tmp_path / "unlabeled.npz"
+    _cache(unlabeled, y=None)
+    assert "stades" in cache_problem(unlabeled)
+    assert cache_problem(unlabeled, require_labels=False) is None
+    X, y, groups = load_cached_embeddings(tmp_path, ["unlabeled"], require_labels=False)
+    assert y is None and len(X) == 4 and len(groups[1]) == 4
+
+
+def test_split_file_requires_lists(tmp_path):
+    from run_baseline import load_or_extend_split
+
+    path = tmp_path / "split.json"
+    path.write_text(json.dumps({"train": "abc", "test": ["d"]}))
+    with pytest.raises(SystemExit, match="liste"):
+        load_or_extend_split(path, ["a", "b"], 0.5, 0)
+
+
+CONTRACT = {"checkpoint_sha256": "aaa", "preprocessing_version": 2, "channels": ["C3", "C4"], "sample_rate": 256}
+
+
+def _source(directory, manifest, subject="s1", content=b"contenu"):
+    directory.mkdir(parents=True)
+    (directory / "manifest.json").write_text(json.dumps(manifest))
+    (directory / f"{subject}.npz").write_bytes(content)
+    return directory / "manifest.json"
+
+
+def test_import_rejects_other_contract_before_copy_and_flags_conflicts(tmp_path):
+    from src.data.cache_contract import import_embeddings
+
+    good = _source(tmp_path / "good", CONTRACT, "s1")
+    good2 = _source(tmp_path / "good2", CONTRACT, "s2")
+    bad_checkpoint = _source(tmp_path / "bad1", CONTRACT | {"checkpoint_sha256": "bbb"}, "s3")
+    bad_channels = _source(tmp_path / "bad2", CONTRACT | {"channels": ["C4", "C3"]}, "s4")
+    bad_rate = _source(tmp_path / "bad3", CONTRACT | {"sample_rate": 128}, "s5")
+    incomplete = _source(tmp_path / "bad4", {"preprocessing_version": 2}, "s6")
+    destination = tmp_path / "dest"
+
+    report = import_embeddings([good, good2, bad_checkpoint, bad_channels, bad_rate, incomplete], destination, CONTRACT)
+
+    assert report["copied"] == 2 and len(report["ignored"]) == 4
+    assert sorted(p.name for p in destination.glob("*.npz")) == ["s1.npz", "s2.npz"]
+    assert json.loads((destination / "manifest.json").read_text()) == CONTRACT
+    assert "s1.npz" in json.loads((destination / "provenance.json").read_text())
+
+    assert import_embeddings([good], destination, CONTRACT)["copied"] == 0  # déjà là, identique
+    conflict = _source(tmp_path / "conflict", CONTRACT, "s1", b"autre contenu")
+    with pytest.raises(ValueError, match="Conflit"):
+        import_embeddings([conflict], destination, CONTRACT)
+    with pytest.raises(ValueError, match="contrat"):
+        import_embeddings([good], destination, CONTRACT | {"checkpoint_sha256": "bbb"})
+
+
+def test_loading_probes_requires_a_complete_and_identical_contract(tmp_path):
+    from src.models.linear_probe import train_probe
+    from src.models.probe_export import load_probes, save_probes
+
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 5, 100)
+    X = rng.standard_normal((100, 8))
+    X[np.arange(100), y] += 3.0
+    groups = (np.repeat([f"s{i}" for i in range(5)], 20), np.tile(np.arange(20), 5))
+    models = {"logistic": train_probe("logistic", X, y), "mlp": train_probe("mlp", X, y, groups=groups)}
+    save_probes(tmp_path, models, 8, CONTRACT)
+
+    models_back, export = load_probes(tmp_path, CONTRACT)
+    assert set(models_back) == {"logistic", "mlp"}
+    mlp = export["probes"]["mlp"]
+    assert mlp["hyperparameters"]["hidden_layer_sizes"] == "(256,)" and mlp["hyperparameters"]["patience"] == 10
+    assert mlp["fit"]["validation_subjects"] and mlp["fit"]["best_pass"] >= 1
+    assert export["environment"]["code_commit"]
+
+    for bad in (
+        None,
+        {"checkpoint_sha256": "aaa"},
+        CONTRACT | {"channels": ["C4", "C3"]},
+        CONTRACT | {"sample_rate": 128},
+        CONTRACT | {"checkpoint_sha256": "bbb"},
+    ):
+        with pytest.raises(ValueError, match="incompatibles"):
+            load_probes(tmp_path, bad)
+    assert set(load_probes(tmp_path, None, allow_unverified=True)[0]) == {"logistic", "mlp"}
+
+
+def test_interrupted_download_is_not_taken_for_a_complete_file(tmp_path, monkeypatch):
+    import io
+
+    from scripts import download_physionet2018 as download
+
+    class Interrupted(io.BytesIO):
+        def read(self, *args):
+            raise KeyboardInterrupt
+
+    def interrupted(url, timeout):
+        return Interrupted(b"")
+
+    monkeypatch.setattr(download.urllib.request, "urlopen", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        download.download_subject("tr00-0001", tmp_path)
+    folder = tmp_path / "tr00-0001"
+    assert not (folder / "tr00-0001.hea").exists()
+
+    monkeypatch.setattr(download.urllib.request, "urlopen", lambda url, timeout: io.BytesIO(b"complet"))
+    download.download_subject("tr00-0001", tmp_path)
+    assert all((folder / name).read_bytes() == b"complet" for name in ("tr00-0001.hea", "tr00-0001.mat"))
+    assert not list(folder.glob("*.part"))
+
+
+def test_band_shares_cover_the_whole_range_including_3_hz():
+    from scripts.eeg_spectra_by_group import relative_band_power
+
+    sr = 256
+    t = np.arange(30 * sr) / sr
+    shares = relative_band_power(np.sin(2 * np.pi * 3 * t)[None].copy(), sr)
+    assert shares["delta"][0] > 0.99 and shares["lent"][0] > 0.99
+    noise = np.random.default_rng(0).standard_normal((2, 30 * sr))
+    shares = relative_band_power(noise, sr)
+    total = sum(shares[band] for band in ("delta", "thêta", "alpha", "sigma", "bêta"))
+    np.testing.assert_allclose(total, 1.0)

@@ -3,8 +3,11 @@
 Pour comprendre un désaccord entre l'expert et le modèle : dans chaque nuit,
 les époques sont groupées par (stade de l'expert, stade prédit par le BiGRU),
 et l'on compare, en médiane par groupe :
-- la part de la puissance 0,5-30 Hz de C3-M2 par bande (delta, thêta,
-  alpha, sigma, bêta) : indépendante du gain d'acquisition ;
+- la part de la puissance 0,5-30 Hz de C3-M2 par bande, indépendante du gain
+  d'acquisition : delta 0,5-4 Hz, thêta 4-8, alpha 8-12, sigma 12-15, bêta
+  15-30 (les cinq couvrent toute la plage et somment à 1) ;
+- la part des ondes lentes (delta + thêta), calculée époque par époque : on
+  n'additionne pas deux médianes ;
 - la part d'alpha en O2-M1 (élevée à l'éveil, yeux fermés) ;
 - le tonus du menton (RMS au-dessus de 10 Hz), en rapport à N2 de la nuit
   (à la médiane de la nuit s'il y a moins de 20 époques de N2).
@@ -29,7 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.data.extract_physionet2018 import import_signal_names  # noqa: E402
 
-BANDS = {"delta": (0.5, 2), "thêta": (4, 8), "alpha": (8, 12), "sigma": (12, 15), "bêta": (15, 30)}
+BANDS = {"delta": (0.5, 4), "thêta": (4, 8), "alpha": (8, 12), "sigma": (12, 15), "bêta": (15, 30)}
 STAGES = ["W", "N1", "N2", "N3", "REM"]
 MIN_EPOCHS = 30
 
@@ -38,7 +41,9 @@ def relative_band_power(epochs: np.ndarray, sr: int) -> dict[str, np.ndarray]:
     freqs, power = ss.welch(epochs, sr, nperseg=sr * 4, axis=-1)
     total = power[:, (freqs >= 0.5) & (freqs < 30)].sum(1)
     total[total == 0] = np.nan  # époques plates : exclues des médianes
-    return {band: power[:, (freqs >= lo) & (freqs < hi)].sum(1) / total for band, (lo, hi) in BANDS.items()}
+    shares = {band: power[:, (freqs >= lo) & (freqs < hi)].sum(1) / total for band, (lo, hi) in BANDS.items()}
+    shares["lent"] = shares["delta"] + shares["thêta"]
+    return shares
 
 
 def night_features(raw_dir: Path, subject: str, onsets: np.ndarray) -> dict[str, np.ndarray]:
@@ -67,7 +72,7 @@ def main() -> None:
     saved = np.load(args.predictions)
     if not np.isfinite(saved["onset_s"]).all():
         raise SystemExit("Prédictions sans temps d'origine (onset_s) : cache v1, époques non repérables")
-    columns = [*BANDS, "alphaO2", "menton"]
+    columns = [*BANDS, "lent", "alphaO2", "menton"]
     print(f"  {'groupe (C3 : part de puissance)':<34}{'n':>5}" + "".join(f"{c:>9}" for c in columns))
     for subject in args.subjects:
         rows = saved["subject"] == subject

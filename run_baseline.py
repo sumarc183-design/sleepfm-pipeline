@@ -33,7 +33,6 @@ Exemples :
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import shutil
@@ -48,6 +47,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from scripts.download_physionet2018 import download_subject, list_subjects
 from scripts.generate_synthetic_physionet2018 import generate_subject
+from src.data.cache_contract import file_sha256
 from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDataset
 from src.data.extract_physionet2018 import ALL_CHANNELS, PREPROCESSING_VERSION
 from src.data.extract_physionet2018 import main as extract_main
@@ -63,7 +63,7 @@ from src.models.linear_probe import (
     compare_probes,
     cross_validate_probes,
 )
-from src.models.probe_export import save_probes
+from src.models.probe_export import run_environment, save_probes
 
 
 def build_random_checkpoint(path: Path, embedding_dim: int = 512) -> None:
@@ -125,6 +125,8 @@ def validate_split(frozen: dict, source: str) -> None:
     if not isinstance(frozen, dict) or set(frozen) != {"train", "test"}:
         raise SystemExit(f'{source} : attendu {{"train": [...], "test": [...]}}')
     for role in ("train", "test"):
+        if not isinstance(frozen[role], list):
+            raise SystemExit(f"{source} : {role!r} doit être une liste de sujets")
         if not all(isinstance(s, str) for s in frozen[role]):
             raise SystemExit(f"{source} : identifiants de sujets non textuels dans {role!r}")
         duplicates = sorted({s for s in frozen[role] if frozen[role].count(s) > 1})
@@ -238,14 +240,6 @@ def embed_dataset(
     return np.concatenate(embeddings), np.concatenate(labels)
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as f:
-        for block in iter(lambda: f.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def embeddings_manifest(checkpoint_path: Path | None) -> dict:
     """Ce qui détermine les embeddings : poids, prétraitement, montage.
     `checkpoint_path=None` : poids aléatoires (tests, données synthétiques)."""
@@ -308,6 +302,7 @@ def embed_subjects_in_chunks(
     device: str,
     manifest: dict | None = None,
     retry_skipped: bool = False,
+    num_workers: int | None = None,
 ) -> dict | None:
     """Traite les sujets par lots : brut -> époques -> embeddings, un
     <id>.npz par sujet dans embeddings_dir, puis supprime brut et époques.
@@ -358,7 +353,9 @@ def embed_subjects_in_chunks(
             except FileNotFoundError:
                 dataset = None  # aucun sujet du lot n'a passé l'extraction
             if dataset is not None:
-                X, y = embed_dataset(encoders, dataset, batch_size, device, num_threads)
+                X, y = embed_dataset(
+                    encoders, dataset, batch_size, device, num_threads if num_workers is None else num_workers
+                )
                 sample_subjects, sample_epoch_idx = epoch_groups(dataset)
                 sample_onsets = epoch_onsets(dataset, processed_dir)
             for subject in chunk:
@@ -386,33 +383,50 @@ def embed_subjects_in_chunks(
 EMBEDDING_DIM = 3 * 512  # respiratoire + stades + ECG
 
 
-def cache_problem(path: Path) -> str | None:
+def cache_problem(path: Path, require_labels: bool = True) -> str | None:
     """Raison pour laquelle un cache d'embeddings est inutilisable, ou None.
-    Vérifie forme et dimension de X, valeurs finies, stades connus, et la
-    cohérence de epoch_idx (unique) et onset_s quand ils sont présents."""
+    X : matrice (n, 1536) finie. y : vecteur de stades connus (facultatif avec
+    require_labels=False, pour prédire sans annotation). epoch_idx : vecteur
+    d'entiers positifs ou nuls, sans doublon. onset_s, qui demande epoch_idx :
+    vecteur tout entier fini et croissant, ou tout entier NaN (cache historique
+    sans temps) ; un temps manquant isolé est refusé."""
     try:
         with np.load(path) as data:
-            X, y = data["X"], data["y"]
-            n = len(y)
+            X = data["X"]
+            if X.ndim != 2 or X.shape[1] != EMBEDDING_DIM:
+                return f"X de forme {X.shape}, attendu (n, {EMBEDDING_DIM})"
+            n = len(X)
             if n == 0:
                 return "aucune époque"
-            if X.ndim != 2 or X.shape != (n, EMBEDDING_DIM):
-                return f"X de forme {X.shape}, attendu ({n}, {EMBEDDING_DIM})"
             if not np.isfinite(X).all():
                 return "X contient des valeurs non finies"
-            if not np.isin(y, list(STAGE_NAME_TO_LABEL.values())).all():
-                return f"stades inconnus : {sorted(set(y.tolist()) - set(STAGE_NAME_TO_LABEL.values()))}"
+            if "y" in data:
+                y = data["y"]
+                if y.shape != (n,):
+                    return f"y de forme {y.shape}, attendu ({n},)"
+                if not np.isin(y, list(STAGE_NAME_TO_LABEL.values())).all():
+                    return f"stades inconnus : {sorted(set(y.tolist()) - set(STAGE_NAME_TO_LABEL.values()))}"
+            elif require_labels:
+                return "pas de stades (y), obligatoires pour évaluer"
+            if "onset_s" in data and "epoch_idx" not in data:
+                return "onset_s sans epoch_idx"
             if "epoch_idx" in data:
                 idx = data["epoch_idx"]
-                if len(idx) != n or len(np.unique(idx)) != n:
-                    return "epoch_idx de mauvaise longueur ou avec doublons"
+                if idx.shape != (n,) or not np.issubdtype(idx.dtype, np.integer):
+                    return f"epoch_idx de forme {idx.shape} et de type {idx.dtype}, attendu ({n},) entiers"
+                if (idx < 0).any() or len(np.unique(idx)) != n:
+                    return "epoch_idx négatif ou avec doublons"
                 if "onset_s" in data:
                     onsets = data["onset_s"]
-                    if len(onsets) != n:
-                        return "onset_s de mauvaise longueur"
-                    ordered = onsets[np.argsort(idx)]
-                    if np.isfinite(ordered).all() and (np.diff(ordered) <= 0).any():
-                        return "onset_s ne croît pas avec epoch_idx"
+                    if onsets.shape != (n,):
+                        return f"onset_s de forme {onsets.shape}, attendu ({n},)"
+                    if not np.isnan(onsets).all():
+                        if not np.isfinite(onsets).all():
+                            return "onset_s partiellement manquant ou infini"
+                        if (np.diff(onsets[np.argsort(idx)]) <= 0).any():
+                            return "onset_s ne croît pas avec epoch_idx"
+            elif not require_labels:
+                return "epoch_idx obligatoire pour prédire sans stades"
     except Exception as exc:
         return f"illisible ({exc.__class__.__name__})"
     return None
@@ -422,27 +436,28 @@ def is_valid_cache(path: Path) -> bool:
     return cache_problem(path) is None
 
 
-def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
+def load_cached_embeddings(embeddings_dir: Path, subjects: list[str], require_labels: bool = True):
     """Renvoie X, y et groups = (sujet, numéro d'époque, début en s) de chaque
     ligne. Le début (onset_s) vaut NaN pour un cache qui ne l'a pas : la nuit
-    est alors supposée continue. Un cache invalide arrête le run."""
+    est alors supposée continue. Un cache invalide arrête le run. Avec
+    require_labels=False, y vaut None si un cache n'a pas de stades."""
     X, y, groups_subject, groups_epoch, groups_onset = [], [], [], [], []
     without_onsets = 0
     for subject in subjects:
         path = embeddings_dir / f"{subject}.npz"
-        problem = cache_problem(path)
+        problem = cache_problem(path, require_labels)
         if problem:
             raise SystemExit(f"{path} : cache inutilisable ({problem})")
         with np.load(path) as data:
             X.append(data["X"])
-            y.append(data["y"])
+            y.append(data["y"] if "y" in data else None)
             if "epoch_idx" in data:
                 epoch_idx = data["epoch_idx"]
             else:
                 # Cache antérieur à epoch_idx : lignes dans l'ordre des noms de
                 # fichiers <sujet>_0..n-1.npy (numérotation sans trou à
                 # l'extraction), on retrouve donc le numéro de chaque ligne.
-                n = len(data["y"])
+                n = len(data["X"])
                 epoch_idx = np.array(sorted(range(n), key=lambda i: f"{subject}_{i}.npy"))
             onsets = data["onset_s"] if "onset_s" in data else np.full(len(epoch_idx), np.nan)
         without_onsets += int(np.isnan(onsets).all())
@@ -455,7 +470,8 @@ def load_cached_embeddings(embeddings_dir: Path, subjects: list[str]):
             "nuits supposées continues, sans trou d'enregistrement"
         )
     groups = (np.concatenate(groups_subject), np.concatenate(groups_epoch), np.concatenate(groups_onset))
-    return np.concatenate(X), np.concatenate(y), groups
+    labels = None if any(part is None for part in y) else np.concatenate(y)
+    return np.concatenate(X), labels, groups
 
 
 def load_verified_split(
@@ -695,7 +711,11 @@ def save_results_json(
             "max_gap": args.max_gap,
         },
         "split_file": None if getattr(args, "split_file", None) is None else str(args.split_file),
+        "split_sha256": None
+        if getattr(args, "split_file", None) is None or not args.split_file.exists()
+        else file_sha256(args.split_file),
         "embeddings_manifest": embeddings_manifest,
+        "environment": run_environment(),
         "train_subjects": sorted(train_subjects),
         "test_subjects": sorted(test_subjects),
         "probes": {
@@ -772,6 +792,7 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         args.device,
         manifest=embeddings_manifest(args.checkpoint),
         retry_skipped=args.retry_skipped,
+        num_workers=args.num_workers,
     )
     if args.embed_only:
         n_done = sum((args.embeddings_dir / f"{s}.npz").exists() for s in subject_ids)
@@ -834,6 +855,12 @@ def main() -> None:
     )
     parser.add_argument("--num-synthetic-subjects", type=int, default=6)
     parser.add_argument("--num-threads", type=int, default=4)
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=None,
+        help="Workers du DataLoader des embeddings ; 0 = dans le processus principal. Par défaut : --num-threads.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--device",
@@ -927,6 +954,10 @@ def main() -> None:
         parser.error("--physionet-subjects et --raw-data sont exclusifs")
     if args.embed_only and args.embeddings_dir is None:
         parser.error("--embed-only demande --embeddings-dir (mode par lots)")
+    if args.num_workers is None:
+        args.num_workers = args.num_threads
+    if args.num_workers < 0:
+        parser.error("--num-workers doit être positif ou nul")
     if sys.platform == "darwin" and "xgboost" in args.probes and not args.device.startswith("cuda"):
         # Sur Mac, XGBoost et torch chargent chacun leur OpenMP : XGBoost plante
         # (segmentation fault) ou se bloque dès que torch a calculé dans le
@@ -987,10 +1018,10 @@ def main() -> None:
         encoders = SleepFMEncoders(checkpoint_path, embedding_dim=512).to(args.device)
         print(f"Embeddings sur : {args.device}")
         X_train, y_train, train_groups = collect_embeddings(
-            encoders, processed_train, args.batch_size, args.device, args.num_threads
+            encoders, processed_train, args.batch_size, args.device, args.num_workers
         )
         X_test, y_test, test_groups = collect_embeddings(
-            encoders, processed_test, args.batch_size, args.device, args.num_threads
+            encoders, processed_test, args.batch_size, args.device, args.num_workers
         )
         n_train, n_test = len(y_train), len(y_test)
 
@@ -1014,6 +1045,7 @@ def main() -> None:
             test_subjects,
             y_test,
             test_groups,
+            embeddings_manifest(args.checkpoint),
         )
 
 

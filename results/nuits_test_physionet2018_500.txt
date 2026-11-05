@@ -4,6 +4,9 @@ Nuits de test                        époques                  Baseline         
 40 anciennes (ce run)                  36163     0.616 [0.571 ; 0.659]     0.672 [0.619 ; 0.723]
 60 nouvelles (ce run)                  52969     0.588 [0.552 ; 0.622]     0.659 [0.623 ; 0.689]
 100 (ce run)                           89132     0.599 [0.570 ; 0.627]     0.664 [0.634 ; 0.694]
+Époques et stades des anciennes nuits identiques entre les runs (36163 époques)
+  Baseline : κ ce run moins run précédent +0.029 [+0.008 ; +0.049] (une graine par run)
+  BiGRU : κ ce run moins run précédent +0.016 [-0.001 ; +0.031] (une graine par run)
 κ médian par nuit, baseline, nuits anciennes : 0.627
 κ médian par nuit, baseline, nuits nouvelles : 0.561
 BiGRU au-dessus de la baseline sur 81 nuits sur 100

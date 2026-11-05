@@ -4,10 +4,12 @@
 - `<sonde>.joblib` : la sonde ajustée (régression logistique, MLP, XGBoost,
   BiGRU), prête à prédire ;
 - `manifest.json` : contrat d'entrée (embeddings SleepFM de dimension 1536,
-  empreinte du checkpoint, version du prétraitement), stades dans l'ordre des
-  classes, hyperparamètres, commit du code et versions des bibliothèques.
+  empreinte du checkpoint, version du prétraitement, canaux, fréquence), stades
+  dans l'ordre des classes, paramètres effectifs et nuits de validation de
+  chaque sonde, commit du code et versions des bibliothèques.
 
-`load_probes` relit le dossier et vérifie le contrat avant toute prédiction.
+`load_probes` relit le dossier et exige un contrat complet et identique avant
+toute prédiction, sauf demande explicite de provenance non vérifiée.
 Les fichiers .joblib sont des pickles : ne charger que des exports de
 confiance (les nôtres).
 """
@@ -17,6 +19,7 @@ from __future__ import annotations
 import json
 import platform
 import subprocess
+from importlib import metadata
 from pathlib import Path
 
 import joblib
@@ -24,25 +27,46 @@ import numpy as np
 import sklearn
 import torch
 
-EXPORT_FORMAT = 1
+from src.data.cache_contract import contract_differences, missing_contract_keys
+
+EXPORT_FORMAT = 2
+READABLE_EXPORT_FORMATS = (1, 2)
 
 
-def _git_commit() -> str:
+def _git(*arguments: str) -> str | None:
     try:
         root = Path(__file__).resolve().parents[2]
         return subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ["git", "-C", str(root), *arguments], capture_output=True, text=True, check=True
         ).stdout.strip()
     except Exception:
-        return "inconnu"
+        return None
+
+
+def _version(package: str) -> str | None:
+    try:
+        return metadata.version(package)
+    except metadata.PackageNotFoundError:
+        return None
+
+
+def run_environment() -> dict:
+    """Code et bibliothèques réellement utilisés par un run."""
+    status = _git("status", "--porcelain", "--untracked-files=no")
+    return {
+        "code_commit": _git("rev-parse", "HEAD") or "inconnu",
+        "code_modified": None if status is None else bool(status),
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "numpy": np.__version__,
+        "scikit-learn": sklearn.__version__,
+        "torch": torch.__version__,
+        "xgboost": _version("xgboost"),
+    }
 
 
 def _hyperparameters(model) -> dict:
-    if hasattr(model, "get_params"):
-        params = model.get_params()
-    else:  # SequenceProbe
-        keys = ("hidden_dim", "epochs", "lr", "dropout", "window", "batch_size", "seed", "context", "class_weight")
-        params = {k: getattr(model, k, None) for k in keys}
+    params = model.get_params()
     return {k: v if isinstance(v, (int, float, str, bool, type(None))) else repr(v) for k, v in params.items()}
 
 
@@ -61,6 +85,7 @@ def save_probes(directory: Path, models: dict, embedding_dim: int, embeddings_ma
             "classes": [int(c) for c in model.classes_],
             "needs_groups": bool(getattr(model, "needs_groups", False)),
             "hyperparameters": _hyperparameters(model),
+            "fit": getattr(model, "fit_info_", None),
         }
     manifest = {
         "export_format": EXPORT_FORMAT,
@@ -70,32 +95,36 @@ def save_probes(directory: Path, models: dict, embedding_dim: int, embeddings_ma
             "groups": "BiGRU : (sujet, numéro d'époque[, début en s]) par ligne",
         },
         "probes": probes,
-        "code_commit": _git_commit(),
-        "versions": {
-            "python": platform.python_version(),
-            "numpy": np.__version__,
-            "scikit-learn": sklearn.__version__,
-            "torch": torch.__version__,
-        },
+        "environment": run_environment(),
     }
     (directory / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     print(f"Sondes exportées : {directory} ({', '.join(models)})")
 
 
-def load_probes(directory: Path, embeddings_manifest: dict | None = None) -> tuple[dict, dict]:
-    """Renvoie ({sonde: modèle}, manifeste). Si `embeddings_manifest` est
-    fourni (celui du cache à prédire), le checkpoint et le prétraitement
-    doivent être ceux de l'entraînement."""
+def load_probes(directory: Path, embeddings_manifest: dict | None, allow_unverified: bool = False) -> tuple[dict, dict]:
+    """Renvoie ({sonde: modèle}, manifeste). Le manifeste du cache à prédire
+    et celui de l'entraînement doivent être complets et identiques (checkpoint,
+    prétraitement, canaux, fréquence). `allow_unverified=True` réserve aux
+    caches historiques : le contrôle devient un avertissement."""
     manifest = json.loads((directory / "manifest.json").read_text())
-    if manifest.get("export_format") != EXPORT_FORMAT:
+    if manifest.get("export_format") not in READABLE_EXPORT_FORMATS:
         raise ValueError(f"{directory} : format d'export {manifest.get('export_format')} non pris en charge")
     trained_on = manifest["input"]["embeddings_manifest"]
-    if embeddings_manifest is not None and trained_on is not None:
-        for key in ("checkpoint_sha256", "preprocessing_version"):
-            if embeddings_manifest.get(key) != trained_on.get(key):
-                raise ValueError(
-                    f"Embeddings incompatibles avec les sondes ({key} : {embeddings_manifest.get(key)} "
-                    f"contre {trained_on.get(key)} à l'entraînement)"
-                )
-    models = {kind: joblib.load(directory / info["file"]) for kind, info in manifest["probes"].items()}
+    problems = [f"{key} absent du cache" for key in missing_contract_keys(embeddings_manifest)]
+    problems += [f"{key} absent de l'export" for key in missing_contract_keys(trained_on)]
+    if not problems:
+        problems = [
+            f"{key} : {embeddings_manifest[key]} contre {trained_on[key]} à l'entraînement"
+            for key in contract_differences(embeddings_manifest, trained_on)
+        ]
+    if problems:
+        message = f"Embeddings incompatibles avec les sondes ou non vérifiables : {' ; '.join(problems)}"
+        if not allow_unverified:
+            raise ValueError(message)
+        print(f"ATTENTION : provenance non vérifiée. {message}")
+    models = {}
+    for kind, info in manifest["probes"].items():
+        models[kind] = joblib.load(directory / info["file"])
+        if [int(c) for c in models[kind].classes_] != info["classes"]:
+            raise ValueError(f"{kind} : classes du modèle différentes de celles du manifeste")
     return models, manifest
