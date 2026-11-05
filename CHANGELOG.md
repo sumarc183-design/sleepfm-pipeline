@@ -43,7 +43,10 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **`--embed-only`** (mode par lots) : calcule seulement les embeddings. Le
   notebook l'active par défaut : le GPU ne sert qu'à SleepFM, les sondes
   tournent ensuite sur le Mac (~20 à 25 min de GPU économisées par run).
-- **Notebook** : 200 sujets par défaut, dans `physionet2018_v2` avec le
+- **Notebook** : 500 sujets par défaut (100 nuits de test, comme
+  l'article) ; un Dataset Kaggle qui garde le zip des embeddings tel quel est
+  décompressé avant l'import ; le découpage étendu est copié dans `Output`.
+- **Notebook** (2026-11-04) : 200 sujets par défaut, dans `physionet2018_v2` avec le
   découpage figé ; sur Kaggle, n'importe que des embeddings au même
   prétraitement, et place prédictions et zip des embeddings dans `Output`.
 - **Prédictions du test sauvegardées** (`<json>.predictions.npz`) : sujet,

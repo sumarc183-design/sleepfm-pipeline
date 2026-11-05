@@ -111,7 +111,9 @@ récent) et `Settings > Internet > On`. Pour un long run (200 sujets,
 navigateur fermé (jusqu'à 12 h) et les sorties restent dans l'onglet `Output`
 de la version. `Run All` en session interactive s'arrête si la session expire.
 
-Le notebook calcule par défaut 200 sujets dans `embeddings/physionet2018_v2`
+Le notebook calcule par défaut 500 sujets (100 nuits de test, comme
+l'article ; ~1 h 15 de GPU par tranche de 100 sujets à calculer) dans
+`embeddings/physionet2018_v2`
 (prétraitement version 2, découpage figé), en mode **embeddings seulement**
 (`EMBED_ONLY = True`, option `--embed-only`) : le GPU ne sert qu'à SleepFM,
 et les sondes, qui n'en ont pas besoin, tournent ensuite sur le Mac. Cela
@@ -119,7 +121,8 @@ et les sondes, qui n'en ont pas besoin, tournent ensuite sur le Mac. Cela
 compte aussi dans le quota, puisque la session tourne pendant ce temps : ne
 recalculer que les sujets manquants, en important les embeddings déjà faits. Kaggle n'a pas accès à Google
 Drive : à la fin, les embeddings sont zippés dans `Output`
-(`embeddings_physionet2018_v2.zip`, ~1 Go), avec les résultats et les
+(`embeddings_physionet2018_v2.zip`, ~5 Mo par sujet), avec le découpage
+étendu, avec les résultats et les
 prédictions. Les dézipper dans `embeddings/physionet2018_v2/` permet de
 relancer les sondes sur le Mac sans GPU. Pour ne pas recalculer sur Kaggle,
 publier ce dossier comme Dataset Kaggle **privé** et l'ajouter au notebook
