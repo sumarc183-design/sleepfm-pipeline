@@ -63,6 +63,7 @@ from src.models.linear_probe import (
     compare_probes,
     cross_validate_probes,
 )
+from src.models.probe_export import save_probes
 
 
 def build_random_checkpoint(path: Path, embedding_dim: int = 512) -> None:
@@ -717,6 +718,9 @@ def save_results_json(
     print(f"Résultats JSON : {path}")
     if y_test is not None and test_groups is not None:
         save_test_predictions(path.with_suffix(".predictions.npz"), results, y_test, test_groups)
+    if getattr(args, "save_models", None) is not None:
+        models = {kind: r["model"] for kind, r in results.items() if "model" in r}
+        save_probes(args.save_models, models, EMBEDDING_DIM, embeddings_manifest)
 
 
 def save_test_predictions(path: Path, results: dict, y_test: np.ndarray, test_groups) -> None:
@@ -852,6 +856,13 @@ def main() -> None:
         "d'entraînement PhysioNet 2018 (au lieu de --raw-data).",
     )
     parser.add_argument("--chunk-size", type=int, default=8, help="Sujets par lot en mode --embeddings-dir")
+    parser.add_argument(
+        "--save-models",
+        type=Path,
+        default=None,
+        help="Avec --results-json : exporte les sondes entraînées dans ce dossier (rechargeables, "
+        "voir scripts/predict_night.py)",
+    )
     parser.add_argument(
         "--embed-only",
         action="store_true",

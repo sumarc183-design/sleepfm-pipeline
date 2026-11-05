@@ -373,3 +373,35 @@ def test_embed_only_computes_embeddings_without_training_probes(tmp_path, monkey
     assert len(list(embeddings_dir.glob("*.npz"))) == 3 and (embeddings_dir / "manifest.json").exists()
     assert not results.exists()
     assert "Embeddings seulement" in capsys.readouterr().out
+
+
+def test_exported_probes_reload_and_predict_identically(tmp_path):
+    """--save-models : les sondes rechargées prédisent comme avant l'export,
+    et des embeddings d'un autre checkpoint sont refusés."""
+    from src.models.linear_probe import compare_probes, predict_probabilities
+    from src.models.probe_export import load_probes, save_probes
+
+    rng = np.random.default_rng(0)
+    y = rng.integers(0, 5, 160)
+    X = rng.standard_normal((160, 8)).astype(np.float32)
+    X[np.arange(160), y] += 3.0
+    groups = (np.repeat([f"s{i}" for i in range(8)], 20), np.tile(np.arange(20), 8))
+    tr, te = slice(0, 120), slice(120, 160)
+    results = compare_probes(
+        ["logistic", "sequence"],
+        X[tr],
+        y[tr],
+        X[te],
+        y[te],
+        train_groups=(groups[0][tr], groups[1][tr]),
+        test_groups=(groups[0][te], groups[1][te]),
+    )
+    manifest = {"checkpoint_sha256": "aaa", "preprocessing_version": 2}
+    save_probes(tmp_path, {k: r["model"] for k, r in results.items()}, 8, manifest)
+    models, exported = load_probes(tmp_path, manifest)
+    assert exported["probes"]["sequence"]["needs_groups"] and exported["input"]["embedding_dim"] == 8
+    test_groups = (groups[0][te], groups[1][te])
+    for kind, r in results.items():
+        np.testing.assert_allclose(predict_probabilities(models[kind], X[te], test_groups), r["test_outputs"]["proba"])
+    with pytest.raises(ValueError, match="incompatibles"):
+        load_probes(tmp_path, manifest | {"checkpoint_sha256": "bbb"})

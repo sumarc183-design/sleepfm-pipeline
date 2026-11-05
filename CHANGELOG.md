@@ -20,6 +20,11 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Notebook renommé** `notebooks/sleepfm_embeddings_physionet2018.ipynb`
   (« SleepFM — embeddings PhysioNet 2018 (GPU) ») ; règle de nommage des
   notebooks dans le GUIDE.
+- **Export des sondes** (`--save-models`, `src/models/probe_export.py`) :
+  sondes rechargeables avec leur manifeste (contrat d'entrée, classes,
+  hyperparamètres, commit, versions) ; `scripts/predict_night.py` prédit
+  l'hypnogramme d'une nuit en CSV, après contrôle du checkpoint et du
+  prétraitement.
 - **Comparaison de deux caches** (`scripts/compare_embedding_caches.py`) :
   mêmes époques, mêmes stades, embeddings identiques sur les sujets communs
   (pour vérifier le prétraitement version 2 sur les 100 premiers sujets).

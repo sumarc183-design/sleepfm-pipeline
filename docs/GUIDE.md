@@ -160,6 +160,21 @@ itérations sans garantie de convergence. Ici, `--max-iter` vaut 1 000 et la
 sortie affiche le nombre d'itérations utilisées, ou un avertissement explicite
 si le modèle n'a pas convergé.
 
+**Sondes exportées** (`--save-models DIR`, avec `--results-json`) : chaque
+sonde entraînée est écrite dans `DIR/<sonde>.joblib`, avec un
+`manifest.json` (contrat d'entrée : dimension, empreinte du checkpoint et
+version du prétraitement des embeddings ; classes ; hyperparamètres ; commit
+et versions). `scripts/predict_night.py` les recharge et écrit l'hypnogramme
+prédit d'une nuit en CSV (stade et probabilités par époque), après avoir
+vérifié que les embeddings viennent du même checkpoint et du même
+prétraitement. Les `.joblib` sont des pickles : ne charger que nos exports.
+
+**Réutiliser les embeddings sur Kaggle** : publier le zip
+`embeddings_physionet2018_v2.zip` comme Dataset Kaggle privé, puis l'ajouter
+au notebook (`Add Input`) : seuls les sujets manquants sont recalculés. Pour
+relancer les sondes sur les mêmes sujets, Kaggle n'est plus utile : le Mac
+suffit.
+
 **Prédictions sauvegardées** : avec `--results-json run.json`, le script écrit
 aussi `run.predictions.npz` : pour chaque époque de test, le sujet, le numéro
 d'époque, le vrai stade, puis la prédiction et les probabilités de chaque

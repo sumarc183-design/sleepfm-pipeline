@@ -407,6 +407,7 @@ def compare_probes(
         proba = predict_probabilities(model, X_test, test_groups)
         # Sorties brutes du test, pour recalculer IC et comparaisons appariées sans réentraîner.
         results[kind]["test_outputs"] = {"pred": test_preds[kind], "proba": proba, "classes": model.classes_}
+        results[kind]["model"] = model  # pour l'export (--save-models), jamais écrit dans le JSON
     if "logistic" in results and test_groups is not None:
         for kind in results:
             if kind != "logistic":
