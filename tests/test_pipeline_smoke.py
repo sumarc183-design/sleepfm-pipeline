@@ -219,6 +219,7 @@ def test_results_json_records_subjects_settings_and_convergence(tmp_path):
 
 
 @pytest.mark.slow
+@pytest.mark.xgboost
 def test_loser_of_mlp_vs_xgboost_is_never_evaluated_on_test():
     """La sélection MLP / XGBoost se fait par validation croisée sur le
     train ; le jeu de test ne voit que les sondes retenues."""
@@ -388,7 +389,7 @@ def test_exported_probes_reload_and_predict_identically(tmp_path):
     groups = (np.repeat([f"s{i}" for i in range(8)], 20), np.tile(np.arange(20), 8))
     tr, te = slice(0, 120), slice(120, 160)
     results = compare_probes(
-        ["logistic", "sequence"],
+        ["logistic", "mlp", "sequence"],  # mlp : a aussi un attribut model_ (régression)
         X[tr],
         y[tr],
         X[te],

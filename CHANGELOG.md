@@ -6,9 +6,13 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Comparaison anciennes / nouvelles nuits de test**
+  (`scripts/compare_test_nights.py`) : quand le découpage est étendu, κ sur
+  les anciennes nuits de test, les nouvelles et l'ensemble, et nuits au κ le
+  plus bas.
 - **Découpage figé** (`--split-file`, `configs/split_physionet2018.json`) :
-  un sujet garde son rôle quand on en ajoute ; les 80 / 20 sujets actuels y
-  sont enregistrés.
+  un sujet garde son rôle quand on en ajoute ; les 80 / 20 sujets du run à
+  100 sujets y sont enregistrés, étendus à 160 / 40 pour 200 sujets.
 - **Manifeste du cache d'embeddings** (`manifest.json`) : empreinte du
   checkpoint, version du prétraitement, canaux, fréquence. Un cache d'un
   autre checkpoint est refusé, un autre prétraitement n'est jamais mélangé.
@@ -51,6 +55,14 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Export des sondes** (`--save-models`) : le MLP, qui a aussi un attribut
+  `model_`, était pris pour le BiGRU et l'export plantait. Seul un module
+  torch est désormais déplacé sur CPU ; le test d'export couvre le MLP.
+- **XGBoost sur Mac** : il plantait (segmentation fault) ou se bloquait
+  dès que torch avait calculé dans le même processus (deux OpenMP
+  différents, même sur un seul thread). `run_baseline.py` le retire des
+  sondes sur Mac avec un avertissement ; ses tests sont sautés sur Mac et
+  tournent en CI Linux.
 - **Chargement OSF strict** : poids lus avec `weights_only=True`, et une clé
   manquante ou inattendue arrête le chargement (`allow_key_mismatch=True`
   pour un essai explicite).
@@ -109,6 +121,18 @@ selon [SemVer](https://semver.org/lang/fr/).
   supprimé et recalculé au démarrage.
 
 ### Résultats
+- 200 sujets, découpage figé étendu à 160 / 40 (2026-11-05), embeddings en
+  prétraitement v2 calculés sur Kaggle : baseline pondérée κ 0,587
+  [0,533 ; 0,643], non pondérée 0,608, MLP 0,586, BiGRU 0,656
+  [0,594 ; 0,713] (+0,069 [+0,045 ; +0,096] sur la baseline, 33 nuits sur
+  40). Sur les 20 anciennes nuits de test, l'entraînement sur 160 nuits fait
+  mieux qu'à 100 sujets (baseline 0,620 contre 0,607, BiGRU 0,706 contre
+  0,685) ; la baisse globale vient de deux nouvelles nuits à l'hypnogramme
+  atypique (κ 0,04 et 0,12), gardées dans le test. Article : ROC-AUC 0,916 /
+  AUPRC 0,750 / F1 0,679 contre 0,924 / 0,759 / 0,700.
+- Embeddings v2 contre v1 sur les 100 premières nuits : identiques sur 91 ;
+  sur les 9 autres, la v2 récupère 480 époques de début de nuit, mêmes
+  stades sur les époques communes.
 - Comparaison à l'article SleepFM 2024 (tableau 8, PhysioNet 2018) :
   baseline officielle ROC-AUC 0,925 / AUPRC 0,770 / F1 0,683, contre
   0,924 / 0,759 / 0,700 publiés. Le profil du F1 par stade de la logistique

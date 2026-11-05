@@ -927,6 +927,13 @@ def main() -> None:
         parser.error("--physionet-subjects et --raw-data sont exclusifs")
     if args.embed_only and args.embeddings_dir is None:
         parser.error("--embed-only demande --embeddings-dir (mode par lots)")
+    if sys.platform == "darwin" and "xgboost" in args.probes and not args.device.startswith("cuda"):
+        # Sur Mac, XGBoost et torch chargent chacun leur OpenMP : XGBoost plante
+        # (segmentation fault) ou se bloque dès que torch a calculé dans le
+        # même processus, même sur un seul thread. Linux (Kaggle, Colab) n'est
+        # pas concerné.
+        args.probes = [p for p in args.probes if p != "xgboost"]
+        print("ATTENTION : XGBoost retiré des sondes sur Mac (conflit OpenMP avec torch) ; à lancer sur Linux.")
 
     is_synthetic = args.raw_data is None
     is_random_checkpoint = args.checkpoint is None

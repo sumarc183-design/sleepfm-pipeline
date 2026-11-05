@@ -24,29 +24,49 @@ flowchart LR
 
 ## Résultats
 
-100 sujets PhysioNet 2018, découpage **par sujet** figé
+200 sujets PhysioNet 2018, découpage **par sujet** figé
 ([`configs/split_physionet2018.json`](configs/split_physionet2018.json) :
-80 nuits d'entraînement, 20 de test, 17 818 époques de test), embeddings
-SleepFM figés. Run de référence du 2026-11-04
-([`results/…_auprc`](results/results_physionet2018_100_auprc.txt), avec les
-prédictions du test époque par époque). Le test ne sert à aucun choix de
-modèle ou de réglage, mais les mêmes 20 nuits ont été évaluées par plusieurs
-runs : les analyses ci-dessous restent exploratoires. IC à 95 % par bootstrap
-sur les sujets de test.
+160 nuits d'entraînement, 40 de test, 36 163 époques de test), embeddings
+SleepFM figés (prétraitement version 2). Run de référence du 2026-11-05
+([`results/…_200`](results/results_physionet2018_200.txt), avec les
+prédictions du test époque par époque ; embeddings calculés sur Kaggle,
+sondes sur CPU). Les 80 / 20 sujets du run précédent à 100 sujets gardent
+leur rôle. Le test ne sert à aucun choix de modèle ou de réglage. IC à 95 %
+par bootstrap sur les sujets de test.
 
 | Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | ROC-AUC | AUPRC | Gap F1 train − test |
 |---|---|---|---|---|---|---|
-| **Régression logistique pondérée** (baseline officielle) | 0,694 | **0,607** [0,545 ; 0,669] | 0,683 [0,629 ; 0,729] | 0,925 | 0,770 | +0,069 |
-| Régression logistique non pondérée | 0,737 | 0,645 [0,577 ; 0,702] | 0,697 [0,642 ; 0,741] | 0,927 | 0,771 | +0,064 |
-| MLP (retenu face à XGBoost) | 0,714 | 0,623 [0,556 ; 0,684] | 0,683 [0,629 ; 0,726] | 0,924 | 0,762 | +0,084 |
-| **BiGRU sur la nuit** | **0,765** | **0,685** [0,613 ; 0,740] | **0,739** [0,674 ; 0,784] | **0,936** | **0,801** | +0,055 |
+| **Régression logistique pondérée** (baseline officielle) | 0,684 | **0,587** [0,533 ; 0,643] | 0,679 [0,640 ; 0,715] | 0,916 | 0,750 | +0,062 |
+| Régression logistique non pondérée | 0,715 | 0,608 [0,544 ; 0,666] | 0,685 [0,641 ; 0,724] | 0,917 | 0,752 | +0,066 |
+| MLP | 0,694 | 0,586 [0,525 ; 0,646] | 0,660 [0,622 ; 0,698] | 0,909 | 0,725 | +0,057 |
+| **BiGRU sur la nuit** | **0,747** | **0,656** [0,594 ; 0,713] | **0,733** [0,696 ; 0,769] | **0,933** | **0,791** | +0,058 |
 
 AUPRC = *average precision* (scikit-learn), un stade contre tous, moyennée.
+Mêmes sondes que le run à 100 sujets (XGBoost, éliminé à 100 sujets, n'est
+pas relancé).
 
 - **Le contexte de la nuit est le levier** : le gain du BiGRU sur la baseline
   est **significatif** en comparaison appariée (mêmes nuits, bootstrap sur les
-  sujets) : κ +0,078 [+0,042 ; +0,114], F1 macro +0,056 [+0,026 ; +0,085].
-  Celui du MLP ne l'est pas : κ +0,016 [−0,006 ; +0,038].
+  sujets) : κ +0,069 [+0,045 ; +0,096], F1 macro +0,054 [+0,035 ; +0,076].
+  Il progresse sur 33 nuits de test sur 40. Celui du MLP est nul : κ −0,000
+  [−0,019 ; +0,016], et son F1 macro recule (−0,019).
+- **Plus de données d'entraînement aide ; la baisse vient du test**
+  ([détail](results/nuits_test_physionet2018_200.txt)). Sur les 20 nuits de
+  test du run à 100 sujets, entraîner sur 160 nuits au lieu de 80 fait
+  mieux : κ 0,620 contre 0,607 pour la baseline, 0,706 contre 0,685 pour le
+  BiGRU (le prétraitement v2 y ajoute 125 époques de début de nuit). Les 20
+  nouvelles nuits de test sont plus dispersées (baseline 0,552
+  [0,442 ; 0,645]) mais pas plus dures en médiane (κ médian par nuit 0,630
+  contre 0,610) : deux nuits à l'hypnogramme atypique tirent le total vers
+  le bas. tr03-1292, notée à 69 % d'éveil par l'expert, que les modèles
+  lisent surtout en N2 (κ 0,04) ; tr04-0133, notée à 76 % de N1 (κ 0,12).
+  Elles restent dans le test : on n'écarte pas de nuits après avoir vu les
+  résultats.
+
+Les analyses détaillées ci-dessous portent sur le run à 100 sujets du
+2026-11-04 ([`results/…_100_auprc`](results/results_physionet2018_100_auprc.txt) :
+80 / 20 nuits, baseline κ 0,607, BiGRU κ 0,685, écart apparié +0,078
+[+0,042 ; +0,114]) ; elles n'ont pas été refaites à 200 sujets.
 - **Il tient d'une graine à l'autre, avec une marge**
   ([ablation, 3 graines](results/ablation_sequence_physionet2018_100.txt)) :
   κ du BiGRU de 0,666 à 0,684, gain de +0,060 à +0,077, significatif à
@@ -94,12 +114,16 @@ AUPRC = *average precision* (scikit-learn), un stade contre tous, moyennée.
   l'éveil (718 époques sur 2 571) et le REM (308). C'est aussi le stade le
   moins concordant entre experts humains.
 - **Reproductible** : un même run donne les mêmes chiffres sur GPU (Kaggle)
-  et sur CPU (Colab, Mac), à 0,001 près.
+  et sur CPU (Colab, Mac), à 0,001 près. Les embeddings recalculés en
+  prétraitement v2 sont identiques à ceux de la v1 sur 91 des 100 premières
+  nuits ; sur les 9 autres, la v2 récupère 480 époques de début de nuit que
+  la v1 coupait, avec les mêmes stades sur les époques communes.
 
 Sorties brutes dans [`results/`](results/) : texte, JSON (sujets, réglages,
 matrices de confusion), prédictions du test, ablation (avec ses prédictions)
-et analyse d'erreurs. Runs antérieurs gardés pour l'historique : `…_100`
-(Kaggle), `…_cpu`, `…_paired`.
+et analyse d'erreurs. Runs antérieurs gardés pour l'historique :
+`…_100_auprc` (référence à 100 sujets), `…_100` (Kaggle), `…_cpu`,
+`…_paired`.
 
 Avant le 2026-11-04 : κ 0,584 (20 sujets) puis 0,622 (100 sujets, split
 75/25), avec la régression **non pondérée**, qui n'est pas le protocole
@@ -119,18 +143,20 @@ apparaît pas. Il ne publie pas de κ sur PhysioNet 2018.
 | Test | ROC-AUC macro | AUPRC macro | F1 macro | F1 Wake / N1 / N2 / N3 / REM |
 |---|---|---|---|---|
 | Article (tableau 8) | 0,924 | 0,759 | 0,700 | 0,79 / 0,44 / 0,79 / 0,74 / 0,72 |
-| Logistique pondérée (baseline officielle) | 0,925 | 0,770 | 0,683 | 0,77 / 0,51 / 0,71 / 0,75 / 0,68 |
-| Logistique non pondérée | 0,927 | 0,771 | 0,697 | 0,77 / 0,45 / 0,81 / 0,76 / 0,70 |
-| BiGRU sur la nuit | 0,936 | 0,801 | 0,739 | 0,76 / 0,52 / 0,83 / 0,79 / 0,80 |
+| Logistique pondérée (baseline officielle) | 0,916 | 0,750 | 0,679 | 0,74 / 0,48 / 0,72 / 0,75 / 0,70 |
+| Logistique non pondérée | 0,917 | 0,752 | 0,685 | 0,75 / 0,43 / 0,78 / 0,75 / 0,72 |
+| BiGRU sur la nuit | 0,933 | 0,791 | 0,733 | 0,78 / 0,52 / 0,79 / 0,75 / 0,82 |
 
-- **Même ordre de grandeur que l'article** : ROC-AUC et AUPRC macro au niveau
-  publié, ou légèrement au-dessus.
+- **Même ordre de grandeur que l'article** : la baseline est un peu en
+  dessous (ROC-AUC 0,916 contre 0,924, AUPRC 0,750 contre 0,759), le BiGRU
+  au-dessus. À 100 sujets, la baseline était au niveau publié (0,925 /
+  0,770) : l'écart tient surtout aux deux nuits atypiques du nouveau test.
 - **Le profil du F1 de la logistique non pondérée colle à celui de
-  l'article**, stade par stade (N1 0,45 contre 0,44 ; N2 0,81 contre 0,79).
+  l'article**, stade par stade (N1 0,43 contre 0,44 ; N2 0,78 contre 0,79).
   La pondérée s'en écarte : meilleure sur N1, moins bonne sur N2. C'est une
   hypothèse à vérifier : l'évaluation de l'article n'a peut-être pas pondéré
   les classes, alors que le code officiel le fait.
-- **Pas une reproduction stricte** : 20 nuits de test contre 100, notre propre
+- **Pas une reproduction stricte** : 40 nuits de test contre 100, notre propre
   découpage, et l'article ne précise ni le nombre de nuits d'entraînement ni
   la sonde utilisée pour cette évaluation.
 

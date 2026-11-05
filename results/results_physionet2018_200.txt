@@ -1,0 +1,53 @@
+Embeddings sur : cpu
+200 sujet(s) déjà en cache, 0 à traiter
+================================================================================================
+Données    : RÉELLES (160 sujet(s) train / 40 test, 143142 / 36163 époques ; 0 sujet(s) rejeté(s) à l'extraction)
+Checkpoint : third_party/sleepfm/sleepfm/checkpoint/best.pt
+------------------------------------------------------------------------------------------------
+2. Évaluation finale sur le test (jamais utilisé pour la sélection)
+Modèle (test)    Accuracy   Kappa  F1 macro  ROC-AUC   AUPRC | F1 train  Gap F1 AUC train  Gap AUC   Durée
+Log. officielle    0.6835  0.5866    0.6789   0.9163  0.7499 |   0.7406 +0.0617    0.9460  +0.0296     68s
+Log. non pond.     0.7151  0.6079    0.6850   0.9165  0.7521 |   0.7510 +0.0660    0.9467  +0.0303     71s
+MLP                0.6941  0.5863    0.6603   0.9090  0.7247 |   0.7168 +0.0566    0.9356  +0.0266    337s
+BiGRU (nuit)       0.7468  0.6560    0.7330   0.9327  0.7908 |   0.7911 +0.0581    0.9627  +0.0300    341s
+------------------------------------------------------------------------------------------------
+Intervalles de confiance à 95 % (bootstrap sur les sujets de test)
+  Log. officielle     kappa [0.533 ; 0.643]   F1 macro [0.640 ; 0.715]   (40 sujets)
+  Log. non pond.      kappa [0.544 ; 0.666]   F1 macro [0.641 ; 0.724]   (40 sujets)
+  MLP                 kappa [0.525 ; 0.646]   F1 macro [0.622 ; 0.698]   (40 sujets)
+  BiGRU (nuit)        kappa [0.594 ; 0.713]   F1 macro [0.696 ; 0.769]   (40 sujets)
+------------------------------------------------------------------------------------------------
+Comparaison appariée à la baseline (mêmes nuits de test) : écart, IC 95 %
+  Log. non pond.      kappa +0.021 [-0.002 ; +0.043]   F1 macro +0.006 [-0.013 ; +0.022]   (non significatif sur le kappa)
+  MLP                 kappa -0.000 [-0.019 ; +0.016]   F1 macro -0.019 [-0.032 ; -0.004]   (non significatif sur le kappa)
+  BiGRU (nuit)        kappa +0.069 [+0.045 ; +0.096]   F1 macro +0.054 [+0.035 ; +0.076]   (significatif sur le kappa)
+  Log. officielle : convergé en 246 itérations
+  Log. non pond. : convergé en 261 itérations
+------------------------------------------------------------------------------------------------
+F1 par stade (test)  Log. officielle  Log. non pond.             MLP    BiGRU (nuit)       n
+  wake                        0.7436          0.7495          0.7453          0.7793    6930
+  nonrem1                     0.4844          0.4294          0.3778          0.5208    6163
+  nonrem2                     0.7159          0.7832          0.7617          0.7891   14644
+  nonrem3                     0.7534          0.7458          0.7303          0.7537    4196
+  rem                         0.6969          0.7170          0.6863          0.8219    4230
+------------------------------------------------------------------------------------------------
+Baseline officielle contre l'article SleepFM 2024 (tableau 8, PhysioNet 2018) : nous / article
+  Stade                ROC-AUC             AUPRC                F1
+  wake           0.938 / 0.966     0.820 / 0.867     0.744 / 0.790
+  nonrem1        0.839 / 0.830     0.472 / 0.471     0.484 / 0.439
+  nonrem2        0.883 / 0.902     0.800 / 0.857     0.716 / 0.793
+  nonrem3        0.970 / 0.971     0.838 / 0.821     0.753 / 0.743
+  rem            0.952 / 0.950     0.820 / 0.778     0.697 / 0.717
+  macro          0.916 / 0.924     0.750 / 0.759     0.679 / 0.700
+------------------------------------------------------------------------------------------------
+Matrice de confusion (test, Log. officielle) : lignes = stade réel, colonnes = stade prédit
+                  wake   nonrem1   nonrem2   nonrem3       rem
+  wake            5031      1128       613        67        91
+  nonrem1         1040      3028      1117         5       973
+  nonrem2          289      1870      9485      1780      1220
+  nonrem3           21        11       447      3655        62
+  rem              220       301       192         0      3517
+================================================================================================
+Résultats JSON : results/results_physionet2018_200.json
+Prédictions du test : results/results_physionet2018_200.predictions.npz
+Sondes exportées : models/physionet2018_200 (logistic, logistic_unweighted, mlp, sequence)

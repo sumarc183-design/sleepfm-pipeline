@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from conftest import XGBOOST_UNSAFE
 
 from src.models.linear_probe import (
     PROBE_KINDS,
@@ -70,6 +71,8 @@ def test_compare_probes_reports_train_test_and_gap():
     X_test, y_test = _separable(150, rng)
 
     kinds = [k for k in PROBE_KINDS if k != "sequence"]  # "sequence" : tests dédiés (besoin des nuits)
+    if XGBOOST_UNSAFE:  # voir conftest.py
+        kinds.remove("xgboost")
     results = compare_probes(
         kinds, X_train, y_train, X_test, y_test, train_groups=_groups(400), test_groups=_groups(150)
     )
@@ -85,7 +88,7 @@ def test_compare_probes_reports_train_test_and_gap():
         assert r["fit_seconds"] >= 0
 
 
-@pytest.mark.parametrize("kind", ["xgboost", "mlp"])
+@pytest.mark.parametrize("kind", [pytest.param("xgboost", marks=pytest.mark.xgboost), "mlp"])
 def test_probes_handle_a_stage_missing_from_train(kind):
     """Petit run : un stade (ici 2) peut manquer au train ; XGBoost exige des
     labels contigus, la sonde doit quand même fonctionner."""
@@ -164,6 +167,7 @@ def test_subject_folds_never_split_a_subject():
         assert set(subjects[fit_idx]).isdisjoint(subjects[val_idx])
 
 
+@pytest.mark.xgboost
 def test_cross_validate_probes_uses_only_given_data():
     rng = np.random.default_rng(0)
     X, y = _separable(300, rng)

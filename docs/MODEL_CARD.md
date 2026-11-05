@@ -28,12 +28,14 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
 
 - **PhysioNet/CinC Challenge 2018** (accès libre) : polysomnographies adultes
   annotées par des experts (stades AASM), 13 canaux rééchantillonnés à 256 Hz.
-  Les 100 premiers sujets d'entraînement du challenge **par identifiant**
+  Les 200 premiers sujets d'entraînement du challenge **par identifiant**
   (pas un tirage aléatoire parmi les 994) ont été utilisés.
-- **Split par sujet** (jamais par époque) : 80/20, soit 80 nuits
-  d'entraînement et 20 de test (17 818 époques). Les sondes non linéaires sont départagées
+- **Split par sujet** (jamais par époque), figé : 160 nuits d'entraînement
+  et 40 de test (36 163 époques). Les 80 / 20 nuits du run à 100 sujets
+  gardent leur rôle. Les sondes non linéaires sont départagées
   par validation croisée par sujet sur le train ; le test ne sert à aucun
-  choix, mais les mêmes 20 nuits ont été évaluées par plusieurs runs.
+  choix, mais les 20 premières nuits de test ont été évaluées par plusieurs
+  runs.
 
 ## Métriques
 
@@ -56,12 +58,14 @@ train − test. Résultats à jour : [README](../README.md#résultats).
   montages.
 - **Canaux** : le montage 13 canaux est requis ; un enregistrement auquel il
   manque un canal est rejeté à l'extraction.
-- **Variabilité** : avec 20 à 25 sujets de test, les chiffres peuvent varier
+- **Variabilité** : avec 20 à 40 sujets de test, les chiffres peuvent varier
   de quelques centièmes selon le tirage des sujets ; d'où les intervalles de
   confiance par bootstrap sur les sujets.
-- **Résultats** (2026-11-04, protocole officiel, run de référence) : κ 0,607
-  [0,545 ; 0,669] pour la baseline, 0,685 [0,613 ; 0,740] pour le BiGRU
-  (0,666 à 0,684 sur 3 graines d'entraînement). Les résultats du
+- **Résultats** (2026-11-05, protocole officiel, run de référence à 200
+  sujets) : κ 0,587 [0,533 ; 0,643] pour la baseline, 0,656 [0,594 ; 0,713]
+  pour le BiGRU. Deux nuits de test à l'hypnogramme atypique (κ 0,04 et
+  0,12) pèsent sur le total. À 100 sujets (2026-11-04) : 0,607 et 0,685
+  (BiGRU de 0,666 à 0,684 sur 3 graines d'entraînement). Les résultats du
   2026-11-02/03 (κ 0,584 et 0,622) utilisaient une régression non pondérée.
 
 ## Considérations éthiques

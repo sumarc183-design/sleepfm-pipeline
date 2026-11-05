@@ -50,7 +50,9 @@ def save_probes(directory: Path, models: dict, embedding_dim: int, embeddings_ma
     directory.mkdir(parents=True, exist_ok=True)
     probes = {}
     for kind, model in models.items():
-        if hasattr(model, "model_"):  # BiGRU : poids sur CPU, pour recharger sans GPU
+        # BiGRU : poids sur CPU, pour recharger sans GPU. Le MLP a aussi un
+        # attribut model_, mais c'est un MLPClassifier, pas un module torch.
+        if isinstance(getattr(model, "model_", None), torch.nn.Module):
             model.model_.to("cpu")
             model.device = "cpu"
         joblib.dump(model, directory / f"{kind}.joblib")
