@@ -62,6 +62,14 @@ pas relancé).
   lisent surtout en N2 (κ 0,04) ; tr04-0133, notée à 76 % de N1 (κ 0,12).
   Elles restent dans le test : on n'écarte pas de nuits après avoir vu les
   résultats.
+- **Ces deux nuits ont des signaux propres**
+  ([examen](results/nuits_atypiques_physionet2018_200.txt)). Dans tr03-1292,
+  les 557 époques notées en éveil et lues en N2 ont un EEG de sommeil (80 %
+  de la puissance en delta et thêta, presque pas d'alpha ni de bêta, tonus du
+  menton bas), sans rapport avec l'éveil de la même nuit : annotation à
+  vérifier, ou EEG lent pathologique. Dans tr04-0133, le N1 est un sommeil
+  léger et fragmenté, entre éveil et N2 : cas limite de cotation. Les deux
+  sont à montrer au médecin du sommeil.
 
 Les analyses détaillées ci-dessous portent sur le run à 100 sujets du
 2026-11-04 ([`results/…_100_auprc`](results/results_physionet2018_100_auprc.txt) :

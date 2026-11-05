@@ -6,6 +6,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Spectre de l'EEG par groupe d'époques** (`scripts/eeg_spectra_by_group.py`) :
+  bandes de C3, alpha occipital et tonus du menton, par couple stade de
+  l'expert / stade prédit, pour comprendre un désaccord.
 - **Comparaison anciennes / nouvelles nuits de test**
   (`scripts/compare_test_nights.py`) : quand le découpage est étendu, κ sur
   les anciennes nuits de test, les nouvelles et l'ensemble, et nuits au κ le
@@ -130,6 +133,9 @@ selon [SemVer](https://semver.org/lang/fr/).
   0,685) ; la baisse globale vient de deux nouvelles nuits à l'hypnogramme
   atypique (κ 0,04 et 0,12), gardées dans le test. Article : ROC-AUC 0,916 /
   AUPRC 0,750 / F1 0,679 contre 0,924 / 0,759 / 0,700.
+- Les deux nuits atypiques ont des signaux propres : tr03-1292 a un EEG de
+  sommeil sur 557 époques notées en éveil (annotation à vérifier),
+  tr04-0133 un sommeil léger et fragmenté noté en N1.
 - Embeddings v2 contre v1 sur les 100 premières nuits : identiques sur 91 ;
   sur les 9 autres, la v2 récupère 480 époques de début de nuit, mêmes
   stades sur les époques communes.

@@ -1,0 +1,82 @@
+Deux nouvelles nuits de test atypiques (run à 200 sujets) — examen du 2026-11-05
+Sources : results/results_physionet2018_200.predictions.npz (prédictions du
+BiGRU, la baseline fait les mêmes erreurs), scripts/inspect_night_signals.py et
+scripts/eeg_spectra_by_group.py (signaux bruts PhysioNet, non versionnés).
+
+0. Ce qui se passe
+  tr03-1292 (κ baseline 0,04, BiGRU 0,03) : 69 % d'éveil selon l'expert, dont
+            un seul bloc de 367 époques (3 h) ; 557 époques notées en éveil
+            sont lues en N2 par le BiGRU.
+  tr04-0133 (κ 0,12 et 0,11) : 76 % de N1 selon l'expert (5 à 10 % dans une
+            nuit habituelle), en blocs de 30 à 38 min ; le BiGRU les répartit
+            entre N1, N2, REM et éveil.
+
+1. Qualité des signaux et physiologie par stade (rapports à N2 de la même nuit)
+  1. Qualité des signaux
+    tr03-1292   époques plates : SaO2 15% ; amplitude C3 / E1 / menton : 12.5 / 20.1 / 6.7
+    tr04-0133   époques plates : SaO2 1% ; amplitude C3 / E1 / menton : 14.5 / 21.1 / 14.7
+    tr03-0167   époques plates : SaO2 13% ; amplitude C3 / E1 / menton : 13.1 / 18.8 / 9.3
+    tr03-0567   époques plates : SaO2 9% ; amplitude C3 / E1 / menton : 14.7 / 12.1 / 6.4
+  2. Physiologie par stade, en rapport à N2 de la même nuit (médianes)
+    nuit           menton REM    menton W    yeux REM    alpha W    alpha REM
+    tr03-1292            1.11        1.74        0.70       1.70         1.32
+    tr04-0133            0.44        3.71        1.88       7.56         4.30
+    tr03-0167            0.10        2.59        4.72       2.93         1.46
+    tr03-0567            0.35        2.20        0.41       2.14         1.50
+  Rapports peu fiables pour tr03-1292 : 7 époques de N2 seulement.
+
+2. Spectre de l'EEG par groupe d'époques (expert / BiGRU), médianes
+   C3 : part de la puissance 0,5-30 Hz par bande ; alphaO2 : part d'alpha en
+   O2 ; menton : tonus (RMS > 10 Hz) en rapport à N2 de la nuit (à la médiane
+   de toute la nuit pour tr03-1292). tr03-0167 et tr03-0567 : bonnes nuits de
+   test (κ 0,85 et 0,84), pour référence.
+  groupe (C3 : part de puissance)       n    delta    thêta    alpha    sigma     bêta  alphaO2   menton
+tr03-1292 (menton : rapport à la médiane de la nuit)
+  expert W / BiGRU W                  107     0.06     0.15     0.14     0.10     0.43     0.15     3.84
+  expert W / BiGRU N2                 557     0.44     0.36     0.04     0.01     0.02     0.04     1.00
+  expert N1 / BiGRU N2                275     0.44     0.33     0.04     0.01     0.03     0.04     0.86
+tr04-0133 (menton : rapport à la médiane N2)
+  expert W / BiGRU W                   57     0.46     0.21     0.12     0.03     0.05     0.25     3.59
+  expert W / BiGRU N2                  46     0.50     0.24     0.10     0.03     0.06     0.23     3.09
+  expert N1 / BiGRU W                  54     0.42     0.20     0.12     0.03     0.05     0.22     2.79
+  expert N1 / BiGRU N1                199     0.48     0.27     0.08     0.02     0.03     0.09     2.25
+  expert N1 / BiGRU N2                430     0.56     0.21     0.07     0.02     0.03     0.08     2.75
+  expert N1 / BiGRU REM                70     0.57     0.20     0.06     0.02     0.02     0.07     1.13
+  expert N2 / BiGRU N2                 47     0.70     0.14     0.03     0.01     0.01     0.03     1.16
+  expert N2 / BiGRU REM                55     0.68     0.14     0.04     0.01     0.01     0.04     0.93
+tr03-0167 (menton : rapport à la médiane N2)
+  expert W / BiGRU W                  320     0.39     0.10     0.17     0.05     0.16     0.28     2.52
+  expert N1 / BiGRU N1                 46     0.27     0.19     0.18     0.05     0.11     0.17     1.36
+  expert N2 / BiGRU N2                175     0.46     0.15     0.06     0.02     0.02     0.10     1.03
+  expert N2 / BiGRU N3                 31     0.52     0.12     0.03     0.01     0.01     0.06     0.48
+  expert N3 / BiGRU N3                 72     0.70     0.07     0.01     0.01     0.01     0.02     0.56
+  expert REM / BiGRU REM              109     0.44     0.16     0.08     0.03     0.04     0.13     0.10
+tr03-0567 (menton : rapport à la médiane N2)
+  expert W / BiGRU W                   31     0.46     0.09     0.13     0.03     0.14     0.26     2.14
+  expert N2 / BiGRU N2                247     0.51     0.12     0.08     0.03     0.03     0.12     1.07
+  expert N3 / BiGRU N2                 69     0.63     0.10     0.06     0.02     0.01     0.07     1.62
+  expert N3 / BiGRU N3                135     0.74     0.06     0.04     0.01     0.01     0.04     2.06
+  expert REM / BiGRU REM              255     0.31     0.20     0.13     0.05     0.07     0.18     0.33
+
+3. Lecture
+  - tr03-1292 : les signaux sont propres (pas de canal plat, amplitudes
+    normales). Les 557 époques notées en éveil et lues en N2 n'ont pas un EEG
+    d'éveil : 80 % de la puissance en delta et thêta, presque pas d'alpha
+    (0,04) ni de bêta (0,02), et un tonus du menton à la médiane de la nuit.
+    Les vraies époques d'éveil de la même nuit (bêta 0,43, alpha 0,14, menton
+    3,8) et l'éveil des bonnes nuits (bêta 0,14-0,16, alpha 0,13-0,17) sont
+    très différents. Ces époques ressemblent à du sommeil (lent, sans fuseaux
+    : sigma 0,01). Hypothèses : annotation erronée sur ce bloc de 3 h, ou EEG
+    lent pathologique ou médicamenteux chez un patient éveillé. Les modèles ne
+    se trompent pas sur ce qu'ils voient : c'est l'étiquette qui interroge.
+    À montrer au médecin du sommeil.
+  - tr04-0133 : signaux propres aussi. Le N1 noté par l'expert a un EEG
+    intermédiaire entre éveil et N2 (delta 0,48-0,57, alpha 0,06-0,08, sans
+    fuseaux) avec un tonus du menton élevé (2,3 à 2,8 fois N2). Sommeil léger
+    et fragmenté, noté en N1 sur de longues périodes : cas limite où N1 et N2
+    se départagent mal, et N1 est déjà le stade le moins concordant entre
+    experts. Pas d'erreur de signal ; difficulté réelle ou choix de cotation.
+  - Les deux nuits restent dans le test : les écarter après avoir vu les
+    résultats biaiserait l'évaluation. Elles sont signalées à part.
+  - Limite : médianes par groupe et spectre d'un seul canal central ; pas
+    d'avis d'expert à ce stade.
