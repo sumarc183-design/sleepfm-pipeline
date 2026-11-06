@@ -1,0 +1,6 @@
+160 nuits train / 100 test, 89132 époques de test
+Graine d'entraînement 44 ; écart à la variante complète de la même sonde, apparié par sujet
+--------------------------------------------------------------------------------------------------------
+Respiration + EEG/EOG + ECG
+  Baseline  κ 0.574 [0.541 ; 0.605]  F1 macro 0.662  ROC-AUC 0.913  (64 s)
+  BiGRU     κ 0.647 [0.614 ; 0.677]  F1 macro 0.722  ROC-AUC 0.933  (367 s)

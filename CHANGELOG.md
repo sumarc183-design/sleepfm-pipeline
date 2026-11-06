@@ -11,6 +11,11 @@ selon [SemVer](https://semver.org/lang/fr/).
   les recalculer. Exploratoire, une graine, sur des nuits de test déjà examinées :
   κ du BiGRU 0,664 avec tout, 0,669 avec l'EEG/EOG seul, 0,449 sans EEG/EOG. Ne
   simule ni un smartphone ni un objet connecté.
+- **Graines et volume à 500 sujets** (`--train-nights`,
+  `results/synthese_graines_volume_physionet2018_500.txt`) : sur 3 graines, κ du
+  BiGRU complet de 0,664 à 0,682 ; gain sans ECG non établi ; perte sans EEG/EOG
+  confirmée. Passer de 160 à 400 nuits : baseline +0,026 [+0,015 ; +0,037], BiGRU
+  +0,012 à +0,035 selon la graine. Mêmes nuits de test, déjà examinées.
 - **Protocole de confirmation** (`docs/PROTOCOLE_CONFIRMATION.md`), écrit avant
   d'ouvrir les 494 sujets réservés : modèles figés par empreinte, critère
   principal, exclusions et historique d'utilisation du test. À valider.

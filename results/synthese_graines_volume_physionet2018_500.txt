@@ -1,0 +1,23 @@
+Synthèse du 2026-11-06 : graines et volume, PhysioNet 2018, 500 sujets
+Mêmes 100 nuits de test (89 132 époques), mêmes embeddings. Exploratoire : ces nuits ont déjà été
+examinées. Détail : ablation_modalites_physionet2018_500*.txt et volume_160nuits_physionet2018_500_seed*.txt.
+
+BiGRU, 400 nuits d'entraînement, κ par graine (42 / 43 / 44)
+  Tous les capteurs                     0,664 / 0,673 / 0,682   moyenne 0,673
+  Respiration + EEG/EOG (sans ECG)      0,687 / 0,686 / 0,688   moyenne 0,687
+  Respiration + ECG (sans EEG/EOG)      0,449 / 0,428 / 0,448   moyenne 0,442
+Écart au modèle complet de la même graine, IC 95 % apparié par sujet
+  Sans ECG      +0,023 [+0,007 ; +0,039]  +0,013 [-0,001 ; +0,027]  +0,006 [-0,006 ; +0,020]   non établi
+  Sans EEG/EOG  -0,215 [-0,248 ; -0,185]  -0,244 [-0,278 ; -0,211]  -0,234 [-0,267 ; -0,200]
+Baseline : identique d'une graine à l'autre (κ 0,599 ; sans ECG 0,597 ; sans EEG/EOG 0,264).
+
+Volume : 400 nuits moins 160 nuits (les 160 du run à 200 sujets, choisies par ordre d'ID, pas au hasard)
+  Baseline                 κ 0,574 -> 0,599   +0,026 [+0,015 ; +0,037]
+  BiGRU, graine 42         κ 0,653 -> 0,664   +0,012 [-0,005 ; +0,027]
+  BiGRU, graine 43         κ 0,653 -> 0,673   +0,019 [+0,002 ; +0,038]
+  BiGRU, graine 44         κ 0,647 -> 0,682   +0,035 [+0,017 ; +0,053]
+  BiGRU, moyenne           +0,022, positif sur les 3 graines
+
+Bloc respiration : variance intra-nuit de l'embedding 0,038, contre 0,232 pour l'EEG/EOG et 0,259 pour
+l'ECG (30 nuits de test). Ce bloc ne prédit jamais REM. Cause non établie : le SaO2 reste en valeurs
+brutes (environ 29 000, comme dans le code officiel), piste non testée.

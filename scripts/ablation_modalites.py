@@ -17,6 +17,7 @@ simule ni un smartphone ni un objet connecté.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -75,6 +76,12 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--variants", nargs="+", choices=list(VARIANTS), default=list(VARIANTS))
+    parser.add_argument(
+        "--train-nights",
+        type=int,
+        default=None,
+        help="n'entraîner que sur les N premières nuits du découpage figé (effet du volume, même test)",
+    )
     parser.add_argument("--out", type=Path, default=None, help="prédictions de chaque variante (.npz)")
     args = parser.parse_args()
     if "complet" not in args.variants:
@@ -83,6 +90,12 @@ def main() -> None:
     (X_train, y_train, train_groups), (X_test, y_test, test_groups) = load_verified_split(
         args.embeddings_dir, args.split_file, args.checkpoint
     )
+    if args.train_nights is not None:
+        kept = json.loads(args.split_file.read_text())["train"][: args.train_nights]
+        if len(kept) != args.train_nights:
+            raise SystemExit(f"{len(kept)} nuits d'entraînement disponibles, {args.train_nights} demandées")
+        rows = np.isin(train_groups[0], kept)
+        X_train, y_train, train_groups = X_train[rows], y_train[rows], tuple(g[rows] for g in train_groups)
     subjects = test_groups[0]
     print(f"{len(set(train_groups[0]))} nuits train / {len(set(subjects))} test, {len(y_test)} époques de test")
     print(f"Graine d'entraînement {args.seed} ; écart à la variante complète de la même sonde, apparié par sujet")
