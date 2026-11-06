@@ -32,7 +32,7 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   (pas un tirage aléatoire parmi les 994) ont été utilisés.
 - **Split par sujet** (jamais par époque), figé : 400 nuits d'entraînement
   et 100 de test (89 132 époques), comme l'article. Les nuits des runs à 100
-  et 200 sujets gardent leur rôle. Les sondes non linéaires sont départagées
+  et 200 sujets gardent leur rôle. Sélection non refaite à 500 sujets (`selection: null` dans le JSON) ; aux runs précédents, les sondes non linéaires sont départagées
   par validation croisée par sujet sur le train ; le test ne sert à aucun
   choix, mais les 20 premières nuits de test ont été évaluées par plusieurs
   runs.

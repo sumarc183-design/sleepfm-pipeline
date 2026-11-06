@@ -1,0 +1,16 @@
+30 nuits de test (tr03-0052 à tr04-0120), blocs de 512 dimensions
+  resp  intra-nuit 0.038  entre nuits 0.026  part intra-nuit 0.592
+  eeg   intra-nuit 0.232  entre nuits 0.115  part intra-nuit 0.668
+  ecg   intra-nuit 0.259  entre nuits 0.177  part intra-nuit 0.594
+Époques de test : 89132, dont REM selon l'expert : 10744
+  pred_logistic_resp : 15961 époques prédites REM
+  pred_sequence_resp : 0 époques prédites REM
+
+100 nuits de test (tr03-0052 à tr06-0797), blocs de 512 dimensions
+  resp  intra-nuit 0.038  entre nuits 0.026  part intra-nuit 0.596
+  eeg   intra-nuit 0.216  entre nuits 0.136  part intra-nuit 0.614
+  ecg   intra-nuit 0.229  entre nuits 0.223  part intra-nuit 0.506
+Époques de test : 89132, dont REM selon l'expert : 10744
+  pred_logistic_resp : 15961 époques prédites REM
+  pred_sequence_resp : 0 époques prédites REM
+

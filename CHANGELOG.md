@@ -6,6 +6,12 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Commande de confirmation** (`scripts/confirm_frozen_models.py`), avec la liste figée des 494 sujets
+  et les empreintes du protocole (`configs/`) : aucun entraînement, tout écart arrête le run avant le
+  moindre score, un seul passage. Testée seulement sur des sujets déjà ouverts.
+- **`--subjects-file`** : embeddings de sujets précis, sans sonde ni extension du découpage.
+- **Bilan machine** (`run_status.json`) : ensemble exact demandé, réussi et rejeté, contrôlé par le notebook.
+- **Variance des blocs d'embeddings** (`scripts/embedding_block_variance.py`) : calcul versionné.
 - **Ablation par capteurs** (`scripts/ablation_modalites.py`) : baseline et BiGRU
   réentraînés sur chaque partie des embeddings (respiration, EEG/EOG, ECG), sans
   les recalculer. Exploratoire, une graine, sur des nuits de test déjà examinées :
@@ -84,6 +90,22 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Import des caches** : destination avec des fichiers sans manifeste refusée, tous les conflits vérifiés
+  avant copie, provenance avec SHA-256 écrite avant publication. Une interruption ne laisse que des fichiers
+  vérifiés sous ce contrat.
+- **Temps des caches récents** : au prétraitement version 2, `epoch_idx` et `onset_s` sont obligatoires, finis,
+  positifs ou nuls et espacés d'au moins une époque (trous permis). Les caches historiques restent lisibles.
+- **Téléchargement** : un transfert plus court que la taille annoncée est retenté et jamais gardé.
+- **Comparaison entre runs** : temps d'origine comparés et doublons refusés ; sans temps, comparaison descriptive.
+- **Ablation par capteurs** : les nouvelles archives gardent probabilités, classes, temps, sujets, paramètres,
+  environnement et état du run, avec écriture atomique. Les archives du 6 nov. n'ont que les classes prédites :
+  leurs AUROC ne se recalculent pas depuis ces fichiers.
+- **Notebook** : bilan par identifiants, découpage sauvegardé hors du dépôt avant mise à jour et exporté dans
+  les deux modes, révision du code explicite, `pip freeze` dans les sorties.
+- **Poids aléatoires** : empreinte réelle du checkpoint synthétique, au lieu d'une étiquette commune.
+- **Synthèse des graines** : « ne prédit jamais REM » valait pour le BiGRU seulement ; la baseline en prédit
+  15 961 sur ce même bloc.
+- **Documents** : découpage du guide (400 / 100), historique du protocole, version 2 du protocole.
 - **Conclusions trop fortes** : le run à 500 sujets est présenté comme une
   évaluation élargie avec réutilisation partielle du test, pas comme une
   reproduction stricte ni un protocole aligné. L'effet du volume n'est établi que

@@ -38,6 +38,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import numpy as np
@@ -47,7 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from scripts.download_physionet2018 import download_subject, list_subjects
 from scripts.generate_synthetic_physionet2018 import generate_subject
-from src.data.cache_contract import file_sha256
+from src.data.cache_contract import file_sha256, write_json_atomic
 from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDataset
 from src.data.extract_physionet2018 import ALL_CHANNELS, PREPROCESSING_VERSION
 from src.data.extract_physionet2018 import main as extract_main
@@ -72,14 +73,18 @@ def build_random_checkpoint(path: Path, embedding_dim: int = 512) -> None:
         m.fc = torch.nn.Linear(m.fc.in_features, embedding_dim)
         return m
 
-    torch.save(
-        {
-            "respiratory_state_dict": build_encoder(len(CHANNEL_INDICES["respiratory"])).state_dict(),
-            "sleep_stages_state_dict": build_encoder(len(CHANNEL_INDICES["sleep_stages"])).state_dict(),
-            "ekg_state_dict": build_encoder(len(CHANNEL_INDICES["ekg"])).state_dict(),
-        },
-        path,
-    )
+    # Poids reproductibles : une reprise retrouve la même empreinte, et des poids
+    # différents ne peuvent pas compléter le même cache.
+    with torch.random.fork_rng():
+        torch.manual_seed(0)
+        torch.save(
+            {
+                "respiratory_state_dict": build_encoder(len(CHANNEL_INDICES["respiratory"])).state_dict(),
+                "sleep_stages_state_dict": build_encoder(len(CHANNEL_INDICES["sleep_stages"])).state_dict(),
+                "ekg_state_dict": build_encoder(len(CHANNEL_INDICES["ekg"])).state_dict(),
+            },
+            path,
+        )
 
 
 def generate_synthetic_raw(raw_dir: Path, n_subjects: int, seed: int) -> None:
@@ -320,9 +325,10 @@ def embed_subjects_in_chunks(
     embeddings_dir.mkdir(parents=True, exist_ok=True)
     for leftover in embeddings_dir.glob("*.tmp.npz"):
         leftover.unlink()  # écriture interrompue lors d'un run précédent
+    strict_times = requires_epoch_times(embeddings_dir)
     for subject in subject_ids:
         cached = embeddings_dir / f"{subject}.npz"
-        problem = cache_problem(cached) if cached.exists() else None
+        problem = cache_problem(cached, strict_times=strict_times) if cached.exists() else None
         if problem:
             print(f"[{subject}] cache inutilisable ({problem}) : supprimé, sera recalculé")
             cached.unlink()
@@ -381,15 +387,24 @@ def embed_subjects_in_chunks(
 
 
 EMBEDDING_DIM = 3 * 512  # respiratoire + stades + ECG
+MIN_EPOCH_STEP_S = 29.9  # époques de 30 s : un pas plus court signale un chevauchement ; un trou reste permis
 
 
-def cache_problem(path: Path, require_labels: bool = True) -> str | None:
+def requires_epoch_times(embeddings_dir: Path) -> bool:
+    """Un dossier au prétraitement version 2 ou plus doit avoir des temps complets."""
+    path = embeddings_dir / "manifest.json"
+    return path.exists() and (json.loads(path.read_text()).get("preprocessing_version") or 0) >= 2
+
+
+def cache_problem(path: Path, require_labels: bool = True, strict_times: bool = False) -> str | None:
     """Raison pour laquelle un cache d'embeddings est inutilisable, ou None.
     X : matrice (n, 1536) finie. y : vecteur de stades connus (facultatif avec
     require_labels=False, pour prédire sans annotation). epoch_idx : vecteur
     d'entiers positifs ou nuls, sans doublon. onset_s, qui demande epoch_idx :
     vecteur tout entier fini et croissant, ou tout entier NaN (cache historique
-    sans temps) ; un temps manquant isolé est refusé."""
+    sans temps) ; un temps manquant isolé est refusé. Avec strict_times, le cas
+    des caches récents : epoch_idx et onset_s obligatoires, temps finis, positifs
+    ou nuls, espacés d'au moins une époque."""
     try:
         with np.load(path) as data:
             X = data["X"]
@@ -410,6 +425,8 @@ def cache_problem(path: Path, require_labels: bool = True) -> str | None:
                 return "pas de stades (y), obligatoires pour évaluer"
             if "onset_s" in data and "epoch_idx" not in data:
                 return "onset_s sans epoch_idx"
+            if strict_times and ("onset_s" not in data or "epoch_idx" not in data):
+                return "epoch_idx et onset_s obligatoires pour ce prétraitement"
             if "epoch_idx" in data:
                 idx = data["epoch_idx"]
                 if idx.shape != (n,) or not np.issubdtype(idx.dtype, np.integer):
@@ -420,11 +437,16 @@ def cache_problem(path: Path, require_labels: bool = True) -> str | None:
                     onsets = data["onset_s"]
                     if onsets.shape != (n,):
                         return f"onset_s de forme {onsets.shape}, attendu ({n},)"
+                    if strict_times and np.isnan(onsets).all():
+                        return "onset_s entièrement manquant, obligatoire pour ce prétraitement"
                     if not np.isnan(onsets).all():
                         if not np.isfinite(onsets).all():
                             return "onset_s partiellement manquant ou infini"
-                        if (np.diff(onsets[np.argsort(idx)]) <= 0).any():
+                        steps = np.diff(onsets[np.argsort(idx)])
+                        if (steps <= 0).any():
                             return "onset_s ne croît pas avec epoch_idx"
+                        if strict_times and ((onsets < 0).any() or (steps < MIN_EPOCH_STEP_S).any()):
+                            return f"onset_s négatif ou espacé de moins de {MIN_EPOCH_STEP_S} s"
             elif not require_labels:
                 return "epoch_idx obligatoire pour prédire sans stades"
     except Exception as exc:
@@ -443,9 +465,10 @@ def load_cached_embeddings(embeddings_dir: Path, subjects: list[str], require_la
     require_labels=False, y vaut None si un cache n'a pas de stades."""
     X, y, groups_subject, groups_epoch, groups_onset = [], [], [], [], []
     without_onsets = 0
+    strict_times = requires_epoch_times(embeddings_dir)
     for subject in subjects:
         path = embeddings_dir / f"{subject}.npz"
-        problem = cache_problem(path, require_labels)
+        problem = cache_problem(path, require_labels, strict_times)
         if problem:
             raise SystemExit(f"{path} : cache inutilisable ({problem})")
         with np.load(path) as data:
@@ -760,9 +783,37 @@ def save_test_predictions(path: Path, results: dict, y_test: np.ndarray, test_gr
     print(f"Prédictions du test : {path}")
 
 
+def write_run_status(embeddings_dir: Path, subject_ids: list[str], run_started: float) -> dict:
+    """Bilan machine du run : l'ensemble exact demandé, réussi et rejeté. Le run
+    est complet si chaque sujet demandé a un seul résultat ; les sujets non
+    demandés présents dans le dossier ne comptent pas et sont listés."""
+    requested = set(subject_ids)
+    cached = {p.name.removesuffix(".npz") for p in embeddings_dir.glob("*.npz")}
+    rejected = {p.name.removesuffix(".skipped") for p in embeddings_dir.glob("*.skipped")}
+    missing, double = requested - cached - rejected, requested & cached & rejected
+    status = {
+        "requested": sorted(requested),
+        "embedded": sorted(requested & cached),
+        "rejected": {s: (embeddings_dir / f"{s}.skipped").read_text().strip() for s in sorted(requested & rejected)},
+        "missing": sorted(missing),
+        "both_embedded_and_rejected": sorted(double),
+        "not_requested": sorted((cached | rejected) - requested),
+        "complete": not missing and not double,
+        "run_started": run_started,
+        "environment": run_environment(),
+    }
+    write_json_atomic(embeddings_dir / "run_status.json", status)
+    return status
+
+
 def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
     """Mode --embeddings-dir : voir embed_subjects_in_chunks."""
-    if args.physionet_subjects:
+    run_started = time.time()
+    if args.subjects_file:
+        subject_ids = json.loads(args.subjects_file.read_text())["subjects"]
+        fetch_subject = download_subject
+        data_kind = "RÉELLES"
+    elif args.physionet_subjects:
         subject_ids = list_subjects("training")[: args.physionet_subjects]
         fetch_subject = download_subject
         data_kind = "RÉELLES"
@@ -790,10 +841,11 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         args.num_threads,
         args.batch_size,
         args.device,
-        manifest=embeddings_manifest(args.checkpoint),
+        manifest=embeddings_manifest(checkpoint_path),
         retry_skipped=args.retry_skipped,
         num_workers=args.num_workers,
     )
+    write_run_status(args.embeddings_dir, subject_ids, run_started)
     if args.embed_only:
         n_done = sum((args.embeddings_dir / f"{s}.npz").exists() for s in subject_ids)
         n_rejected = sum((args.embeddings_dir / f"{s}.skipped").exists() for s in subject_ids)
@@ -939,6 +991,13 @@ def main() -> None:
         help="Gap F1 moyen (apprentissage - validation) au-delà duquel MLP/XGBoost est éliminé",
     )
     parser.add_argument(
+        "--subjects-file",
+        type=Path,
+        default=None,
+        help='JSON {"subjects": [...]} : sujets précis dont calculer les embeddings. Demande --embed-only, '
+        "donc aucun entraînement ni extension du découpage (confirmation sur les sujets réservés).",
+    )
+    parser.add_argument(
         "--probes",
         nargs="+",
         choices=PROBE_KINDS,
@@ -954,6 +1013,10 @@ def main() -> None:
         parser.error("--physionet-subjects et --raw-data sont exclusifs")
     if args.embed_only and args.embeddings_dir is None:
         parser.error("--embed-only demande --embeddings-dir (mode par lots)")
+    if args.subjects_file is not None and not args.embed_only:
+        parser.error("--subjects-file demande --embed-only : aucun entraînement sur une liste de sujets imposée")
+    if args.subjects_file is not None and (args.physionet_subjects or args.raw_data is not None):
+        parser.error("--subjects-file exclut --physionet-subjects et --raw-data")
     if args.num_workers is None:
         args.num_workers = args.num_threads
     if args.num_workers < 0:

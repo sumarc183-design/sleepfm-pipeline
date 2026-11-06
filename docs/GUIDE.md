@@ -58,7 +58,8 @@ signale des époques retirées en cours de nuit). Pour un cache antérieur à
 `epoch_idx`, l'ordre est reconstitué depuis ce tri.
 
 **Découpage figé** (`--split-file`) : `configs/split_physionet2018.json` liste
-les 80 sujets d'entraînement et les 20 de test des résultats publiés. Un sujet
+les 400 sujets d'entraînement et les 100 de test du run de référence (les rôles
+des runs à 100 et 200 sujets sont conservés). Un sujet
 listé garde toujours son rôle ; les nouveaux sujets sont répartis (même
 fraction, même graine) et ajoutés au fichier. Sans ce fichier, passer à 200
 sujets refait tout le tirage et change les nuits de test.
@@ -301,3 +302,17 @@ ceux d'un réentraînement complet), pas une erreur introduite ici.
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)) pour rester strictement
 compatibles avec les checkpoints publiés : mêmes noms de clés, même montage
 de canaux, même architecture.
+
+## Confirmation sur les sujets réservés
+
+À lancer une seule fois, après validation de [`PROTOCOLE_CONFIRMATION.md`](PROTOCOLE_CONFIRMATION.md).
+
+1. Embeddings seuls, sans sonde ni extension du découpage (Kaggle : `CONFIRMATION = True` dans le
+   notebook, ou) :
+   `python run_baseline.py --embed-only --subjects-file configs/reserved_physionet2018.json --embeddings-dir embeddings/physionet2018_reserved_v2 --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt`
+2. Évaluation des modèles figés, sans entraînement :
+   `python scripts/confirm_frozen_models.py --embeddings-dir embeddings/physionet2018_reserved_v2 --out results/confirmation_physionet2018`
+
+La commande vérifie d'abord les empreintes (modèles, liste, découpage), le contrat et la couverture
+exacte des sujets, et ne calcule aucun score en cas d'écart. `--rehearsal <sujets déjà ouverts>` la teste
+sans toucher aux sujets réservés.

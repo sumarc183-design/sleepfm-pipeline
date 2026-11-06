@@ -7,10 +7,11 @@ baseline et du BiGRU sur les anciennes nuits de test, les nouvelles et
 l'ensemble, avec IC à 95 % par bootstrap sur les sujets ; liste les nuits au
 κ le plus bas avec leur répartition des stades (selon l'expert).
 
-Le script vérifie si les anciennes nuits ont exactement les mêmes époques et
-les mêmes stades dans les deux runs. Si oui, il donne l'écart apparié entre les
-deux runs, pour une graine d'entraînement chacun. Sinon, la comparaison reste
-descriptive : les entrées du test ont changé en même temps que l'entraînement.
+Le script vérifie si les anciennes nuits ont exactement les mêmes époques, aux
+mêmes temps d'origine, et les mêmes stades dans les deux runs. Si oui, il donne
+l'écart apparié entre les deux runs, pour une graine d'entraînement chacun. Sinon,
+ou si les temps manquent, la comparaison reste descriptive : l'identité des entrées
+n'est pas établie.
 
     python scripts/compare_test_nights.py \
         --predictions results/results_physionet2018_200.predictions.npz \
@@ -31,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.models.linear_probe import bootstrap_ci, paired_bootstrap_diff  # noqa: E402
 
 PROBES = {"logistic": "Baseline", "sequence": "BiGRU"}
+ONSET_TOLERANCE_S = 0.01
 STAGES = "W/N1/N2/N3/REM"
 
 
@@ -43,23 +45,42 @@ def sorted_rows(subjects: np.ndarray, epoch_idx: np.ndarray) -> np.ndarray:
     return np.lexsort((epoch_idx, subjects))
 
 
+def same_epochs_problem(old, new, rows_old: np.ndarray, rows_new: np.ndarray) -> str | None:
+    """Pourquoi les époques des deux runs ne sont pas établies identiques, ou None."""
+    if len(rows_old) != len(rows_new):
+        return f"{len(rows_old)} époques contre {len(rows_new)}"
+    keys = len({(s, i) for s, i in zip(old["subject"][rows_old], old["epoch_idx"][rows_old], strict=True)})
+    if keys != len(rows_old):
+        return "couples sujet / époque en double"
+    if not (
+        np.array_equal(old["subject"][rows_old], new["subject"][rows_new])
+        and np.array_equal(old["epoch_idx"][rows_old], new["epoch_idx"][rows_new])
+    ):
+        return "sujets ou numéros d'époque différents"
+    if not np.array_equal(old["y_true"][rows_old], new["y_true"][rows_new]):
+        return "stades différents"
+    if "onset_s" not in old.files or "onset_s" not in new.files:
+        return "temps d'origine absents d'une archive"
+    onsets_old, onsets_new = old["onset_s"][rows_old], new["onset_s"][rows_new]
+    if not (np.isfinite(onsets_old).all() and np.isfinite(onsets_new).all()):
+        return "temps d'origine manquants"
+    if (np.abs(onsets_old - onsets_new) > ONSET_TOLERANCE_S).any():
+        return "temps d'origine différents"
+    return None
+
+
 def compare_same_epochs(old, new, is_old: np.ndarray) -> None:
     """Écart apparié entre les deux runs, seulement si les époques sont identiques."""
     rows_old = sorted_rows(old["subject"], old["epoch_idx"])
     rows_new = np.flatnonzero(is_old)[sorted_rows(new["subject"][is_old], new["epoch_idx"][is_old])]
-    same = (
-        len(rows_old) == len(rows_new)
-        and np.array_equal(old["subject"][rows_old], new["subject"][rows_new])
-        and np.array_equal(old["epoch_idx"][rows_old], new["epoch_idx"][rows_new])
-        and np.array_equal(old["y_true"][rows_old], new["y_true"][rows_new])
-    )
-    if not same:
+    problem = same_epochs_problem(old, new, rows_old, rows_new)
+    if problem:
         print(
-            f"Époques des anciennes nuits DIFFÉRENTES entre les runs ({len(rows_old)} contre {len(rows_new)}) : "
+            f"Identité des anciennes nuits non établie entre les runs ({problem}) : "
             "comparaison descriptive, pas d'écart attribuable au seul entraînement"
         )
         return
-    print(f"Époques et stades des anciennes nuits identiques entre les runs ({len(rows_old)} époques)")
+    print(f"Époques, temps et stades des anciennes nuits identiques entre les runs ({len(rows_old)} époques)")
     y, subjects = old["y_true"][rows_old], old["subject"][rows_old]
     for probe, name in PROBES.items():
         diff = paired_bootstrap_diff(

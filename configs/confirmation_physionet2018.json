@@ -1,0 +1,33 @@
+{
+  "protocol_version": 2,
+  "models": {
+    "logistic": "1e219b2e5e485f82bd990319234b9316c369127b577ba592870092807ee3cfc0",
+    "sequence": "85936d27eb2e136208113a53c61697f2005287ae4dcac084be601e8a2c861fe8"
+  },
+  "reserved_sha256": "0903cff2fba7176507c5ae9094e302fe999b5e3b7cf644e2e328c185a0a1043b",
+  "split_sha256": "d4b33aa2aacd556b2f248883a41fe9d9d065e6a8a458d005e5d642dd9554ef72",
+  "contract": {
+    "checkpoint_sha256": "a2fe7e5abf70f8a448c5577a085e0b7096332dcb1ec7497916e425446ac24575",
+    "preprocessing_version": 2,
+    "channels": [
+      "F3-M2",
+      "F4-M1",
+      "C3-M2",
+      "C4-M1",
+      "O1-M2",
+      "O2-M1",
+      "E1-M2",
+      "Chin1-Chin2",
+      "ABD",
+      "CHEST",
+      "AIRFLOW",
+      "SaO2",
+      "ECG"
+    ],
+    "sample_rate": 256
+  },
+  "bootstrap": {
+    "n_boot": 1000,
+    "seed": 42
+  }
+}

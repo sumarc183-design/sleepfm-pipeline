@@ -18,6 +18,9 @@ Volume : 400 nuits moins 160 nuits (les 160 du run à 200 sujets, choisies par o
   BiGRU, graine 44         κ 0,647 -> 0,682   +0,035 [+0,017 ; +0,053]
   BiGRU, moyenne           +0,022, positif sur les 3 graines
 
-Bloc respiration : variance intra-nuit de l'embedding 0,038, contre 0,232 pour l'EEG/EOG et 0,259 pour
-l'ECG (30 nuits de test). Ce bloc ne prédit jamais REM. Cause non établie : le SaO2 reste en valeurs
-brutes (environ 29 000, comme dans le code officiel), piste non testée.
+Bloc respiration (corrigé le 2026-11-06 ; variance_blocs_physionet2018_500.txt, scripts/embedding_block_variance.py) :
+variance intra-nuit de l'embedding 0,038, contre 0,232 pour l'EEG/EOG et 0,259 pour l'ECG (30 premières
+nuits de test par identifiant ; 0,038, 0,216 et 0,229 sur les 100). Sur ce bloc seul, le BiGRU ne prédit
+aucune époque REM, mais la baseline en prédit 15 961 : ce comportement dépend de la sonde et ne s'attribue
+pas au bloc seul. Cause non établie : le SaO2 reste en valeurs brutes (environ 29 000, comme dans le code
+officiel), piste non testée.

@@ -568,3 +568,151 @@ def test_band_shares_cover_the_whole_range_including_3_hz():
     shares = relative_band_power(noise, sr)
     total = sum(shares[band] for band in ("delta", "thêta", "alpha", "sigma", "bêta"))
     np.testing.assert_allclose(total, 1.0)
+
+
+def _npz_source(folder, manifest, subject, content=b"cache"):
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "manifest.json").write_text(json.dumps(manifest))
+    (folder / f"{subject}.npz").write_bytes(content)
+    return folder / "manifest.json"
+
+
+def test_import_refuses_a_destination_with_files_of_unknown_provenance(tmp_path):
+    from src.data.cache_contract import import_embeddings
+
+    destination = tmp_path / "dest"
+    destination.mkdir()
+    (destination / "inconnu.npz").write_bytes(b"origine inconnue")
+    with pytest.raises(ValueError, match="sans manifeste"):
+        import_embeddings([_npz_source(tmp_path / "ok", CONTRACT, "s1")], destination, CONTRACT)
+    assert not (destination / "manifest.json").exists() and not (destination / "s1.npz").exists()
+
+
+def test_import_checks_every_conflict_before_copying_anything(tmp_path):
+    from src.data.cache_contract import file_sha256, import_embeddings
+
+    first = _npz_source(tmp_path / "a", CONTRACT, "s1")
+    (first.parent / "s2.npz").write_bytes(b"version a")
+    second = _npz_source(tmp_path / "b", CONTRACT, "s2", b"version b")
+    destination = tmp_path / "dest"
+    with pytest.raises(ValueError, match="Conflit"):
+        import_embeddings([first, second], destination, CONTRACT)
+    assert not list(destination.iterdir())
+
+    report = import_embeddings([first], destination, CONTRACT)
+    assert report["copied"] == 2 and not (destination / ".import_en_cours").exists()
+    provenance = json.loads((destination / "provenance.json").read_text())
+    assert provenance["s1.npz"]["sha256"] == file_sha256(destination / "s1.npz")
+
+
+def test_import_interrupted_before_publication_leaves_only_verified_files(tmp_path, monkeypatch):
+    from src.data import cache_contract
+
+    source = _npz_source(tmp_path / "a", CONTRACT, "s1")
+    (source.parent / "s2.npz").write_bytes(b"deux")
+    destination = tmp_path / "dest"
+    real_replace, calls = cache_contract.os.replace, []
+
+    def stop_after_first_publication(src, dst):
+        real_replace(src, dst)
+        if str(dst).endswith(".npz"):
+            calls.append(dst)
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(cache_contract.os, "replace", stop_after_first_publication)
+    with pytest.raises(KeyboardInterrupt):
+        cache_contract.import_embeddings([source], destination, CONTRACT)
+    monkeypatch.setattr(cache_contract.os, "replace", real_replace)
+    assert json.loads((destination / "manifest.json").read_text()) == CONTRACT
+    assert len(list(destination.glob("*.npz"))) == 1
+    assert cache_contract.import_embeddings([source], destination, CONTRACT)["copied"] == 1
+    assert len(list(destination.glob("*.npz"))) == 2
+
+
+@pytest.mark.parametrize(
+    "onsets",
+    [np.full(4, np.nan), np.array([-30.0, 0.0, 30.0, 60.0]), np.array([0.0, 1.0, 2.0, 3.0])],
+    ids=["tous_manquants", "negatif", "chevauchement"],
+)
+def test_strict_times_reject_unusable_chronology(tmp_path, onsets):
+    from run_baseline import cache_problem
+
+    path = tmp_path / "c.npz"
+    base = {"X": np.zeros((4, 1536)), "y": np.zeros(4, dtype=int), "epoch_idx": np.arange(4)}
+    np.savez(path, **base, onset_s=onsets)
+    assert cache_problem(path, strict_times=True) is not None
+
+    np.savez(path, **base, onset_s=np.array([0.0, 30.0, 90.0, 120.0]))  # un trou reste permis
+    assert cache_problem(path, strict_times=True) is None
+    np.savez(path, **base)
+    assert cache_problem(path) is None and cache_problem(path, strict_times=True) is not None
+
+
+def test_truncated_download_is_retried_and_never_kept(tmp_path, monkeypatch):
+    import io
+
+    from scripts import download_physionet2018 as download
+
+    class Response(io.BytesIO):
+        headers = {"Content-Length": "1000"}
+
+    answers = []
+
+    def urlopen(url, timeout):
+        answers.append(url)
+        if len(answers) == 1:
+            return Response(b"abc")  # annonce 1000 octets, en donne 3
+        response = Response(b"x" * 1000)
+        return response
+
+    monkeypatch.setattr(download.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(download.time, "sleep", lambda _: None)
+    download.download_subject("tr00-0001", tmp_path)
+    folder = tmp_path / "tr00-0001"
+    assert (folder / "tr00-0001.hea").read_bytes() == b"x" * 1000 and not list(folder.glob("*.part"))
+
+    monkeypatch.setattr(download.urllib.request, "urlopen", lambda url, timeout: Response(b"abc"))
+    with pytest.raises(OSError, match="incomplet"):
+        download.download_subject("tr00-0002", tmp_path, retries=2)
+    assert not list((tmp_path / "tr00-0002").iterdir())
+
+
+def test_same_epochs_require_identical_times(tmp_path):
+    from scripts.compare_test_nights import same_epochs_problem
+
+    run = {
+        "subject": np.array(["a", "a"]),
+        "epoch_idx": np.array([0, 1]),
+        "y_true": np.array([0, 1]),
+        "onset_s": np.array([0.0, 30.0]),
+    }
+
+    def archive(name, **changes):
+        np.savez(tmp_path / name, **(run | changes))
+        return np.load(tmp_path / name)
+
+    rows = np.array([0, 1])
+    old = archive("old.npz")
+    assert same_epochs_problem(old, archive("same.npz"), rows, rows) is None
+    shifted = archive("shift.npz", onset_s=run["onset_s"] + 3600)
+    assert "temps" in same_epochs_problem(old, shifted, rows, rows)
+    no_times = {k: v for k, v in run.items() if k != "onset_s"}
+    np.savez(tmp_path / "none.npz", **no_times)
+    assert "absents" in same_epochs_problem(old, np.load(tmp_path / "none.npz"), rows, rows)
+    double = archive("double.npz", epoch_idx=np.array([0, 0]))
+    assert "double" in same_epochs_problem(double, double, rows, rows)
+
+
+def test_run_status_covers_exactly_the_requested_subjects(tmp_path):
+    from run_baseline import write_run_status
+
+    (tmp_path / "a.npz").write_bytes(b"")
+    (tmp_path / "etranger.npz").write_bytes(b"")
+    (tmp_path / "b.skipped").write_text("canaux manquants\n")
+    status = write_run_status(tmp_path, ["a", "b", "c"], 0.0)
+    assert not status["complete"] and status["missing"] == ["c"] and status["not_requested"] == ["etranger"]
+    assert status["rejected"] == {"b": "canaux manquants"}
+    (tmp_path / "c.npz").write_bytes(b"")
+    assert write_run_status(tmp_path, ["a", "b", "c"], 0.0)["complete"]
+    (tmp_path / "a.skipped").write_text("x")
+    assert not write_run_status(tmp_path, ["a", "b", "c"], 0.0)["complete"]

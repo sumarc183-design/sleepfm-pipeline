@@ -16,14 +16,27 @@ https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
 """
 
 import argparse
+import http.client
 import os
-import shutil
 import time
 import urllib.request
 from pathlib import Path
 
 PHYSIONET_2018_URL = "https://physionet.org/files/challenge-2018/1.0.0"
 DOWNLOAD_TIMEOUT_SECONDS = 120  # sans réponse du serveur pendant ce délai : nouvel essai
+
+
+def copy_complete(response, out) -> None:
+    """Copie la réponse et vérifie sa taille annoncée : une fin de flux prématurée
+    lève une erreur au lieu de passer pour un fichier complet."""
+    written = 0
+    while block := response.read(1 << 20):
+        out.write(block)
+        written += len(block)
+    headers = getattr(response, "headers", None)
+    announced = headers.get("Content-Length") if headers is not None else None
+    if announced is not None and written != int(announced):
+        raise OSError(f"Transfert incomplet : {written} octets reçus sur {announced}")
 
 
 def list_subjects(split: str = "training") -> list[str]:
@@ -37,7 +50,7 @@ def download_subject(subject_id: str, dest_dir: str | Path, split: str = "traini
     direct vers dest_dir/<subject_id>/, sans passer par wfdb (-arousal.mat est
     un fichier MATLAB, pas un enregistrement WFDB). Les fichiers déjà présents
     ne sont pas retéléchargés. Écriture dans un `.part` renommé à la fin : un
-    transfert interrompu n'est jamais pris pour un fichier complet."""
+    transfert interrompu ou tronqué n'est jamais pris pour un fichier complet."""
     subject_dir = Path(dest_dir) / subject_id
     subject_dir.mkdir(parents=True, exist_ok=True)
     for name in (f"{subject_id}.hea", f"{subject_id}.mat", f"{subject_id}-arousal.mat"):
@@ -53,10 +66,10 @@ def download_subject(subject_id: str, dest_dir: str | Path, split: str = "traini
                     ) as response,
                     open(partial, "wb") as out,
                 ):
-                    shutil.copyfileobj(response, out)
+                    copy_complete(response, out)
                 os.replace(partial, dest)
                 break
-            except OSError:
+            except (OSError, http.client.HTTPException):
                 partial.unlink(missing_ok=True)
                 if attempt == retries - 1:
                     raise
