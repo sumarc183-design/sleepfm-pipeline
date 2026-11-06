@@ -112,10 +112,10 @@ docs/             résultats, guide, carte du modèle, protocole, roadmap, accè
 | [OSF_COMPARISON.md](docs/OSF_COMPARISON.md) | Ce qu'il faut aligner avant de comparer SleepFM et OSF |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
 
-## Attributions
+## Licence et attributions
 
-Code de modèle et d'extraction adapté de SleepFM et d'OSF (licences MIT) :
-voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Pour citer ce travail :
-[CITATION.cff](CITATION.cff).
+**Licence :** tous droits réservés, voir [LICENSE](LICENSE). Le dépôt peut être consulté, mais pas réutilisé
+sans accord écrit. Le code de modèle et d'extraction adapté de SleepFM et d'OSF reste sous licence MIT :
+voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Pour citer ce travail : [CITATION.cff](CITATION.cff).
 
 ⚠️ Projet de recherche, pas un dispositif médical.

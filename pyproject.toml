@@ -5,6 +5,7 @@ description = "Reproduction et évaluation de SleepFM (modèle fondamental du so
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Marc Su" }]
+license = { file = "LICENSE" }
 
 [tool.ruff]
 line-length = 120

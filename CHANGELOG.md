@@ -6,6 +6,7 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Licence** : tous droits réservés (`LICENSE`), textes MIT de SleepFM et d'OSF reproduits dans `THIRD_PARTY_NOTICES.md`. Ne s'applique pas rétroactivement à ce qui a déjà été copié.
 - **Commande de confirmation** (`scripts/confirm_frozen_models.py`), avec la liste figée des 494 sujets
   et les empreintes du protocole (`configs/`) : aucun entraînement, tout écart arrête le run avant le
   moindre score, un seul passage. Testée seulement sur des sujets déjà ouverts.
