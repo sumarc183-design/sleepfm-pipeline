@@ -331,3 +331,15 @@ def test_sequence_probe_accepts_onsets_and_keeps_nights_together():
     onsets = np.tile(np.r_[np.arange(10) * 30.0, 1200 + np.arange(10) * 30.0], 6)  # un trou par nuit
     model = SequenceProbe(epochs=1).fit(X, y, (subjects, epoch_idx, onsets))
     assert model.predict(X, (subjects, epoch_idx, onsets)).shape == (120,)
+
+
+def test_select_blocks_keeps_the_requested_columns_in_order():
+    from scripts.ablation_modalites import select_blocks
+
+    X = np.arange(2 * 1536).reshape(2, 1536)
+    assert select_blocks(X, ("ecg",)).tolist() == X[:, 1024:1536].tolist()
+    no_eeg = select_blocks(X, ("ecg", "resp"))
+    assert no_eeg.shape == (2, 1024)
+    assert no_eeg.tolist() == np.concatenate([X[:, :512], X[:, 1024:]], axis=1).tolist()
+    with pytest.raises(ValueError, match="dimension"):
+        select_blocks(X[:, :512], ("resp",))

@@ -6,6 +6,11 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Ablation par capteurs** (`scripts/ablation_modalites.py`) : baseline et BiGRU
+  réentraînés sur chaque partie des embeddings (respiration, EEG/EOG, ECG), sans
+  les recalculer. Exploratoire, une graine, sur des nuits de test déjà examinées :
+  κ du BiGRU 0,664 avec tout, 0,669 avec l'EEG/EOG seul, 0,449 sans EEG/EOG. Ne
+  simule ni un smartphone ni un objet connecté.
 - **Protocole de confirmation** (`docs/PROTOCOLE_CONFIRMATION.md`), écrit avant
   d'ouvrir les 494 sujets réservés : modèles figés par empreinte, critère
   principal, exclusions et historique d'utilisation du test. À valider.
