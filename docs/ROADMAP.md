@@ -16,6 +16,7 @@
 - [ ] Embeddings + sonde linéaire sur MESA (cohorte supplémentaire, si l'accès NSRR est obtenu)
 - [ ] Comparaison SleepFM vs OSF sur SleepBench (même protocole, mêmes données)
 - [ ] Tableau de résultats consolidé
+- [ ] Prédiction sur une polysomnographie brute non annotée : fenêtres de 30 s indépendantes des annotations, mêmes contrats, traitement après enregistrement (reporté du nouvel audit, 2026-11-06)
 
 ## J90 — Différenciation
 - [ ] Choix de la tâche différenciante (détection apnée OU robustesse pédiatrique CHAT)
