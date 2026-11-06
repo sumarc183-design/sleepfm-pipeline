@@ -48,5 +48,5 @@ Matrice de confusion (test, Log. officielle) : lignes = stade réel, colonnes = 
   nonrem3           21         8       248      2018         6
   rem              236       165       104         0      1755
 ================================================================================================
-Résultats JSON : /private/tmp/claude-501/-Users-marco-Desktop-projet-alternance/db4ce273-2198-4e33-80d0-ea178fc34fd5/scratchpad/packed_run.json
-Prédictions du test : /private/tmp/claude-501/-Users-marco-Desktop-projet-alternance/db4ce273-2198-4e33-80d0-ea178fc34fd5/scratchpad/packed_run.predictions.npz
+Résultats JSON : packed_run.json
+Prédictions du test : packed_run.predictions.npz

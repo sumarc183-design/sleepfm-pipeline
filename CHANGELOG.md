@@ -90,6 +90,7 @@ selon [SemVer](https://semver.org/lang/fr/).
   SleepFM 2024 (PhysioNet 2018), stade par stade.
 
 ### Corrigé
+- **Page du dépôt** : README raccourci avec résumé en anglais, résultats en bref et état du projet ; le détail passe, sans changement de chiffres, dans `docs/RESULTATS.md`. Chemins locaux retirés d'un fichier de résultats.
 - **Import des caches** : destination avec des fichiers sans manifeste refusée, tous les conflits vérifiés
   avant copie, provenance avec SHA-256 écrite avant publication. Une interruption ne laisse que des fichiers
   vérifiés sous ce contrat.

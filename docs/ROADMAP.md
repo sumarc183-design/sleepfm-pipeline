@@ -21,4 +21,4 @@
 ## J90 — Différenciation
 - [ ] Choix de la tâche différenciante (détection apnée OU robustesse pédiatrique CHAT)
 - [ ] Baseline mesurée sur cette tâche
-- [ ] Note de synthèse pour décision d'investissement phase 2
+- [ ] Note de synthèse pour décision sur la phase 2
