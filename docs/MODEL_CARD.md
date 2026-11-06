@@ -68,7 +68,7 @@ train − test. Résultats à jour : [README](../README.md#résultats).
   sujets) : κ 0,599 [0,570 ; 0,627] pour la baseline, 0,664 [0,634 ; 0,694]
   pour le BiGRU ; ROC-AUC 0,921, AUPRC 0,750, F1 0,686 pour la baseline,
   contre 0,924 / 0,759 / 0,700 dans l'article. Écart apparié du BiGRU : κ
-  +0,065 [+0,047 ; +0,083], une seule graine à 500 sujets. 5 nuits sur 100 sont
+  +0,065 [+0,047 ; +0,083], graine 42 ; sur 3 graines à 500 sujets, BiGRU de 0,664 à 0,682 et gain de +0,065 à +0,083. 5 nuits sur 100 sont
   sous κ 0,3 avec la baseline. Historique : à 200 sujets (2026-11-05), 0,587 et
   0,656 ; à 100 sujets en prétraitement version 1 (2026-11-04), 0,607 et 0,685
   (BiGRU de 0,666 à 0,684 sur 3 graines d'entraînement). Les résultats du

@@ -52,15 +52,23 @@ sujets, ne tourne pas sur Mac, voir le [guide](docs/GUIDE.md)).
 - **Le BiGRU fait mieux que la baseline sur ces 100 nuits** : en comparaison appariée (mêmes nuits,
   bootstrap sur les sujets), κ +0,065 [+0,047 ; +0,083], F1 macro +0,046 [+0,031 ; +0,062], et κ supérieur sur
   81 nuits sur 100. Le gain se retrouve à part sur les 60 nuits ajoutées (κ 0,659 contre 0,588) et sur les
-  40 déjà vues (0,672 contre 0,616). Une seule graine d'entraînement à 500 sujets : la variance n'y est
-  pas encore mesurée.
+  40 déjà vues (0,672 contre 0,616). Ce tableau est celui de la graine 42. Sur les graines 42, 43 et 44,
+  le κ du BiGRU va de 0,664 à 0,682 (moyenne 0,673) et son gain de +0,065 à +0,083
+  ([synthèse](results/synthese_graines_volume_physionet2018_500.txt)) : 0,664 est la plus basse des trois.
 - **Le MLP n'apporte pas de gain** : κ −0,008 [−0,027 ; +0,012], F1 macro −0,019 [−0,034 ; −0,003].
-- **Effet du volume d'entraînement : établi pour la baseline, pas pour le BiGRU**
-  ([détail](results/nuits_test_physionet2018_500.txt)). Sur exactement les mêmes 36 163 époques de test,
-  passer de 160 à 400 nuits d'entraînement donne, en écart apparié pour une graine par run : baseline
-  κ +0,029 [+0,008 ; +0,049], BiGRU κ +0,016 [−0,001 ; +0,031]. La comparaison entre 100 et 200 sujets
-  reste descriptive : le prétraitement a changé en même temps, avec 125 époques de test en plus
-  ([détail](results/nuits_test_physionet2018_200.txt)).
+- **Effet du volume d'entraînement : modeste, mesuré sur le même test.** Même cache, mêmes 100 nuits de
+  test, 160 nuits d'entraînement (les premières par ID, pas tirées au hasard) contre 400 : baseline κ
+  +0,026 [+0,015 ; +0,037] ; BiGRU +0,012 [−0,005 ; +0,027], +0,019 [+0,002 ; +0,038] et
+  +0,035 [+0,017 ; +0,053] selon la graine, +0,022 en moyenne
+  ([synthèse](results/synthese_graines_volume_physionet2018_500.txt)). Ces nuits ont déjà été examinées :
+  c'est une mesure exploratoire.
+- **Sur ces données, l'EEG/EOG porte presque toute la performance**
+  ([script](scripts/ablation_modalites.py), [synthèse](results/synthese_graines_volume_physionet2018_500.txt)).
+  κ moyen du BiGRU sur 3 graines : 0,673 avec tous les capteurs, 0,442 sans EEG/EOG (respiration + ECG).
+  Avec la graine 42 seule, l'EEG/EOG seul donne 0,669. Le gain apparent sans ECG (0,687) n'est pas établi :
+  +0,023, +0,013 et +0,006 selon la graine, IC contenant 0 pour deux d'entre elles. Exploratoire, encodeurs
+  figés conçus pour la polysomnographie : ce n'est pas la limite de ces capteurs, et ça ne simule ni un
+  téléphone ni un objet connecté. Le bloc respiration semble peu informatif, sans cause établie.
 - **N1 reste difficile** : F1 0,500 pour la baseline, 0,505 pour le BiGRU. Pas de gain établi.
 - **Quelques nuits pèsent sur le total** : 5 nuits sur 100 ont un κ sous 0,3 avec la baseline (κ médian
   par nuit 0,583). Sur les deux plus basses, tr03-1292 (κ 0,08, 69 % d'éveil selon l'expert, surtout lu en
