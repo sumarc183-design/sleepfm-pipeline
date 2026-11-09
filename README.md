@@ -15,7 +15,9 @@ checkpoint officiel, avant toute comparaison à
 > **In short.** An independent evaluation of the public SleepFM checkpoint on open
 > PhysioNet 2018 data: 5-class sleep staging from frozen embeddings, with subject-level
 > splits and bootstrap confidence intervals. On 100 test nights, a bidirectional GRU reaches
-> κ 0.664 to 0.682 over three seeds, against 0.599 for the official logistic baseline. This is
+> κ 0.664 to 0.682 over three seeds, against 0.599 for the official logistic baseline. A single
+> pre-registered pass on 494 never-opened subjects confirmed the gain: κ 0.672 against 0.578
+> (difference +0.094, 95 % CI +0.086 to +0.103). This is
 > neither a strict reproduction of the paper nor a clinical validation. Documentation is in French.
 
 ```mermaid
@@ -38,19 +40,22 @@ que la baseline officielle : son gain de κ va de +0,065 à +0,083 selon la grai
 | **BiGRU sur la nuit**, graine 42 | **0,664** [0,634 ; 0,694] | **0,731** | **0,940** | **0,800** |
 | Article SleepFM 2024, tableau 8 (pas de κ publié) | | 0,700 | 0,924 | 0,759 |
 
+**Confirmation sur 494 sujets jamais ouverts** (passage unique, protocole fixé à l'avance, modèles figés de la
+graine 42) : κ 0,672 pour le BiGRU contre 0,578 pour la baseline, écart **+0,094 [+0,086 ; +0,103]**,
+gain confirmé ([protocole et résultat](docs/PROTOCOLE_CONFIRMATION.md#résultat-2026-11-09-passage-unique)).
+
 Sur 3 graines, le κ du BiGRU va de 0,664 à 0,682. Comparaison à l'article, effet du volume, ablation par
 capteurs et nuits difficiles : **[résultats détaillés](docs/RESULTATS.md)**.
 
 **Limites à garder en tête**
 - **Pas une reproduction stricte de l'article :** seul le nombre de nuits de test est identique ; sujets, découpage, sonde et poids exacts restent différents ou inconnus.
-- **Pas une validation clinique :** une seule cohorte, et 40 des 100 nuits de test avaient déjà été examinées.
-- **Confirmation à venir :** 494 sujets sont réservés et n'ont jamais été ouverts ([protocole](docs/PROTOCOLE_CONFIRMATION.md), à valider).
+- **Pas une validation clinique ni externe :** une seule cohorte (PhysioNet 2018). Sur les 100 nuits de test, 40 avaient déjà été examinées ; la confirmation sur 494 sujets réservés reste dans la même cohorte.
 
 ## État du projet
 
 | Jalon | Échéance | État |
 |---|---|---|
-| J30, reproduction | 1er décembre 2026 | En cours : pipeline et premières mesures faits, confirmation à venir |
+| J30, reproduction | 1er décembre 2026 | En cours : pipeline, mesures et confirmation sur 494 sujets réservés faits |
 | J60, comparaison | 31 décembre 2026 | À venir : MESA si l'accès est obtenu, OSF, polysomnographie brute |
 | J90, différenciation | 30 janvier 2027 | À venir |
 
@@ -106,7 +111,7 @@ docs/             résultats, guide, carte du modèle, protocole, roadmap, accè
 | [RESULTATS.md](docs/RESULTATS.md) | Tous les résultats, comparaison à l'article, limites |
 | [GUIDE.md](docs/GUIDE.md) | Installation, modes d'exécution, sondes, tests, pièges connus |
 | [MODEL_CARD.md](docs/MODEL_CARD.md) | Usage prévu, données, métriques, limites |
-| [PROTOCOLE_CONFIRMATION.md](docs/PROTOCOLE_CONFIRMATION.md) | Confirmation prévue sur les 494 sujets réservés |
+| [PROTOCOLE_CONFIRMATION.md](docs/PROTOCOLE_CONFIRMATION.md) | Protocole et résultat de la confirmation sur les 494 sujets réservés |
 | [ROADMAP.md](docs/ROADMAP.md) | Jalons J30 / J60 / J90 |
 | [DATA_ACCESS.md](docs/DATA_ACCESS.md) | Demande d'accès NSRR (MESA, SHHS, CHAT) |
 | [OSF_COMPARISON.md](docs/OSF_COMPARISON.md) | Ce qu'il faut aligner avant de comparer SleepFM et OSF |

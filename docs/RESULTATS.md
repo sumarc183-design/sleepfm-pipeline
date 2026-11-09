@@ -17,7 +17,8 @@ entre entraînements ou centres.
 
 Le test ne sert à aucun choix automatique de modèle, mais **40 des 100 nuits avaient déjà été examinées**
 et aucun protocole n'avait été écrit avant ce run. La
-[confirmation prévue](PROTOCOLE_CONFIRMATION.md) porte sur 494 sujets jamais ouverts.
+[confirmation](PROTOCOLE_CONFIRMATION.md#résultat-2026-11-09-passage-unique) sur 494 sujets jamais ouverts,
+faite le 2026-11-09 en un seul passage, confirme le gain : κ 0,672 contre 0,578, écart +0,094 [+0,086 ; +0,103].
 
 | Sonde (test) | Accuracy | Cohen's κ [IC 95 %] | F1 macro [IC 95 %] | ROC-AUC | AUPRC | Gap F1 train − test |
 |---|---|---|---|---|---|---|
