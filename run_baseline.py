@@ -843,21 +843,42 @@ def save_test_predictions(path: Path, results: dict, y_test: np.ndarray, test_gr
 
 def write_run_status(embeddings_dir: Path, subject_ids: list[str], run_started: float) -> dict:
     """Bilan machine du run : l'ensemble exact demandé, réussi et rejeté. Le run
-    est complet si chaque sujet demandé a un seul résultat ; les sujets non
-    demandés présents dans le dossier ne comptent pas et sont listés."""
+    est complet si chaque sujet demandé a un seul résultat valide, sans fichier
+    temporaire restant. Les caches sont vérifiés un par un, pas chargés ensemble.
+    Les sujets non demandés sont seulement listés, sans lecture de leur contenu."""
     validate_subject_ids(subject_ids)
     requested = set(subject_ids)
-    cached = {p.name.removesuffix(".npz") for p in embeddings_dir.glob("*.npz")}
+    cached = {p.name.removesuffix(".npz") for p in embeddings_dir.glob("*.npz") if not p.name.endswith(".tmp.npz")}
     rejected = {p.name.removesuffix(".skipped") for p in embeddings_dir.glob("*.skipped")}
+    temporary = {p.name.removesuffix(".tmp.npz") for p in embeddings_dir.glob("*.tmp.npz")}
+    invalid, invalid_rejections, reasons = {}, {}, {}
+    strict_times = requires_epoch_times(embeddings_dir)
+    for subject in sorted(requested & cached):
+        problem = cache_problem(embeddings_dir / f"{subject}.npz", strict_times=strict_times)
+        if problem:
+            invalid[subject] = problem
+    for subject in sorted(requested & rejected):
+        try:
+            reason = (embeddings_dir / f"{subject}.skipped").read_text().strip()
+            if reason:
+                reasons[subject] = reason
+            else:
+                invalid_rejections[subject] = "raison du rejet vide"
+        except (OSError, UnicodeError) as exc:
+            invalid_rejections[subject] = f"rejet illisible ({exc.__class__.__name__})"
     missing, double = requested - cached - rejected, requested & cached & rejected
+    pending = sorted(requested & temporary)
     status = {
         "requested": sorted(requested),
-        "embedded": sorted(requested & cached),
-        "rejected": {s: (embeddings_dir / f"{s}.skipped").read_text().strip() for s in sorted(requested & rejected)},
+        "embedded": sorted((requested & cached) - set(invalid)),
+        "rejected": reasons,
+        "invalid": invalid,
+        "invalid_rejections": invalid_rejections,
+        "temporary": pending,
         "missing": sorted(missing),
         "both_embedded_and_rejected": sorted(double),
-        "not_requested": sorted((cached | rejected) - requested),
-        "complete": not missing and not double,
+        "not_requested": sorted((cached | rejected | temporary) - requested),
+        "complete": not (missing or double or invalid or invalid_rejections or pending),
         "run_started": run_started,
         "environment": run_environment(),
     }
@@ -904,10 +925,11 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         retry_skipped=args.retry_skipped,
         num_workers=args.num_workers,
     )
-    write_run_status(args.embeddings_dir, subject_ids, run_started)
+    status = write_run_status(args.embeddings_dir, subject_ids, run_started)
+    if not status["complete"]:
+        raise SystemExit(f"Bilan du run incomplet ou invalide : voir {args.embeddings_dir / 'run_status.json'}")
     if args.embed_only:
-        n_done = sum((args.embeddings_dir / f"{s}.npz").exists() for s in subject_ids)
-        n_rejected = sum((args.embeddings_dir / f"{s}.skipped").exists() for s in subject_ids)
+        n_done, n_rejected = len(status["embedded"]), len(status["rejected"])
         print(
             f"Embeddings seulement : {n_done} sujet(s) en cache, {n_rejected} rejeté(s), dans {args.embeddings_dir}. "
             "Sondes à lancer ensuite, sans GPU, sur ce dossier."

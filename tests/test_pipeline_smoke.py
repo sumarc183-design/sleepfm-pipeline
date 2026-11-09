@@ -779,13 +779,13 @@ def test_same_epochs_require_identical_times(tmp_path):
 def test_run_status_covers_exactly_the_requested_subjects(tmp_path):
     from run_baseline import write_run_status
 
-    (tmp_path / "a.npz").write_bytes(b"")
+    np.savez(tmp_path / "a.npz", X=np.zeros((1, 1536), np.float32), y=np.array([0]), epoch_idx=np.array([0]))
     (tmp_path / "etranger.npz").write_bytes(b"")
     (tmp_path / "b.skipped").write_text("canaux manquants\n")
     status = write_run_status(tmp_path, ["a", "b", "c"], 0.0)
     assert not status["complete"] and status["missing"] == ["c"] and status["not_requested"] == ["etranger"]
     assert status["rejected"] == {"b": "canaux manquants"}
-    (tmp_path / "c.npz").write_bytes(b"")
+    np.savez(tmp_path / "c.npz", X=np.zeros((1, 1536), np.float32), y=np.array([0]), epoch_idx=np.array([0]))
     assert write_run_status(tmp_path, ["a", "b", "c"], 0.0)["complete"]
     (tmp_path / "a.skipped").write_text("x")
     assert not write_run_status(tmp_path, ["a", "b", "c"], 0.0)["complete"]

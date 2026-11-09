@@ -6,6 +6,10 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Bilan final vérifié** : `run_status.json` relit chaque cache demandé, contrôle
+  les raisons des rejets et distingue les temporaires ; les seuls noms de fichiers
+  ne suffisent plus pour annoncer un run complet. CLI et notebook refusent un bilan
+  invalide avant succès, entraînement ou export ; les fichiers source restent intacts.
 - **Contrôle des entrées OSF** (`scripts/check_osf_input.py`) : vérification du
   format d'un NPZ d'époques déjà préparées, ordre des canaux explicite, fréquence
   et durée strictes, refus des canaux dupliqués ou absents et des valeurs non finies.

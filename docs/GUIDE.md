@@ -109,6 +109,21 @@ manquants, aucun stade annoté…). Une extraction interrompue ne laisse pas de
 sujet à moitié traité : un sujet n'est terminé qu'une fois son fichier de
 stades écrit, en dernier.
 
+**Bilan final du run** : `run_status.json` distingue les caches valides
+(`embedded`), les rejets avec leur raison (`rejected`), les caches invalides
+(`invalid`), les rejets vides ou illisibles (`invalid_rejections`), les
+temporaires restants (`temporary`), les sujets manquants et les doubles résultats.
+Le champ `complete` exige exactement un résultat valide par sujet demandé et
+aucun temporaire pour ces sujets. Les autres sujets du dossier sont seulement
+listés dans `not_requested`, sans lecture de leur contenu.
+
+Ce contrôle relit les caches demandés un par un, avec les contraintes temporelles
+du manifeste ; il ajoute donc une lecture finale des fichiers. Il ne les répare
+pas et ne remplace pas le contrôle de provenance effectué avant le calcul.
+Un bilan incomplet ou invalide arrête le CLI avant l'annonce de succès ou
+l'entraînement des sondes. Le notebook affiche les catégories en cause avant
+de proposer l'export. Les rejets ne sont valides qu'avec une raison lisible.
+
 ### Notebooks
 
 Un notebook par usage, nommé `sleepfm_<rôle>_<données>.ipynb`, avec le même
