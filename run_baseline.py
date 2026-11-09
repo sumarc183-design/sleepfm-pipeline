@@ -39,6 +39,7 @@ import shutil
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -344,54 +345,80 @@ def embed_subjects_in_chunks(
     if manifest is not None:
         manifest = check_embeddings_manifest(embeddings_dir, manifest, len(todo))
 
-    for start in range(0, len(todo), chunk_size):
-        chunk = todo[start : start + chunk_size]
-        print(f"Lot {start // chunk_size + 1}/{-(-len(todo) // chunk_size)} : {len(chunk)} sujet(s)")
-        with tempfile.TemporaryDirectory() as tmp:
-            raw_dir, processed_dir = Path(tmp) / "raw", Path(tmp) / "processed"
-            raw_dir.mkdir()
-            # Durée de chaque étape, affichée seulement : sert à repérer ce qui ralentit un run.
-            t0 = time.perf_counter()
-            for subject in chunk:
-                fetch_subject(subject, raw_dir)
-            t1 = time.perf_counter()
-            extract(raw_dir, processed_dir, num_threads)
-            t2 = time.perf_counter()
+    chunks = [todo[start : start + chunk_size] for start in range(0, len(todo), chunk_size)]
 
-            try:
-                dataset = PhysioNet2018EpochDataset(processed_dir)
-            except FileNotFoundError:
-                dataset = None  # aucun sujet du lot n'a passé l'extraction
-            if dataset is not None:
-                X, y = embed_dataset(
-                    encoders, dataset, batch_size, device, num_threads if num_workers is None else num_workers
-                )
-                sample_subjects, sample_epoch_idx = epoch_groups(dataset)
-                sample_onsets = epoch_onsets(dataset, processed_dir)
-            t3 = time.perf_counter()
-            print(
-                f"  Durées du lot : téléchargement {t1 - t0:.0f} s, extraction {t2 - t1:.0f} s, "
-                f"embeddings {t3 - t2:.0f} s"
-            )
+    def download_chunk(chunk: list[str]) -> tuple[tempfile.TemporaryDirectory, float]:
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            began = time.perf_counter()
+            (Path(tmp.name) / "raw").mkdir()
             for subject in chunk:
-                mask = sample_subjects == subject if dataset is not None else np.zeros(0, dtype=bool)
-                if not mask.any():
-                    # Sujet rejeté par l'extraction (canaux manquants, pas de
-                    # stades...) : marqué, avec la raison, pour ne pas le
-                    # retenter à chaque relance.
-                    reason_file = processed_dir / "rejected" / f"{subject}.txt"
-                    reason = reason_file.read_text() if reason_file.exists() else "aucune époque valide\n"
-                    (embeddings_dir / f"{subject}.skipped").write_text(reason)
-                    continue
-                tmp_file = embeddings_dir / f"{subject}.tmp.npz"
-                np.savez(
-                    tmp_file,
-                    X=X[mask].astype(np.float32),
-                    y=y[mask],
-                    epoch_idx=sample_epoch_idx[mask],
-                    onset_s=sample_onsets[mask],
-                )
-                os.replace(tmp_file, embeddings_dir / f"{subject}.npz")
+                fetch_subject(subject, Path(tmp.name) / "raw")
+            return tmp, time.perf_counter() - began
+        except BaseException:
+            tmp.cleanup()
+            raise
+
+    # Le lot suivant se télécharge pendant l'extraction et les embeddings du lot en cours :
+    # au plus deux lots bruts sur disque à la fois. Une erreur de téléchargement remonte
+    # au moment où son lot est attendu, comme sans préchargement.
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        upcoming = pool.submit(download_chunk, chunks[0]) if chunks else None
+        try:
+            for index, chunk in enumerate(chunks):
+                print(f"Lot {index + 1}/{len(chunks)} : {len(chunk)} sujet(s)")
+                # Durée de chaque étape, affichée seulement : sert à repérer ce qui ralentit un run.
+                t0 = time.perf_counter()
+                tmp, download_s = upcoming.result()
+                upcoming = pool.submit(download_chunk, chunks[index + 1]) if index + 1 < len(chunks) else None
+                t1 = time.perf_counter()
+                try:
+                    raw_dir, processed_dir = Path(tmp.name) / "raw", Path(tmp.name) / "processed"
+                    extract(raw_dir, processed_dir, num_threads)
+                    t2 = time.perf_counter()
+                    try:
+                        dataset = PhysioNet2018EpochDataset(processed_dir)
+                    except FileNotFoundError:
+                        dataset = None  # aucun sujet du lot n'a passé l'extraction
+                    if dataset is not None:
+                        X, y = embed_dataset(
+                            encoders, dataset, batch_size, device, num_threads if num_workers is None else num_workers
+                        )
+                        sample_subjects, sample_epoch_idx = epoch_groups(dataset)
+                        sample_onsets = epoch_onsets(dataset, processed_dir)
+                    t3 = time.perf_counter()
+                    print(
+                        f"  Durées du lot : téléchargement {download_s:.0f} s (attente {t1 - t0:.0f} s), "
+                        f"extraction {t2 - t1:.0f} s, embeddings {t3 - t2:.0f} s"
+                    )
+                    for subject in chunk:
+                        mask = sample_subjects == subject if dataset is not None else np.zeros(0, dtype=bool)
+                        if not mask.any():
+                            # Sujet rejeté par l'extraction (canaux manquants, pas de
+                            # stades...) : marqué, avec la raison, pour ne pas le
+                            # retenter à chaque relance.
+                            reason_file = processed_dir / "rejected" / f"{subject}.txt"
+                            reason = reason_file.read_text() if reason_file.exists() else "aucune époque valide\n"
+                            (embeddings_dir / f"{subject}.skipped").write_text(reason)
+                            continue
+                        tmp_file = embeddings_dir / f"{subject}.tmp.npz"
+                        np.savez(
+                            tmp_file,
+                            X=X[mask].astype(np.float32),
+                            y=y[mask],
+                            epoch_idx=sample_epoch_idx[mask],
+                            onset_s=sample_onsets[mask],
+                        )
+                        os.replace(tmp_file, embeddings_dir / f"{subject}.npz")
+                finally:
+                    tmp.cleanup()
+        finally:
+            # Arrêt sur erreur : le lot déjà en téléchargement est attendu puis effacé.
+            if upcoming is not None:
+                try:
+                    upcoming.result()[0].cleanup()
+                except Exception:
+                    pass
     return manifest
 
 

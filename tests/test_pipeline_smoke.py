@@ -186,6 +186,43 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     np.testing.assert_allclose(X_again, X, atol=1e-5)
 
 
+@pytest.mark.slow
+def test_chunked_embeddings_prefetch_error_cleans_up(tmp_path, monkeypatch):
+    """Préchargement du lot suivant : une erreur de téléchargement remonte quand
+    son lot est attendu, les lots précédents restent en cache, et aucun dossier
+    temporaire ne reste sur disque."""
+    import tempfile
+
+    from run_baseline import embed_subjects_in_chunks
+
+    raw_dir = tmp_path / "raw"
+    rng = np.random.default_rng(4)
+    for i in range(3):
+        generate_subject(
+            str(raw_dir), f"synthetic-{i:04d}", sample_rate=32, n_epochs=4, epoch_sec=30, lead_in_sec=2, rng=rng
+        )
+    subjects = sorted(p.name for p in raw_dir.iterdir())
+    ckpt_path = tmp_path / "best.pt"
+    _build_fake_checkpoint(ckpt_path)
+    encoders = SleepFMEncoders(ckpt_path, embedding_dim=512)
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+
+    def fetch_subject(subject, dest_dir):
+        if subject == subjects[2]:
+            raise OSError("téléchargement impossible")
+        (dest_dir / subject).symlink_to(raw_dir / subject, target_is_directory=True)
+
+    embeddings_dir = tmp_path / "embeddings"
+    with pytest.raises(OSError, match="téléchargement impossible"):
+        embed_subjects_in_chunks(
+            subjects, fetch_subject, encoders, embeddings_dir, chunk_size=1, num_threads=1, batch_size=16, device="cpu"
+        )
+    assert sorted(p.stem for p in embeddings_dir.glob("*.npz")) == subjects[:2]
+    assert list(scratch.iterdir()) == []
+
+
 def test_results_json_records_subjects_settings_and_convergence(tmp_path):
     """Le JSON suffit à savoir si deux runs sont comparables : mêmes sujets
     de test, mêmes réglages, baseline convergée ou non."""

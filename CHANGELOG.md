@@ -9,6 +9,10 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Confirmation sur les 494 sujets réservés** (passage unique, 2026-11-09) : écart de κ BiGRU moins
   baseline +0,094 [+0,086 ; +0,103], gain confirmé. Détail dans `docs/PROTOCOLE_CONFIRMATION.md` et
   `results/confirmation_physionet2018.json`.
+- **Préchargement des données** : en mode par lots, le lot suivant se télécharge pendant l'extraction et
+  les embeddings du lot en cours (au plus deux lots bruts sur disque). Résultats identiques ; une erreur
+  de téléchargement arrête le run comme avant, sans laisser de dossier temporaire. Le temps affiché
+  distingue la durée du téléchargement et l'attente réelle.
 - **Durée de chaque étape** : `run_baseline.py` affiche, par lot, le temps de téléchargement, d'extraction
   et d'embeddings. Affichage seul, sans effet sur les calculs ; sert à repérer ce qui ralentit un run.
 - **Protocole de confirmation validé** par le tuteur le 2026-11-06, critère compris (contenu inchangé).
