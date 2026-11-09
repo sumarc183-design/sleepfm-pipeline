@@ -1,6 +1,6 @@
 # Protocole de confirmation SleepFM
 
-**Version 2, 2026-11-06 (version 1 : 2026-11-05), avant d'ouvrir les sujets réservés. État : validé par le tuteur le 2026-11-06, critère compris ; contenu inchangé depuis.**
+**Version 2, 2026-11-06 (version 1 : 2026-11-05), avant d'ouvrir les sujets réservés. État : validé par le tuteur le 2026-11-06, critère compris ; protocole inchangé depuis. Résultat ajouté le 2026-11-09, après le passage unique.**
 Toute modification se fait par un commit daté, avant l'évaluation. L'historique git fait foi.
 
 ## Pourquoi
@@ -85,4 +85,29 @@ Un seul passage. Le résultat est publié quel qu'il soit, avec la commande exac
 | 20 nuits ajoutées à 200 sujets | Run à 200 sujets, comparaison par nuit, examen de 2 nuits |
 | 60 nuits ajoutées à 500 sujets | Run à 500 sujets, comparaison par nuit |
 | Les 100 nuits (2026-11-06) | Ablation par capteurs, graines 42 à 44, effet du volume (160 ou 400 nuits), variance des blocs, répétition de la commande de confirmation |
-| 494 sujets réservés | Jamais ouverts |
+| 494 sujets réservés | Ouverts le 2026-11-09 : embeddings (Kaggle, commit `ca9dbd0`), puis passage unique de confirmation (commit `105df20`) |
+
+## Résultat (2026-11-09, passage unique)
+
+Commande : `python scripts/confirm_frozen_models.py --embeddings-dir embeddings/physionet2018_reserved_v2 --out results/confirmation_physionet2018`,
+commit `105df20`, code non modifié, empreintes conformes. Détail : `results/confirmation_physionet2018.json`.
+
+- 494 nuits évaluées sur 494, 0 rejetée, 443 289 époques.
+- **Critère principal** : écart de κ BiGRU moins baseline **+0,094, IC à 95 % [+0,086 ; +0,103]**.
+  La borne basse est au-dessus de 0 : **gain confirmé**.
+
+| Mesure | Baseline | BiGRU |
+|---|---|---|
+| κ de Cohen | 0,578 [0,565 ; 0,592] | 0,672 [0,661 ; 0,683] |
+| F1 macro | 0,671 | 0,739 |
+| ROC-AUC macro | 0,916 | 0,942 |
+| AUPRC macro | 0,742 | 0,811 |
+
+- Écart de F1 macro : +0,069 [+0,062 ; +0,075].
+- F1 par stade, baseline puis BiGRU : éveil 0,790 / 0,811 ; N1 0,491 / 0,516 ; N2 0,695 / 0,809 ;
+  N3 0,697 / 0,739 ; REM 0,680 / 0,821.
+- Le BiGRU fait mieux sur chaque préfixe d'identifiant (tr06 à tr14), à titre descriptif. Son κ va de 0,611 (tr10) à 0,702 (tr12).
+- Comparaison descriptive : sur les 100 nuits de test du run à 500 sujets, κ 0,599 (baseline) et 0,664 (BiGRU).
+  L'écart est plus grand ici (+0,094 contre +0,065).
+- Portée : confirmation sur PhysioNet 2018, mêmes capteurs et même centre. Ce n'est ni une validation
+  externe ni une reproduction de l'article.
