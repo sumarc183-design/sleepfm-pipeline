@@ -21,6 +21,12 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Évaluation de la prédiction sur PSG brute** : `scripts/embed_raw_grid.py` (embeddings des 100 nuits
+  de test sur la grille fixe de 30 s, préchargement du sujet suivant, reprise, rejets motivés),
+  `src/data/raw_grid_labels.py` (stade de l'expert par fenêtre, seulement pour noter ; fenêtres à cheval
+  ou non annotées comptées à part), `scripts/evaluate_raw_grid.py` (modèles figés, κ et F1 avec IC par
+  sujet, comparaison descriptive à la grille annotée) et notebook Kaggle
+  `sleepfm_raw_grid_physionet2018.ipynb`. Aucun entraînement.
 - **Bilan final vérifié** : `run_status.json` relit chaque cache demandé, contrôle
   les raisons des rejets et distingue les temporaires ; les seuls noms de fichiers
   ne suffisent plus pour annoncer un run complet. CLI et notebook refusent un bilan

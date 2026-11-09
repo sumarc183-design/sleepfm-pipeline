@@ -133,6 +133,7 @@ ce titre au notebook importé pour s'y retrouver.
 | Fichier | Titre | Rôle |
 |---|---|---|
 | `notebooks/sleepfm_embeddings_physionet2018.ipynb` | SleepFM — embeddings PhysioNet 2018 (GPU) | Calcule les embeddings SleepFM sur GPU (Kaggle ou Colab) ; sondes ensuite sur le Mac, ou ici avec `EMBED_ONLY = False` |
+| `notebooks/sleepfm_raw_grid_physionet2018.ipynb` | SleepFM — prédiction sur PSG brute, grille fixe (PhysioNet 2018, GPU) | Embeddings des 100 nuits de test sur la grille fixe de 30 s, pour évaluer la prédiction sur PSG brute ; évaluation ensuite sur le Mac |
 
 ### Google Colab (GPU gratuit)
 
@@ -250,6 +251,24 @@ par défaut et aucun worker enfant. Le BiGRU lit la nuit entière, après
 enregistrement. Les fenêtres diffèrent de celles de l'entraînement annoté :
 les performances publiées ne sont pas démontrées pour cette nouvelle grille.
 Les tests synthétiques valident le fonctionnement, pas la qualité clinique.
+
+**Mesurer ses performances** : le notebook `sleepfm_raw_grid_physionet2018.ipynb`
+calcule sur GPU les embeddings de la grille fixe pour les 100 nuits de test du
+découpage figé (`scripts/embed_raw_grid.py`). Le stade de l'expert de chaque
+fenêtre est lu à part (`src/data/raw_grid_labels.py`), seulement pour noter :
+une fenêtre n'est notée que si elle porte un seul stade défini ; les fenêtres à
+cheval sur deux stades ou non annotées sont comptées à part. Puis, sur le Mac :
+
+```bash
+python scripts/evaluate_raw_grid.py --embeddings-dir embeddings/physionet2018_raw_grid \
+    --out results/raw_grid_physionet2018
+```
+
+Les modèles figés du run à 500 sujets prédisent toute la nuit (le BiGRU voit
+aussi le début non annoté). La comparaison à la grille annotée des mêmes nuits
+est descriptive : les fenêtres diffèrent, il n'y a pas d'écart apparié. Les
+fenêtres à cheval sur deux stades, exclues du score, sont surtout des transitions,
+les plus difficiles : le score de la grille brute peut donc être optimiste.
 
 **Réutiliser les embeddings sur Kaggle** : publier le zip
 `embeddings_physionet2018_v2.zip` comme Dataset Kaggle privé, puis l'ajouter
