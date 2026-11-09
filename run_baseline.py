@@ -49,10 +49,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from scripts.download_physionet2018 import download_subject, list_subjects
 from scripts.generate_synthetic_physionet2018 import generate_subject
-from src.data.cache_contract import file_sha256, write_json_atomic
+from src.data.cache_contract import file_sha256, missing_contract_keys, write_json_atomic
 from src.data.epoch_dataset import STAGE_NAME_TO_LABEL, PhysioNet2018EpochDataset
 from src.data.extract_physionet2018 import ALL_CHANNELS, PREPROCESSING_VERSION
 from src.data.extract_physionet2018 import main as extract_main
+from src.data.subject_ids import load_subjects_file, validate_subject_ids
 from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
 from src.models.linear_probe import (
@@ -153,6 +154,10 @@ def load_or_extend_split(
     écrit d'un bloc (fichier temporaire renommé). Passer de 100 à 200 sujets
     ne change donc pas le rôle des 100 premiers. Sans fichier (`path=None`),
     découpage aléatoire habituel."""
+    try:
+        validate_subject_ids(subjects)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     if not 0 < test_fraction < 1:
         raise SystemExit(f"--test-fraction doit être entre 0 et 1 (reçu {test_fraction})")
     if path is None:
@@ -263,20 +268,27 @@ def check_embeddings_manifest(embeddings_dir: Path, expected: dict, n_to_compute
       mauvais modèle.
     - Prétraitement ou montage différent : arrêt s'il reste des sujets à
       calculer (on mélangerait deux versions) ; sinon simple avertissement.
-    - Pas de manifeste mais des caches (créés avant son introduction) : on
-      l'écrit avec le checkpoint fourni et la version 1 du prétraitement, en
-      le signalant (provenance déclarée, pas vérifiable)."""
+    - Pas de manifeste mais des caches ou rejets : arrêt sans écriture.
+      Le checkpoint fourni ne prouve pas l'origine des fichiers présents.
+    - Un dossier neuf reçoit atomiquement le contrat complet."""
+    missing = missing_contract_keys(expected)
+    if missing:
+        raise SystemExit(f"Contrat attendu incomplet : {', '.join(missing)}")
     path = embeddings_dir / "manifest.json"
     if path.exists():
         manifest = json.loads(path.read_text())
+        missing = missing_contract_keys(manifest)
+        if missing:
+            raise SystemExit(f"{path} : contrat incomplet ({', '.join(missing)})")
     else:
-        legacy = sorted(p.name for p in embeddings_dir.glob("*.npz"))
-        manifest = dict(expected)
+        legacy = sorted(p.name for pattern in ("*.npz", "*.skipped") for p in embeddings_dir.glob(pattern))
         if legacy:
-            manifest["preprocessing_version"] = 1
-            manifest["legacy"] = f"{len(legacy)} cache(s) antérieurs au manifeste : provenance déclarée, non vérifiée"
-            print(f"ATTENTION : {manifest['legacy']} ; manifeste écrit avec le checkpoint fourni")
-        path.write_text(json.dumps(manifest, indent=2) + "\n")
+            raise SystemExit(
+                f"{embeddings_dir} : {len(legacy)} fichier(s) sans manifeste, provenance inconnue. "
+                "Restaurer le manifeste d'origine vérifié ou utiliser un nouveau dossier."
+            )
+        manifest = dict(expected)
+        write_json_atomic(path, manifest)
     if manifest["checkpoint_sha256"] != expected["checkpoint_sha256"]:
         raise SystemExit(
             f"{path} : les embeddings en cache viennent d'un autre checkpoint "
@@ -323,27 +335,36 @@ def embed_subjects_in_chunks(
 
     `fetch_subject(subject_id, dest_dir)` doit déposer les 3 fichiers bruts
     du sujet dans dest_dir/<subject_id>/ (téléchargement ou lien local)."""
+    validate_subject_ids(subject_ids)
+    if chunk_size <= 0 or batch_size <= 0 or num_threads <= 0 or (num_workers is not None and num_workers < 0):
+        raise ValueError("chunk_size, batch_size et num_threads doivent être positifs ; num_workers positif ou nul")
     embeddings_dir.mkdir(parents=True, exist_ok=True)
-    for leftover in embeddings_dir.glob("*.tmp.npz"):
-        leftover.unlink()  # écriture interrompue lors d'un run précédent
     strict_times = requires_epoch_times(embeddings_dir)
+    problems = {}
     for subject in subject_ids:
         cached = embeddings_dir / f"{subject}.npz"
         problem = cache_problem(cached, strict_times=strict_times) if cached.exists() else None
         if problem:
-            print(f"[{subject}] cache inutilisable ({problem}) : supprimé, sera recalculé")
-            cached.unlink()
-    if retry_skipped:
-        for marker in embeddings_dir.glob("*.skipped"):
-            marker.unlink()  # sujets rejetés retentés (après une correction de l'extraction)
+            problems[subject] = problem
     todo = [
         s
         for s in subject_ids
-        if not (embeddings_dir / f"{s}.npz").exists() and not (embeddings_dir / f"{s}.skipped").exists()
+        if (s in problems or not (embeddings_dir / f"{s}.npz").exists())
+        and (retry_skipped or not (embeddings_dir / f"{s}.skipped").exists())
     ]
-    print(f"{len(subject_ids) - len(todo)} sujet(s) déjà en cache, {len(todo)} à traiter")
+    # Le contrat est vérifié avant de supprimer un cache, un marqueur de rejet
+    # ou un fichier temporaire : une mauvaise commande ne détruit rien.
     if manifest is not None:
         manifest = check_embeddings_manifest(embeddings_dir, manifest, len(todo))
+    for subject in subject_ids:
+        (embeddings_dir / f"{subject}.tmp.npz").unlink(missing_ok=True)
+        if retry_skipped:
+            (embeddings_dir / f"{subject}.skipped").unlink(missing_ok=True)
+    for subject in todo:
+        if subject in problems:
+            print(f"[{subject}] cache inutilisable ({problems[subject]}) : supprimé, sera recalculé")
+            (embeddings_dir / f"{subject}.npz").unlink()
+    print(f"{len(subject_ids) - len(todo)} sujet(s) déjà traités, {len(todo)} à traiter")
 
     chunks = [todo[start : start + chunk_size] for start in range(0, len(todo), chunk_size)]
 
@@ -499,6 +520,7 @@ def load_cached_embeddings(embeddings_dir: Path, subjects: list[str], require_la
     ligne. Le début (onset_s) vaut NaN pour un cache qui ne l'a pas : la nuit
     est alors supposée continue. Un cache invalide arrête le run. Avec
     require_labels=False, y vaut None si un cache n'a pas de stades."""
+    validate_subject_ids(subjects)
     X, y, groups_subject, groups_epoch, groups_onset = [], [], [], [], []
     without_onsets = 0
     strict_times = requires_epoch_times(embeddings_dir)
@@ -823,6 +845,7 @@ def write_run_status(embeddings_dir: Path, subject_ids: list[str], run_started: 
     """Bilan machine du run : l'ensemble exact demandé, réussi et rejeté. Le run
     est complet si chaque sujet demandé a un seul résultat ; les sujets non
     demandés présents dans le dossier ne comptent pas et sont listés."""
+    validate_subject_ids(subject_ids)
     requested = set(subject_ids)
     cached = {p.name.removesuffix(".npz") for p in embeddings_dir.glob("*.npz")}
     rejected = {p.name.removesuffix(".skipped") for p in embeddings_dir.glob("*.skipped")}
@@ -846,7 +869,7 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
     """Mode --embeddings-dir : voir embed_subjects_in_chunks."""
     run_started = time.time()
     if args.subjects_file:
-        subject_ids = json.loads(args.subjects_file.read_text())["subjects"]
+        subject_ids = args.requested_subjects
         fetch_subject = download_subject
         data_kind = "RÉELLES"
     elif args.physionet_subjects:
@@ -1043,6 +1066,18 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    for option in ("chunk_size", "batch_size", "num_threads", "num_synthetic_subjects", "max_iter", "cv_folds"):
+        if getattr(args, option) <= 0:
+            parser.error(f"--{option.replace('_', '-')} doit être positif")
+    if args.physionet_subjects is not None and args.physionet_subjects <= 0:
+        parser.error("--physionet-subjects doit être positif")
+    if not 0 < args.test_fraction < 1:
+        parser.error("--test-fraction doit être entre 0 et 1")
+    if args.subjects_file is not None:
+        try:
+            args.requested_subjects = load_subjects_file(args.subjects_file)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
     if args.physionet_subjects and args.embeddings_dir is None:
         parser.error("--physionet-subjects nécessite --embeddings-dir")
     if args.physionet_subjects and args.raw_data is not None:

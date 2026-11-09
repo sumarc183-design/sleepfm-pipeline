@@ -55,8 +55,8 @@ capteurs et nuits difficiles : **[résultats détaillés](docs/RESULTATS.md)**.
 
 | Jalon | Échéance | État |
 |---|---|---|
-| J30, reproduction | 1er décembre 2026 | En cours : pipeline, mesures et confirmation sur 494 sujets réservés faits |
-| J60, comparaison | 31 décembre 2026 | À venir : MESA si l'accès est obtenu, OSF, polysomnographie brute |
+| J30, reproduction | 1er décembre 2026 | Atteint le 9 novembre : pipeline, mesures et confirmation sur 494 sujets réservés |
+| J60, comparaison | 31 décembre 2026 | En cours : prédiction brute disponible ; MESA si accès obtenu, comparaison OSF à préparer |
 | J90, différenciation | 30 janvier 2027 | À venir |
 
 Détail : [ROADMAP](docs/ROADMAP.md).
@@ -68,13 +68,18 @@ Détail : [ROADMAP](docs/ROADMAP.md).
 **En local** :
 
 ```bash
-pip install -r requirements-dev.txt
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
 bash scripts/setup_sleepfm.sh   # checkpoint officiel best.pt
 python scripts/download_physionet2018.py --out data/raw/physionet2018/training --limit 20
 python run_baseline.py --raw-data data/raw/physionet2018/training \
     --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt
-pytest tests/                   # unitaires + bout-en-bout sur données synthétiques
+python -m pytest -q             # unitaires + bout-en-bout
 ```
+
+Prédiction après enregistrement sur une PSG PhysioNet 2018 sans annotations :
+`scripts/predict_raw_night.py`, voir le [guide](docs/GUIDE.md#prédire-sur-une-psg-brute-sans-annotations).
 
 Mode par lots pour 100 sujets et plus, détails des sondes, tests et points
 d'attention : [docs/GUIDE.md](docs/GUIDE.md).

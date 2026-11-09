@@ -60,12 +60,16 @@ def import_embeddings(source_manifests: list[Path], destination: Path, expected:
     que des fichiers vérifiés sous ce contrat, et une relance complète le reste.
     Renvoie {"copied", "ignored"}.
     """
+    missing = missing_contract_keys(expected)
+    if missing:
+        raise ValueError(f"Contrat attendu incomplet : {', '.join(missing)}")
     destination.mkdir(parents=True, exist_ok=True)
     manifest_path = destination / "manifest.json"
     if manifest_path.exists():
-        differs = contract_differences(json.loads(manifest_path.read_text()), expected)
+        current = json.loads(manifest_path.read_text())
+        differs = missing_contract_keys(current) or contract_differences(current, expected)
         if differs:
-            raise ValueError(f"{destination} : cache existant au contrat différent ({', '.join(differs)})")
+            raise ValueError(f"{destination} : cache existant au contrat différent ou incomplet ({', '.join(differs)})")
     else:
         orphans = sorted(p.name for pattern in ("*.npz", "*.skipped") for p in destination.glob(pattern))
         if orphans:

@@ -6,6 +6,17 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Validation avant travail** : listes de sujets non vides, uniques et sans chemins ;
+  paramètres de lots invalides refusés avant calcul. Un cache existant sans manifeste
+  ne reçoit plus automatiquement une provenance ; contrats incomplets refusés à l'import.
+- **Reprise des lots** : contrat contrôlé avant toute suppression de cache corrompu,
+  marqueur de rejet ou fichier temporaire. Nettoyage et `--retry-skipped` limités aux
+  sujets demandés ; tailles et nombres de workers invalides refusés avant écriture.
+- **PSG brute sans annotations** (`scripts/predict_raw_night.py`) : fichiers PhysioNet
+  2018 `.hea`/`.mat`, grille fixe de 30 s depuis zéro, canaux et signal contrôlés,
+  même contrat de signal et modèles exportés. CSV par nuit et JSON de provenance ;
+  aucune modification des caches annotés. Les performances sur cette grille restent
+  à évaluer. Écriture CSV atomique commune aux deux commandes de prédiction.
 - **Confirmation sur les 494 sujets réservés** (passage unique, 2026-11-09) : écart de κ BiGRU moins
   baseline +0,094 [+0,086 ; +0,103], gain confirmé. Détail dans `docs/PROTOCOLE_CONFIRMATION.md` et
   `results/confirmation_physionet2018.json`.

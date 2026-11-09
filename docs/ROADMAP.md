@@ -16,7 +16,7 @@
 - [ ] Embeddings + sonde linéaire sur MESA (cohorte supplémentaire, si l'accès NSRR est obtenu)
 - [ ] Comparaison SleepFM vs OSF sur SleepBench (même protocole, mêmes données)
 - [ ] Tableau de résultats consolidé
-- [ ] Prédiction sur une polysomnographie brute non annotée : fenêtres de 30 s indépendantes des annotations, mêmes contrats, traitement après enregistrement (reporté du nouvel audit, 2026-11-06)
+- [x] Prédiction sur une polysomnographie brute non annotée au format PhysioNet 2018 : fenêtres fixes de 30 s indépendantes des annotations, contrat du signal vérifié, traitement après enregistrement (`scripts/predict_raw_night.py`). Fonctionnement testé sur données synthétiques ; performances sur cette grille non évaluées
 
 ## J90 — Différenciation
 - [ ] Choix de la tâche différenciante (détection apnée OU robustesse pédiatrique CHAT)

@@ -15,6 +15,10 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   seul retenu), BiGRU sur la suite des époques d'une nuit.
 - **Tâche** : stadification du sommeil par époque de 30 s, 5 classes
   (Wake, N1, N2, N3, REM).
+- **Inférence sans annotations** : `scripts/predict_raw_night.py`, pour les fichiers
+  PhysioNet 2018 `.hea`/`.mat`, utilise une grille fixe depuis le début de la nuit.
+  Le traitement du signal et le checkpoint sont contrôlés ; les performances
+  mesurées sur les fenêtres annotées ne sont pas établies pour cette grille.
 
 ## Usage prévu
 
@@ -50,9 +54,13 @@ train − test. Résultats à jour : [README](../README.md#résultats).
   (ROC-AUC 0,924, AUPRC 0,759, F1 0,700). La baseline obtient 0,921, 0,750 et
   0,686 sur 100 nuits : même effectif et même ordre de grandeur, mais sujets,
   découpage et sonde peuvent différer, et 40 de ces nuits avaient déjà été
-  examinées. Confirmation prévue : [protocole](PROTOCOLE_CONFIRMATION.md).
-- **Sujets non tirés au hasard** : les 500 premiers par identifiant. Les
-  résultats ne valent pas pour les 494 autres avant d'y être mesurés.
+  examinées. Confirmation réalisée le 9 novembre 2026 :
+  [protocole et résultat](PROTOCOLE_CONFIRMATION.md#résultat-2026-11-09-passage-unique).
+- **Sujets non tirés au hasard** : les 500 premiers par identifiant pour le
+  développement ; confirmation unique sur les 494 autres, sans réentraînement :
+  κ 0,672 pour le BiGRU et 0,578 pour la baseline. Cette confirmation reste
+  dans la même cohorte. Toute analyse ultérieure est exploratoire ; ces sujets
+  ne servent ni à choisir ni à régler une variante de stadification.
 - **N1 mal reconnu** (F1 0,50 avec la baseline et le BiGRU, 0,45 sans
   pondération, run à 500 sujets), confondu surtout avec l'éveil : stade de transition, rare et peu
   concordant même entre experts.

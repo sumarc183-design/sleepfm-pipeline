@@ -50,6 +50,12 @@ démarrage : interrompre un run, même en pleine écriture, ne casse pas le
 suivant. Même split, mêmes époques et mêmes labels que le mode
 classique (vérifié par `tests/test_pipeline_smoke.py`).
 
+Le contrat est contrôlé avant toute suppression de fichier. Le nettoyage des
+temporaires et `--retry-skipped` concernent uniquement les sujets demandés :
+les marqueurs d'autres sujets du dossier sont conservés. Les tests vérifient
+le chevauchement téléchargement/embeddings et le nettoyage des deux lots en
+cas d'erreur ; le gain de temps réel reste à mesurer sur un gros run.
+
 Chaque `.npz` contient `X` (embeddings), `y` (stades), `epoch_idx` (numéro
 d'époque, pour remettre la nuit dans l'ordre chronologique : les fichiers sont
 triés par nom, `_10` avant `_2`) et `onset_s` (début de l'époque, en secondes
@@ -67,7 +73,11 @@ sujets refait tout le tirage et change les nuits de test.
 **Provenance du cache** : le dossier garde un `manifest.json` (empreinte
 SHA-256 du checkpoint, version du prétraitement, canaux, fréquence). Un autre
 checkpoint est refusé ; un autre prétraitement aussi, dès qu'il reste des
-sujets à calculer, pour ne jamais mélanger deux versions. Les 100 caches de
+sujets à calculer, pour ne jamais mélanger deux versions. Sans manifeste, un
+dossier contenant déjà des caches ou rejets est refusé sans modification :
+restaurer le manifeste d'origine vérifié ou repartir dans un autre dossier.
+Le checkpoint passé à la commande ne suffit pas à établir cette provenance.
+Les 100 caches historiques de
 `embeddings/physionet2018` datent d'avant le manifeste : ils sont déclarés en
 version 1 (début utile pris sur la colonne « wake »). La version 2 prend la fin
 de la période « undefined », colonne désignée par son nom, comme le code
@@ -81,6 +91,10 @@ fréquence. Il est comparé en entier pour réunir des caches
 des sondes exportées. Chaque fichier est aussi vérifié : formes, valeurs finies,
 indices d'époque entiers et uniques, temps tous finis et croissants ou tous
 absents (cache historique). Un temps manquant isolé est refusé.
+
+Les identifiants sont des noms uniques composés de lettres ASCII, chiffres,
+tirets et underscores. Les listes vides, doublons, chemins et paramètres de
+lots non positifs sont refusés avant travail. `--num-workers 0` reste permis.
 
 **Sujets rejetés** : la raison est écrite dans `<sujet>.skipped` (canaux
 manquants, aucun stade annoté…). Une extraction interrompue ne laisse pas de
@@ -179,9 +193,40 @@ commit et versions). `scripts/predict_night.py` les recharge et écrit
 l'hypnogramme prédit d'une nuit en CSV (stade et probabilités par époque). Il
 refuse tout cache au contrat absent, incomplet ou différent, sauf
 `--allow-unverified-provenance`, réservé aux caches historiques. Les stades du
-cache sont facultatifs pour prédire, mais une PSG brute jamais annotée n'est pas
-encore prise en charge : l'extraction choisit ses fenêtres à partir des
-annotations. Les `.joblib` sont des pickles : ne charger que nos exports.
+cache sont facultatifs pour prédire. Les `.joblib` sont des pickles : ne charger
+que nos exports.
+
+### Prédire sur une PSG brute sans annotations
+
+Pour les fichiers PhysioNet 2018 `<sujet>.hea` et `<sujet>.mat`, sans
+`-arousal.mat` :
+
+```bash
+python scripts/predict_raw_night.py tr03-0005 \
+    --raw-data data/raw/physionet2018/training \
+    --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt \
+    --models models/physionet2018_500 --out predictions/raw --batch-size 32
+```
+
+Le script ne télécharge rien et n'entraîne aucune sonde. Il exige les 13 canaux
+du montage attendu, vérifie la forme et les valeurs du signal, remet les canaux
+dans l'ordre, et applique le même traitement numérique du signal que l'extracteur
+annoté. Le checkpoint, la fréquence, le montage et la version du traitement sont
+contrôlés contre le manifeste des sondes avant l'inférence.
+
+Les fenêtres sont fixées à 0, 30, 60… secondes depuis le début de l'enregistrement,
+sans lecture des annotations. La fin de moins de 30 secondes est retirée, sans
+rembourrage. Le CSV contient les stades et probabilités ; le JSON associé indique
+la grille, la durée retirée, les empreintes du brut, des modèles et du CSV, ainsi
+que l'environnement. Les embeddings de cette grille ne sont pas ajoutés aux
+caches d'entraînement.
+
+**Limites :** formats EDF et autres montages non pris en charge ; nuit
+rééchantillonnée en mémoire, lots de tenseurs contrôlés par `--batch-size`, CPU
+par défaut et aucun worker enfant. Le BiGRU lit la nuit entière, après
+enregistrement. Les fenêtres diffèrent de celles de l'entraînement annoté :
+les performances publiées ne sont pas démontrées pour cette nouvelle grille.
+Les tests synthétiques valident le fonctionnement, pas la qualité clinique.
 
 **Réutiliser les embeddings sur Kaggle** : publier le zip
 `embeddings_physionet2018_v2.zip` comme Dataset Kaggle privé, puis l'ajouter
@@ -233,8 +278,8 @@ l'évaluation finale sur le test des sondes retenues. Random Forest, testé, a
 ## Tests
 
 ```bash
-pytest tests/ -v                 # unitaires + bout-en-bout (~1 min, quelques minutes sur CPU lent)
-pytest tests/ -m "not slow"      # unitaires seulement
+python -m pytest -q                 # unitaires + bout-en-bout
+python -m pytest -q -m "not slow"    # unitaires seulement
 ruff check . && ruff format --check .
 ```
 

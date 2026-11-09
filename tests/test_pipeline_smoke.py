@@ -133,7 +133,15 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
 
     embeddings_dir = tmp_path / "embeddings"
     embed_subjects_in_chunks(
-        subjects, fetch_subject, encoders, embeddings_dir, chunk_size=2, num_threads=1, batch_size=16, device="cpu"
+        subjects,
+        fetch_subject,
+        encoders,
+        embeddings_dir,
+        chunk_size=2,
+        num_threads=1,
+        batch_size=16,
+        device="cpu",
+        num_workers=0,
     )
     assert sorted(fetched) == subjects
     assert sorted(p.stem for p in embeddings_dir.glob("*.npz")) == subjects
@@ -168,7 +176,15 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     # Reprise : rien n'est retéléchargé ni recalculé
     fetched.clear()
     embed_subjects_in_chunks(
-        subjects, fetch_subject, encoders, embeddings_dir, chunk_size=2, num_threads=1, batch_size=16, device="cpu"
+        subjects,
+        fetch_subject,
+        encoders,
+        embeddings_dir,
+        chunk_size=2,
+        num_threads=1,
+        batch_size=16,
+        device="cpu",
+        num_workers=0,
     )
     assert fetched == []
 
@@ -178,7 +194,15 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
     truncated.write_bytes(truncated.read_bytes()[:100])
     (embeddings_dir / f"{subjects[1]}.tmp.npz").write_bytes(b"partiel")
     embed_subjects_in_chunks(
-        subjects, fetch_subject, encoders, embeddings_dir, chunk_size=2, num_threads=1, batch_size=16, device="cpu"
+        subjects,
+        fetch_subject,
+        encoders,
+        embeddings_dir,
+        chunk_size=2,
+        num_threads=1,
+        batch_size=16,
+        device="cpu",
+        num_workers=0,
     )
     assert fetched == [subjects[0]]
     assert not list(embeddings_dir.glob("*.tmp.npz"))
@@ -217,7 +241,15 @@ def test_chunked_embeddings_prefetch_error_cleans_up(tmp_path, monkeypatch):
     embeddings_dir = tmp_path / "embeddings"
     with pytest.raises(OSError, match="téléchargement impossible"):
         embed_subjects_in_chunks(
-            subjects, fetch_subject, encoders, embeddings_dir, chunk_size=1, num_threads=1, batch_size=16, device="cpu"
+            subjects,
+            fetch_subject,
+            encoders,
+            embeddings_dir,
+            chunk_size=1,
+            num_threads=1,
+            batch_size=16,
+            device="cpu",
+            num_workers=0,
         )
     assert sorted(p.stem for p in embeddings_dir.glob("*.npz")) == subjects[:2]
     assert list(scratch.iterdir()) == []
@@ -314,12 +346,16 @@ def test_embeddings_manifest_refuses_mixing_checkpoints_or_preprocessing(tmp_pat
     from run_baseline import check_embeddings_manifest
 
     expected = {"checkpoint_sha256": "aaa", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
-    # Caches antérieurs au manifeste : déclarés en version 1, signalés.
+    # L'origine d'un cache sans manifeste ne peut pas être déduite du checkpoint fourni.
     legacy_dir = tmp_path / "legacy"
     legacy_dir.mkdir()
     np.savez(legacy_dir / "s1.npz", X=np.zeros((1, 2)), y=np.zeros(1))
-    manifest = check_embeddings_manifest(legacy_dir, expected, n_to_compute=0)
-    assert manifest["preprocessing_version"] == 1 and "legacy" in manifest
+    with pytest.raises(SystemExit, match="provenance inconnue"):
+        check_embeddings_manifest(legacy_dir, expected, n_to_compute=0)
+    assert not (legacy_dir / "manifest.json").exists()
+    assert (legacy_dir / "s1.npz").exists()
+    # Un vrai contrat historique reste lisible, sans être réécrit en version 2.
+    (legacy_dir / "manifest.json").write_text(json.dumps(expected | {"preprocessing_version": 1}))
     # Rien à calculer : la version différente est seulement signalée...
     check_embeddings_manifest(legacy_dir, expected, n_to_compute=0)
     # ... mais on refuse d'y ajouter des sujets calculés avec la version 2.

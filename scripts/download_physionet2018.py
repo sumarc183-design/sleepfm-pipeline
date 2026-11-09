@@ -18,9 +18,14 @@ https://physionet.org/files/challenge-2018/1.0.0/training/<id>/<id>.hea
 import argparse
 import http.client
 import os
+import sys
 import time
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.data.subject_ids import validate_subject_ids
 
 PHYSIONET_2018_URL = "https://physionet.org/files/challenge-2018/1.0.0"
 DOWNLOAD_TIMEOUT_SECONDS = 120  # sans réponse du serveur pendant ce délai : nouvel essai
@@ -51,6 +56,11 @@ def download_subject(subject_id: str, dest_dir: str | Path, split: str = "traini
     un fichier MATLAB, pas un enregistrement WFDB). Les fichiers déjà présents
     ne sont pas retéléchargés. Écriture dans un `.part` renommé à la fin : un
     transfert interrompu ou tronqué n'est jamais pris pour un fichier complet."""
+    validate_subject_ids([subject_id])
+    if retries <= 0:
+        raise ValueError("retries doit être positif")
+    if split not in ("training", "test"):
+        raise ValueError("split doit être training ou test")
     subject_dir = Path(dest_dir) / subject_id
     subject_dir.mkdir(parents=True, exist_ok=True)
     for name in (f"{subject_id}.hea", f"{subject_id}.mat", f"{subject_id}-arousal.mat"):
@@ -82,6 +92,8 @@ def main() -> None:
     parser.add_argument("--out", required=True, help="Répertoire de sortie (un sous-dossier par sujet)")
     parser.add_argument("--limit", type=int, default=10, help="Nombre de sujets à télécharger")
     args = parser.parse_args()
+    if args.limit <= 0:
+        parser.error("--limit doit être positif")
 
     subjects = list_subjects("training")[: args.limit]
     print(f"{len(subjects)} sujet(s) à télécharger vers {args.out}")
