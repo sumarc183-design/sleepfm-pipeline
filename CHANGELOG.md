@@ -22,6 +22,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Comparaison des caches** : les temps d'origine sont désormais comparés avant
   d'annoncer des fenêtres identiques ; temps absents signalés comme non vérifiés,
   tolérances absolues contrôlées et fichiers temporaires exclus du bilan.
+- **Tableau consolidé lisible** : décimales à la française dans le Markdown (le CSV garde le point),
+  champ manquant noté « absent », et rappel que la confirmation utilise les modèles figés du run à
+  500 sujets (400 nuits, graine 42), que son JSON n'enregistre pas.
 - **Consolidation des résultats sauvegardés** (`scripts/consolidate_results.py`) :
   tableaux CSV et Markdown des runs et confirmations terminées, sources SHA-256,
   effectifs et champs manquants explicites ; aucun modèle chargé ni score recalculé.

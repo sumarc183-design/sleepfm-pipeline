@@ -54,7 +54,7 @@ def test_keeps_exact_scores_and_unknown_historical_fields(tmp_path, baseline):
     csv_rows = list(csv.DictReader(io.StringIO(csv_text)))
     assert csv_rows[0]["roc_auc_macro"] == ""
     assert csv_rows[0]["cohen_kappa"] == "0.5"
-    assert "non renseigné" in render_markdown(rows)
+    assert "absent" in render_markdown(rows)
     assert path.read_bytes() == before
 
 
@@ -149,4 +149,4 @@ def test_cli_runs_without_model_dependencies(tmp_path, baseline):
     )
     assert result.returncode == 0, result.stderr
     assert len(list(csv.DictReader(csv_path.open()))) == 1
-    assert "0.500 [0.200 ; 0.800]" in md_path.read_text()
+    assert "0,500 [0,200 ; 0,800]" in md_path.read_text()

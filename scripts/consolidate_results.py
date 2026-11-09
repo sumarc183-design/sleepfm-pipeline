@@ -40,6 +40,10 @@ FIELDS = (
 )
 
 
+# Passages de scripts/confirm_frozen_models.py : modèles figés, aucun entraînement.
+FROZEN_MODEL_KINDS = ("confirmation sur les sujets réservés", "répétition sur des sujets déjà ouverts")
+
+
 def metric_value(value, key: str):
     if value is None:
         return None
@@ -86,7 +90,7 @@ def read_result(path: Path) -> list[dict]:
         if payload.get("status") != "terminé":
             raise ValueError("Statut terminé obligatoire pour une confirmation ou répétition")
         kind = payload.get("kind")
-        if kind not in ("confirmation sur les sujets réservés", "répétition sur des sujets déjà ouverts"):
+        if kind not in FROZEN_MODEL_KINDS:
             raise ValueError("Type de confirmation ou répétition inconnu")
         train_nights = None  # L'absence de liste n'autorise pas à inventer l'effectif d'entraînement.
         test_nights = payload.get("n_evaluated")
@@ -175,7 +179,9 @@ def render_csv(rows: list[dict]) -> str:
 
 def render_markdown(rows: list[dict]) -> str:
     def value(v):
-        return "non renseigné" if v is None else f"{v:.3f}" if isinstance(v, float) else str(v)
+        if v is None:
+            return "absent"
+        return f"{v:.3f}".replace(".", ",") if isinstance(v, float) else str(v)
 
     def cell(v):
         return value(v).replace("|", "\\|").replace("\n", " ")
@@ -187,7 +193,7 @@ def render_markdown(rows: list[dict]) -> str:
         "Lecture des JSON sauvegardés, sans entraînement ni recalcul des scores. "
         "Les cohortes de test et les prétraitements peuvent différer : ces lignes ne forment pas un classement.",
         "",
-        "Les champs historiques absents restent « non renseigné ». "
+        "Un champ que le JSON n'enregistre pas est noté « absent ». "
         "La confirmation est conservée séparément des évaluations de développement et des répétitions.",
         "",
         "| Source | Sonde | Nuits train | Nuits test | Époques test | κ [IC95 %] | F1 macro | ROC-AUC | AUPRC |",
@@ -214,9 +220,15 @@ def render_markdown(rows: list[dict]) -> str:
         row = next(r for r in rows if r["source"] == source)
         lines.append(
             f"- R{i} : `{cell(source)}` ; {cell(row['kind'])} ; "
-            f"prétraitement {value(row['preprocessing_version'])} ; "
-            f"graine {value(row['seed'])} ; SHA-256 `{row['source_sha256']}`."
+            f"prétraitement : {value(row['preprocessing_version'])} ; "
+            f"graine : {value(row['seed'])} ; SHA-256 `{row['source_sha256']}`."
         )
+        if row["kind"] in FROZEN_MODEL_KINDS:
+            lines.append(
+                "  Le JSON de confirmation ne garde que les empreintes des modèles figés. D'après "
+                "`docs/PROTOCOLE_CONFIRMATION.md`, ce sont les exports du run à 500 sujets "
+                "(400 nuits d'entraînement, graine 42), sans réentraînement."
+            )
     return "\n".join(lines) + "\n"
 
 
