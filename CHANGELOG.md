@@ -6,6 +6,12 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Comparaison des caches** : les temps d'origine sont désormais comparés avant
+  d'annoncer des fenêtres identiques ; temps absents signalés comme non vérifiés,
+  tolérances absolues contrôlées et fichiers temporaires exclus du bilan.
+- **Consolidation des résultats sauvegardés** (`scripts/consolidate_results.py`) :
+  tableaux CSV et Markdown des runs et confirmations terminées, sources SHA-256,
+  effectifs et champs manquants explicites ; aucun modèle chargé ni score recalculé.
 - **Validation avant travail** : listes de sujets non vides, uniques et sans chemins ;
   paramètres de lots invalides refusés avant calcul. Un cache existant sans manifeste
   ne reçoit plus automatiquement une provenance ; contrats incomplets refusés à l'import.

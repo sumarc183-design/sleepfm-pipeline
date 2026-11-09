@@ -96,6 +96,14 @@ Les identifiants sont des noms uniques composés de lettres ASCII, chiffres,
 tirets et underscores. Les listes vides, doublons, chemins et paramètres de
 lots non positifs sont refusés avant travail. `--num-workers 0` reste permis.
 
+**Comparer deux caches** : `python scripts/compare_embedding_caches.py ancien nouveau`
+aligne les lignes par numéro d'époque et compare les stades, les embeddings
+(`--atol`, 0,001 par défaut) et les temps d'origine (`--onset-atol`, 0,01 s).
+Les tolérances sont absolues, finies et positives ou nulles. Sans temps complets,
+le résultat est « NON VÉRIFIÉ », même avec des embeddings numériquement identiques.
+Un décalage temporel connu est signalé comme différence. Les fichiers temporaires
+`.tmp.npz` ne comptent pas comme sujets ; aucun cache n'est modifié.
+
 **Sujets rejetés** : la raison est écrite dans `<sujet>.skipped` (canaux
 manquants, aucun stade annoté…). Une extraction interrompue ne laisse pas de
 sujet à moitié traité : un sujet n'est terminé qu'une fois son fichier de
@@ -274,6 +282,29 @@ sonde écartée n'y est jamais évaluée :
 La sortie affiche d'abord cette sélection (F1 de validation par pli), puis
 l'évaluation finale sur le test des sondes retenues. Random Forest, testé, a
 été retiré (plus lent que XGBoost et moins adapté aux embeddings denses).
+
+## Consolider les résultats enregistrés
+
+```bash
+python scripts/consolidate_results.py \
+    --out results/consolidated_physionet2018.csv \
+    --markdown results/consolidated_physionet2018.md
+```
+
+Par défaut, cette commande lit uniquement les quatre JSON existants : runs de
+référence à 100, 200 et 500 sujets et confirmation terminée sur les 494 sujets.
+Pour d'autres fichiers, passer leurs chemins avant `--out`. Elle n'importe aucun
+modèle et ne recalcule aucun score. Chaque ligne garde la source, son SHA-256,
+la sonde, les effectifs disponibles, les métriques et les IC du kappa enregistrés.
+Le CSV conserve la précision des valeurs ; le Markdown arrondit à trois décimales.
+
+Une donnée historique absente reste non renseignée : ni la graine ni l'effectif
+d'entraînement de la confirmation ne sont déduits d'un autre fichier. Une
+confirmation incomplète, un chevauchement train/test, des effectifs incohérents
+ou des métriques non finies sont refusés avant écriture. Les répétitions restent
+identifiées comme telles. Le tableau ne classe pas les runs et ne démontre pas
+leur comparabilité ; les différences de nuits et de prétraitement restent à
+prendre en compte. MESA et OSF seront ajoutés seulement après évaluation autorisée.
 
 ## Tests
 

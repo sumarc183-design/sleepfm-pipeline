@@ -2,6 +2,11 @@
 
 Résumé dans le [README](../README.md).
 
+Tableau des scores déjà enregistrés : [Markdown](../results/consolidated_physionet2018.md)
+et [CSV](../results/consolidated_physionet2018.csv), régénérés par
+`scripts/consolidate_results.py` sans entraîner ni réévaluer de modèle. Les tests
+et prétraitements diffèrent entre runs ; ce tableau ne constitue pas un classement.
+
 ## Run de référence à 500 sujets
 
 
