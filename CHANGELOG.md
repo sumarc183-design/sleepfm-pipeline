@@ -6,6 +6,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Durée de chaque étape** : `run_baseline.py` affiche, par lot, le temps de téléchargement, d'extraction
+  et d'embeddings. Affichage seul, sans effet sur les calculs ; sert à repérer ce qui ralentit un run.
+- **Protocole de confirmation validé** par le tuteur le 2026-11-06, critère compris (contenu inchangé).
 - **Licence** : tous droits réservés (`LICENSE`), textes MIT de SleepFM et d'OSF reproduits dans `THIRD_PARTY_NOTICES.md`. Ne s'applique pas rétroactivement à ce qui a déjà été copié.
 - **Commande de confirmation** (`scripts/confirm_frozen_models.py`), avec la liste figée des 494 sujets
   et les empreintes du protocole (`configs/`) : aucun entraînement, tout écart arrête le run avant le

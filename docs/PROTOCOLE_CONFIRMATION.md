@@ -1,6 +1,6 @@
 # Protocole de confirmation SleepFM
 
-**Version 2, 2026-11-06 (version 1 : 2026-11-05), avant d'ouvrir les sujets réservés. État : à valider avec le tuteur.**
+**Version 2, 2026-11-06 (version 1 : 2026-11-05), avant d'ouvrir les sujets réservés. État : validé par le tuteur le 2026-11-06, critère compris ; contenu inchangé depuis.**
 Toute modification se fait par un commit daté, avant l'évaluation. L'historique git fait foi.
 
 ## Pourquoi

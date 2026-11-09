@@ -350,9 +350,13 @@ def embed_subjects_in_chunks(
         with tempfile.TemporaryDirectory() as tmp:
             raw_dir, processed_dir = Path(tmp) / "raw", Path(tmp) / "processed"
             raw_dir.mkdir()
+            # Durée de chaque étape, affichée seulement : sert à repérer ce qui ralentit un run.
+            t0 = time.perf_counter()
             for subject in chunk:
                 fetch_subject(subject, raw_dir)
+            t1 = time.perf_counter()
             extract(raw_dir, processed_dir, num_threads)
+            t2 = time.perf_counter()
 
             try:
                 dataset = PhysioNet2018EpochDataset(processed_dir)
@@ -364,6 +368,11 @@ def embed_subjects_in_chunks(
                 )
                 sample_subjects, sample_epoch_idx = epoch_groups(dataset)
                 sample_onsets = epoch_onsets(dataset, processed_dir)
+            t3 = time.perf_counter()
+            print(
+                f"  Durées du lot : téléchargement {t1 - t0:.0f} s, extraction {t2 - t1:.0f} s, "
+                f"embeddings {t3 - t2:.0f} s"
+            )
             for subject in chunk:
                 mask = sample_subjects == subject if dataset is not None else np.zeros(0, dtype=bool)
                 if not mask.any():
