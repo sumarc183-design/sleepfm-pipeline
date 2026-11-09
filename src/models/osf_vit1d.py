@@ -72,7 +72,11 @@ class Attention(nn.Module):
         self.scale = dim_head**-0.5
         self.attend = nn.Softmax(dim=-1)
         self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=qkv_bias)
-        self.to_out = nn.Linear(inner_dim, dim) if not (heads == 1 and dim_head == dim) else nn.Identity()
+        self.to_out = (
+            nn.Sequential(nn.Linear(inner_dim, dim), nn.Dropout(0.0))
+            if not (heads == 1 and dim_head == dim)
+            else nn.Identity()
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         qkv = self.to_qkv(x).chunk(3, dim=-1)
@@ -114,14 +118,32 @@ class OSFViT1D(nn.Module):
         dim_head: int = 64,
         mlp_dim: int = 3072,
         qkv_bias: bool = True,
+        lead_wise: int = 0,
+        patch_size_ch: int = 4,
     ):
         super().__init__()
-        assert seq_len % patch_size == 0
+        sizes = (num_leads, seq_len, patch_size, patch_size_ch, width, depth, heads, dim_head, mlp_dim)
+        if any(type(n) is not int or n <= 0 for n in sizes):
+            raise ValueError("Les dimensions OSF doivent être des entiers strictement positifs")
+        if type(lead_wise) is not int or lead_wise not in (0, 1):
+            raise ValueError("lead_wise doit valoir 0 ou 1")
+        if seq_len % patch_size or (lead_wise and num_leads % patch_size_ch):
+            raise ValueError("Les dimensions OSF doivent être divisibles par les tailles de patch")
+        self.num_leads, self.seq_len, self.lead_wise = num_leads, seq_len, lead_wise
         num_patches = seq_len // patch_size
         self.width = width
         self.depth = depth
 
-        self.to_patch_embedding = nn.Conv1d(num_leads, width, kernel_size=patch_size, stride=patch_size, bias=False)
+        if lead_wise == 0:
+            self.to_patch_embedding = nn.Conv1d(num_leads, width, kernel_size=patch_size, stride=patch_size, bias=False)
+            self.lead_emb = None
+        else:
+            patch_shape = (patch_size_ch, patch_size)
+            self.to_patch_embedding = nn.Conv2d(1, width, kernel_size=patch_shape, stride=patch_shape, bias=False)
+            groups = num_leads // patch_size_ch
+            num_patches *= groups
+            # Présent dans les poids officiels, mais jamais ajouté aux tokens.
+            self.lead_emb = nn.Embedding(groups, width)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, width))
         self.pos_embedding = nn.Parameter(torch.zeros(1, num_patches + 1, width))
 
@@ -129,16 +151,31 @@ class OSFViT1D(nn.Module):
             self.add_module(f"block{i}", TransformerBlock(width, mlp_dim, heads, dim_head, qkv_bias))
         self.norm = nn.LayerNorm(width)
 
-    def forward_encoding(self, series: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward_encoding(
+        self, series: torch.Tensor, return_sequence: bool = False
+    ) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
         """series: [B, num_leads, seq_len] -> (cls_embedding [B, width], patch_embeddings [B, N, width])."""
-        x = self.to_patch_embedding(series)
-        x = rearrange(x, "b c n -> b n c")
+        if series.ndim != 3 or tuple(series.shape[1:]) != (self.num_leads, self.seq_len) or not len(series):
+            raise ValueError(f"Entrée OSF attendue : (batch non vide, {self.num_leads}, {self.seq_len})")
+        if not series.is_floating_point() or not torch.isfinite(series).all():
+            raise ValueError("Entrée OSF flottante et finie obligatoire")
+        if self.lead_wise == 0:
+            x = rearrange(self.to_patch_embedding(series), "b c n -> b n c")
+        else:
+            x = rearrange(self.to_patch_embedding(series.unsqueeze(1)), "b c groups time -> b (groups time) c")
         cls_tok = self.cls_token.expand(x.size(0), -1, -1)
         x = torch.cat([cls_tok, x], dim=1) + self.pos_embedding[:, : x.size(1) + 1, :]
         for i in range(self.depth):
             x = getattr(self, f"block{i}")(x)
         x = self.norm(x)
+        if return_sequence:
+            return x
         return x[:, 0], x[:, 1:]
+
+    def forward(self, series: torch.Tensor) -> torch.Tensor:
+        """Appel standard du module : embedding du token CLS, comme en amont."""
+        cls, _ = self.forward_encoding(series)
+        return cls
 
 
 def vit_base(num_leads: int, seq_len: int = 1920, patch_size: int = 64, **kwargs) -> OSFViT1D:
@@ -167,10 +204,15 @@ def load_osf_backbone(checkpoint_path: str | Path, allow_key_mismatch: bool = Fa
         )
     payload = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
     meta = payload["metadata"]
-    if meta.get("lead_wise", 0) != 0:
-        raise NotImplementedError("lead_wise=1 (2D patchify) checkpoints not supported by this minimal loader.")
-
-    model = vit_base(num_leads=meta["num_leads"], seq_len=meta["seq_len"], patch_size=meta["patch_size_time"])
+    if meta.get("lead_wise", 0) == 1 and "patch_size_ch" not in meta:
+        raise ValueError("Checkpoint OSF : patch_size_ch obligatoire pour lead_wise=1")
+    model = vit_base(
+        num_leads=meta["num_leads"],
+        seq_len=meta["seq_len"],
+        patch_size=meta["patch_size_time"],
+        lead_wise=meta.get("lead_wise", 0),
+        patch_size_ch=meta.get("patch_size_ch", 4),
+    )
     missing, unexpected = model.load_state_dict(payload["state_dict"], strict=False)
     if (missing or unexpected) and not allow_key_mismatch:
         raise ValueError(

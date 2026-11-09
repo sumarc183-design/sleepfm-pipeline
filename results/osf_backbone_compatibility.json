@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-09",
+  "scope": "Compatibilité du backbone sur tenseurs synthétiques uniquement ; aucun poids préentraîné ni donnée patient.",
+  "reference_commit": "d75d616736a52733d8565edba9e0fd07dab41c4a",
+  "reference_blob_sha1": "ad070eb6b03ad5aa22012036916a73ae933fd5a6",
+  "reference_url": "https://github.com/yang-ai-lab/OSF-Open-Sleep-FM/blob/d75d616736a52733d8565edba9e0fd07dab41c4a/osf/backbone/vit1d_cls.py",
+  "torch": "2.2.2",
+  "cases": [
+    {
+      "parameters": {
+        "num_leads": 12,
+        "seq_len": 1920,
+        "patch_size": 64,
+        "lead_wise": 0,
+        "patch_size_ch": 4,
+        "width": 24,
+        "depth": 2,
+        "heads": 2,
+        "dim_head": 12,
+        "mlp_dim": 48
+      },
+      "input_shape": [
+        2,
+        12,
+        1920
+      ],
+      "tokens_shape": [
+        2,
+        31,
+        24
+      ],
+      "max_absolute_error": 0.0,
+      "all_weights_loaded_strictly": true
+    },
+    {
+      "parameters": {
+        "num_leads": 12,
+        "seq_len": 1920,
+        "patch_size": 64,
+        "lead_wise": 1,
+        "patch_size_ch": 4,
+        "width": 24,
+        "depth": 2,
+        "heads": 2,
+        "dim_head": 12,
+        "mlp_dim": 48
+      },
+      "input_shape": [
+        2,
+        12,
+        1920
+      ],
+      "tokens_shape": [
+        2,
+        91,
+        24
+      ],
+      "max_absolute_error": 0.0,
+      "all_weights_loaded_strictly": true
+    }
+  ]
+}

@@ -6,6 +6,15 @@ selon [SemVer](https://semver.org/lang/fr/).
 ## [Non publié]
 
 ### Ajouté
+- **Contrôle des entrées OSF** (`scripts/check_osf_input.py`) : vérification du
+  format d'un NPZ d'époques déjà préparées, ordre des canaux explicite, fréquence
+  et durée strictes, refus des canaux dupliqués ou absents et des valeurs non finies.
+  Rapport de provenance sans chargement de modèle ; aucun prétraitement clinique déduit.
+- **Compatibilité du backbone OSF** : noms de projection d'attention alignés avec
+  le code officiel, mode de découpage par groupes de canaux pris en charge,
+  métadonnées et entrées invalides refusées. Sorties identiques à une référence
+  officielle figée sur des tenseurs synthétiques ; aucun checkpoint préentraîné
+  téléchargé ni évaluation sur patients.
 - **Comparaison des caches** : les temps d'origine sont désormais comparés avant
   d'annoncer des fenêtres identiques ; temps absents signalés comme non vérifiés,
   tolérances absolues contrôlées et fichiers temporaires exclus du bilan.

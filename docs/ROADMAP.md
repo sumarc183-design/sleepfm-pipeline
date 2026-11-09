@@ -15,6 +15,8 @@
 ## J60 — Comparaison
 - [ ] Embeddings + sonde linéaire sur MESA (cohorte supplémentaire, si l'accès NSRR est obtenu)
 - [ ] Comparaison SleepFM vs OSF sur SleepBench (même protocole, mêmes données)
+  - [x] Compatibilité du backbone avec le code officiel : noms de poids, deux modes de découpage, vérification indépendante sur tenseurs synthétiques. Checkpoint préentraîné et comparaison sur patients non exécutés (`results/osf_backbone_compatibility.json`)
+  - [x] Contrôle du format des entrées OSF : canaux, ordre explicite, 64 Hz, fenêtres de 30 s et valeurs finies ; tests synthétiques (`scripts/check_osf_input.py`). Unités, références d'électrodes et mapping de cohorte restent à valider
 - [ ] Tableau de résultats consolidé pour la comparaison multi-cohortes
   - [x] Consolidation des résultats PhysioNet 2018 déjà enregistrés (100, 200, 500 sujets et confirmation) en CSV et Markdown, avec sources et empreintes ; aucune nouvelle évaluation (`scripts/consolidate_results.py`)
 - [x] Prédiction sur une polysomnographie brute non annotée au format PhysioNet 2018 : fenêtres fixes de 30 s indépendantes des annotations, contrat du signal vérifié, traitement après enregistrement (`scripts/predict_raw_night.py`). Fonctionnement testé sur données synthétiques ; performances sur cette grille non évaluées

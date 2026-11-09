@@ -15,9 +15,10 @@ que les poids préentraînés officiels se chargent sans renommage.
 - Dépôt : https://github.com/yang-ai-lab/OSF-Open-Sleep-FM
 - Licence : MIT
 
-Réimplémentation minimale de `osf/backbone/vit1d_cls.py::ViT` (ViT 1D avec
-token CLS), suffisante pour charger le `osf_backbone.pth` publié et produire
-des embeddings, sans reprendre tout le code d'entraînement. Voir
+Adaptation de `osf/backbone/vit1d_cls.py::ViT` (signal PSG, token CLS,
+découpage temporel ou par groupes de canaux). Noms des poids et sorties
+vérifiés contre la source au commit `d75d616736a52733d8565edba9e0fd07dab41c4a`
+sur des tenseurs synthétiques ; checkpoint préentraîné non testé ici. Voir
 `docs/OSF_COMPARISON.md` pour les différences de canaux et de schéma de
 labels à traiter avant de comparer directement SleepFM et OSF.
 
