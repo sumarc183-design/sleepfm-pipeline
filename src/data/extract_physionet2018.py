@@ -88,6 +88,34 @@ def extract_labels(arousal_mat_path: str) -> Tuple[np.ndarray, List[str]]:
     return labels, stage_names
 
 
+STAGE_COLUMNS = {"wake", "nonrem1", "nonrem2", "nonrem3", "rem", "undefined"}
+
+
+def annotation_problem(
+    labels: np.ndarray, stage_names: List[str], signal_shape: Tuple[int, int], header: Tuple[int, int]
+) -> str | None:
+    """Raison de refuser des annotations avant leur conversion en stades, ou None.
+
+    Exige les 6 colonnes attendues, des indicateurs binaires finis, exactement un
+    indicateur actif par échantillon, et des longueurs cohérentes entre annotations,
+    signal et en-tête (`header` = nombre de signaux, nombre d'échantillons annoncés).
+    Sans ce contrôle, un échantillon sans stade actif deviendrait N1 par `argmax`."""
+    if set(stage_names) != STAGE_COLUMNS or len(stage_names) != len(STAGE_COLUMNS):
+        return f"colonnes de stades inattendues {stage_names}"
+    n_signals, n_samples = header
+    if signal_shape != (n_signals, n_samples):
+        return f"signal {signal_shape} différent de l'en-tête ({n_signals}, {n_samples})"
+    if labels.ndim != 2 or labels.shape != (n_samples, len(stage_names)):
+        return f"annotations {labels.shape} incompatibles avec {n_samples} échantillons"
+    if not np.isfinite(labels).all() or not np.isin(labels, (0, 1)).all():
+        return "indicateurs de stade non binaires"
+    active = labels.sum(axis=1)
+    if (active != 1).any():
+        bad = int(np.flatnonzero(active != 1)[0])
+        return f"échantillon {bad} avec {int(active[bad])} stade(s) actif(s) au lieu d'un seul"
+    return None
+
+
 def first_defined_sample(labels: np.ndarray, stage_names: List[str]) -> int | None:
     """Premier échantillon dont le stade n'est pas « undefined » : la période
     initiale, avant que l'expert commence à annoter, est retirée. Colonne
@@ -175,11 +203,15 @@ def process_one_subject(
         shutil.rmtree(path_to_x)
 
     try:
-        channel_names, sample_rate, _ = import_signal_names(hea_path)
+        channel_names, sample_rate, n_samples = import_signal_names(hea_path)
         labels, stage_names = extract_labels(arousal_path)
         signal = loadmat(mat_path)["val"]
     except Exception as exc:
         reject(path_to_save, subject_id, f"failed to load raw files ({exc})")
+        return
+    problem = annotation_problem(labels, stage_names, signal.shape, (len(channel_names), n_samples))
+    if problem:
+        reject(path_to_save, subject_id, f"invalid annotations ({problem})")
         return
 
     try:

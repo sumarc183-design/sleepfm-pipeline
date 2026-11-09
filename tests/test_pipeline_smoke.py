@@ -776,6 +776,27 @@ def test_same_epochs_require_identical_times(tmp_path):
     assert "double" in same_epochs_problem(double, double, rows, rows)
 
 
+def test_same_windows_are_not_attributed_to_training_without_same_embeddings(tmp_path):
+    """Audit du 9 nov., constat D : mêmes fenêtres mais autre checkpoint ou prétraitement,
+    ou contrat absent, ne sont jamais présentés comme un effet du seul entraînement."""
+    import json
+
+    from scripts.compare_test_nights import input_contract, same_inputs_problem
+
+    contract = {"checkpoint_sha256": "a", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
+
+    def run(name, manifest):
+        (tmp_path / f"{name}.json").write_text(json.dumps({"embeddings_manifest": manifest}))
+        return input_contract(tmp_path / f"{name}.predictions.npz")
+
+    same = run("a", contract)
+    assert same_inputs_problem(same, run("b", contract)) is None
+    assert "preprocessing_version" in same_inputs_problem(same, run("c", contract | {"preprocessing_version": 1}))
+    assert "checkpoint_sha256" in same_inputs_problem(same, run("d", contract | {"checkpoint_sha256": "z"}))
+    assert "absent" in same_inputs_problem(same, run("e", None))
+    assert "absent" in same_inputs_problem(same, input_contract(tmp_path / "sans_json.predictions.npz"))
+
+
 def test_run_status_covers_exactly_the_requested_subjects(tmp_path):
     from run_baseline import write_run_status
 

@@ -27,7 +27,7 @@ import numpy as np
 import sklearn
 import torch
 
-from src.data.cache_contract import contract_differences, missing_contract_keys
+from src.data.cache_contract import contract_differences, file_sha256, missing_contract_keys
 
 EXPORT_FORMAT = 2
 READABLE_EXPORT_FORMATS = (1, 2)
@@ -101,11 +101,21 @@ def save_probes(directory: Path, models: dict, embedding_dim: int, embeddings_ma
     print(f"Sondes exportées : {directory} ({', '.join(models)})")
 
 
-def load_probes(directory: Path, embeddings_manifest: dict | None, allow_unverified: bool = False) -> tuple[dict, dict]:
+def load_probes(
+    directory: Path,
+    embeddings_manifest: dict | None,
+    allow_unverified: bool = False,
+    expected_sha256: dict[str, str] | None = None,
+) -> tuple[dict, dict]:
     """Renvoie ({sonde: modèle}, manifeste). Le manifeste du cache à prédire
     et celui de l'entraînement doivent être complets et identiques (checkpoint,
     prétraitement, canaux, fréquence). `allow_unverified=True` réserve aux
-    caches historiques : le contrôle devient un avertissement."""
+    caches historiques : le contrôle devient un avertissement.
+
+    Avec `expected_sha256` ({sonde: empreinte}), seules ces sondes sont chargées,
+    et l'empreinte est vérifiée sur le fichier réellement chargé, juste avant le
+    chargement : un manifeste qui redirige une sonde vers un autre fichier est
+    refusé. Le manifeste renvoyé indique alors les fichiers chargés (`loaded`)."""
     manifest = json.loads((directory / "manifest.json").read_text())
     if manifest.get("export_format") not in READABLE_EXPORT_FORMATS:
         raise ValueError(f"{directory} : format d'export {manifest.get('export_format')} non pris en charge")
@@ -123,8 +133,24 @@ def load_probes(directory: Path, embeddings_manifest: dict | None, allow_unverif
             raise ValueError(message)
         print(f"ATTENTION : provenance non vérifiée. {message}")
     models = {}
-    for kind, info in manifest["probes"].items():
-        models[kind] = joblib.load(directory / info["file"])
+    kinds = list(manifest["probes"]) if expected_sha256 is None else list(expected_sha256)
+    root = directory.resolve()
+    loaded = {}
+    for kind in kinds:
+        if kind not in manifest["probes"]:
+            raise ValueError(f"{kind} : sonde absente du manifeste")
+        info = manifest["probes"][kind]
+        path = (directory / info["file"]).resolve()
+        if path.parent != root:
+            raise ValueError(f"{kind} : fichier hors du dossier des modèles ({info['file']})")
+        if expected_sha256 is not None:
+            digest = file_sha256(path)
+            if digest != expected_sha256[kind]:
+                raise ValueError(f"{kind} : empreinte du fichier chargé ({info['file']}) différente de celle attendue")
+            loaded[kind] = {"file": info["file"], "sha256": digest}
+        models[kind] = joblib.load(path)
         if [int(c) for c in models[kind].classes_] != info["classes"]:
             raise ValueError(f"{kind} : classes du modèle différentes de celles du manifeste")
+    if expected_sha256 is not None:
+        manifest = manifest | {"loaded": loaded, "manifest_sha256": file_sha256(directory / "manifest.json")}
     return models, manifest

@@ -7,7 +7,10 @@ moindre écart arrête le run sans afficher de score :
 - sujets réservés sans intersection avec le découpage ;
 - contrat du cache identique à celui du protocole ;
 - dossier d'embeddings : chaque sujet réservé a un seul résultat (cache valide ou
-  rejet de l'extraction avec sa raison), et aucun sujet étranger ;
+  rejet de l'extraction avec une raison lisible et non vide), au moins une nuit
+  évaluable, et aucun sujet étranger ;
+- au chargement, empreinte de chaque fichier de modèle réellement lu (un manifeste
+  qui redirige une sonde vers un autre fichier est refusé avant tout score) ;
 - code au commit annoncé, sans modification ;
 - pas de résultat déjà écrit sous ce nom.
 
@@ -35,7 +38,7 @@ from sklearn.metrics import cohen_kappa_score, f1_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from run_baseline import cache_problem, load_cached_embeddings  # noqa: E402
+from run_baseline import cache_problem, load_cached_embeddings, rejection_reason  # noqa: E402
 from src.data.cache_contract import contract_differences, file_sha256, write_json_atomic  # noqa: E402
 from src.data.epoch_dataset import STAGE_NAME_TO_LABEL  # noqa: E402
 from src.models.linear_probe import (  # noqa: E402
@@ -89,6 +92,13 @@ def subjects_problems(subjects: list[str], split: dict, embeddings_dir: Path, re
         problem = cache_problem(embeddings_dir / f"{subject}.npz", strict_times=True)
         if problem:
             problems.append(f"{subject} : {problem}")
+    # Même règle que le bilan du run : un rejet n'exclut un sujet qu'avec une raison lisible.
+    for subject in sorted(requested & rejected - both):
+        _, problem = rejection_reason(embeddings_dir / f"{subject}.skipped")
+        if problem:
+            problems.append(f"{subject} : {problem}")
+    if requested and not requested & cached:
+        problems.append("aucune nuit évaluable : tous les sujets sont rejetés ou absents")
     return problems
 
 
@@ -138,6 +148,18 @@ def run_confirmation(
     environment = run_environment()
     if require_clean and not is_rehearsal and (environment["code_modified"] is not False):
         problems.append("code modifié ou commit inconnu")
+    models = export = None
+    if not problems:
+        # Empreintes revérifiées sur les fichiers réellement chargés, pas seulement sur les
+        # noms figés : avant toute trace du passage et avant tout score.
+        try:
+            models, export = load_probes(
+                models_dir,
+                cache_manifest,
+                expected_sha256={kind: config["models"][kind] for kind in (BASELINE, CANDIDATE)},
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            problems.append(f"modèles : {exc}")
     if problems:
         raise SystemExit("Confirmation refusée, aucun score calculé :\n- " + "\n- ".join(problems))
 
@@ -147,6 +169,8 @@ def run_confirmation(
         "protocol_version": config["protocol_version"],
         "config_sha256": file_sha256(config_path),
         "models": config["models"],
+        "loaded_models": export["loaded"],
+        "models_manifest_sha256": export["manifest_sha256"],
         "reserved_sha256": config["reserved_sha256"],
         "split_sha256": config["split_sha256"],
         "embeddings_manifest": cache_manifest,
@@ -158,12 +182,12 @@ def run_confirmation(
     write_json_atomic(json_path, report)  # trace le passage avant le premier score
 
     rejected = {
-        s: (embeddings_dir / f"{s}.skipped").read_text().strip()
+        s: rejection_reason(embeddings_dir / f"{s}.skipped")[0]
         for s in subjects
         if not (embeddings_dir / f"{s}.npz").exists()
     }
     evaluated = [s for s in subjects if s not in rejected]
-    models, _ = load_probes(models_dir, cache_manifest)
+
     X, y, groups = load_cached_embeddings(embeddings_dir, evaluated)
     subject_rows = groups[0]
 

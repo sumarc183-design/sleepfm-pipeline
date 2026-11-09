@@ -45,7 +45,7 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
 
 Accuracy, kappa de Cohen (accord corrigé du hasard, métrique de référence en
 stadification), F1 macro, F1 par stade, ROC-AUC et AUPRC un-contre-tous, gap
-train − test. Résultats à jour : [README](../README.md#résultats).
+train − test. Résultats à jour : [README](../README.md#résultats-en-bref).
 
 ## Limites connues
 

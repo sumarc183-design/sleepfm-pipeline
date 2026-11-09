@@ -6,6 +6,7 @@ import pytest
 
 from src.data.extract_physionet2018 import (
     ALL_CHANNELS,
+    annotation_problem,
     first_defined_sample,
     import_signal_names,
     process_labels_to_events,
@@ -53,3 +54,38 @@ def test_first_defined_sample_uses_the_undefined_column_by_name():
     assert first_defined_sample(np.tile(np.eye(6)[4], (5, 1)), names) is None
     with pytest.raises(ValueError):
         first_defined_sample(labels[:, :4], names[:4])
+
+
+NAMES = ["nonrem1", "nonrem2", "nonrem3", "rem", "undefined", "wake"]
+
+
+def _valid_labels(n=10):
+    labels = np.zeros((n, len(NAMES)))
+    labels[:, NAMES.index("wake")] = 1
+    return labels
+
+
+def test_annotation_problem_accepts_one_hot_labels():
+    assert annotation_problem(_valid_labels(), NAMES, (13, 10), (13, 10)) is None
+
+
+@pytest.mark.parametrize(
+    "alter, message",
+    [
+        (lambda lab: lab * 0, "0 stade(s) actif(s)"),  # aucun indicateur : serait devenu N1
+        (lambda lab: np.hstack([lab[:, :5] + np.eye(10, 5), lab[:, 5:]]), "2 stade(s) actif(s)"),
+        (lambda lab: lab * 0.5, "non binaires"),
+        (lambda lab: np.where(lab == 1, np.nan, lab), "non binaires"),
+        (lambda lab: lab[:9], "incompatibles"),
+    ],
+)
+def test_annotation_problem_refuses_invalid_labels(alter, message):
+    """Audit du 9 nov., constat B : aucune époque de stade arbitraire."""
+    problem = annotation_problem(alter(_valid_labels()), NAMES, (13, 10), (13, 10))
+    assert problem is not None and message in problem
+
+
+def test_annotation_problem_checks_names_and_header():
+    assert "colonnes" in annotation_problem(_valid_labels()[:, :5], NAMES[:5], (13, 10), (13, 10))
+    assert "en-tête" in annotation_problem(_valid_labels(), NAMES, (13, 10), (13, 11))
+    assert "en-tête" in annotation_problem(_valid_labels(), NAMES, (12, 10), (13, 10))

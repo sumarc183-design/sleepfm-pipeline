@@ -5,6 +5,21 @@ selon [SemVer](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Corrigé (audit du 2026-11-09)
+- **Modèles de la confirmation** : l'empreinte est vérifiée sur chaque fichier réellement chargé, et
+  seules les deux sondes figées sont chargées. Un manifeste qui redirige une sonde vers un autre
+  fichier est refusé avant toute trace et tout score. Le rapport enregistre les fichiers chargés et
+  l'empreinte du manifeste. Export actuel rechargé sans changement.
+- **Annotations invalides refusées** avant leur conversion en stades : colonnes attendues, indicateurs
+  binaires finis, un seul stade actif par échantillon, longueurs cohérentes avec le signal et l'en-tête.
+  Un échantillon sans stade actif ne devient plus N1. Les annotations réelles vérifiées sont conformes.
+- **Rejets de la confirmation** : même règle que le bilan du run (raison lisible et non vide), et refus
+  si aucune nuit n'est évaluable, avant tout score.
+- **Comparaison entre runs** : mêmes fenêtres ne suffisent plus ; l'écart n'est attribué au seul
+  entraînement que si les contrats des embeddings (JSON voisin de chaque archive) sont présents et
+  identiques. Sinon il est présenté comme une comparaison de pipelines.
+- **Fiche du modèle** : lien vers « Résultats en bref » réparé.
+
 ### Ajouté
 - **Bilan final vérifié** : `run_status.json` relit chaque cache demandé, contrôle
   les raisons des rejets et distingue les temporaires ; les seuls noms de fichiers

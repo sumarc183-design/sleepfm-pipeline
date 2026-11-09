@@ -841,6 +841,16 @@ def save_test_predictions(path: Path, results: dict, y_test: np.ndarray, test_gr
     print(f"Prédictions du test : {path}")
 
 
+def rejection_reason(path: Path) -> tuple[str | None, str | None]:
+    """(raison, problème) d'un marqueur de rejet : un rejet n'est valide qu'avec
+    une raison lisible et non vide. Règle commune au bilan du run et à la confirmation."""
+    try:
+        reason = path.read_text().strip()
+    except (OSError, UnicodeError) as exc:
+        return None, f"rejet illisible ({exc.__class__.__name__})"
+    return (reason, None) if reason else (None, "raison du rejet vide")
+
+
 def write_run_status(embeddings_dir: Path, subject_ids: list[str], run_started: float) -> dict:
     """Bilan machine du run : l'ensemble exact demandé, réussi et rejeté. Le run
     est complet si chaque sujet demandé a un seul résultat valide, sans fichier
@@ -858,14 +868,11 @@ def write_run_status(embeddings_dir: Path, subject_ids: list[str], run_started: 
         if problem:
             invalid[subject] = problem
     for subject in sorted(requested & rejected):
-        try:
-            reason = (embeddings_dir / f"{subject}.skipped").read_text().strip()
-            if reason:
-                reasons[subject] = reason
-            else:
-                invalid_rejections[subject] = "raison du rejet vide"
-        except (OSError, UnicodeError) as exc:
-            invalid_rejections[subject] = f"rejet illisible ({exc.__class__.__name__})"
+        reason, problem = rejection_reason(embeddings_dir / f"{subject}.skipped")
+        if problem:
+            invalid_rejections[subject] = problem
+        else:
+            reasons[subject] = reason
     missing, double = requested - cached - rejected, requested & cached & rejected
     pending = sorted(requested & temporary)
     status = {

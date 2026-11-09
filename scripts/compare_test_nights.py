@@ -13,6 +13,12 @@ l'écart apparié entre les deux runs, pour une graine d'entraînement chacun. S
 ou si les temps manquent, la comparaison reste descriptive : l'identité des entrées
 n'est pas établie.
 
+Mêmes fenêtres ne veut pas dire mêmes embeddings : le contrat des entrées (checkpoint,
+prétraitement, canaux, fréquence) est lu dans le JSON voisin de chaque archive
+(<run>.json pour <run>.predictions.npz). L'écart n'est attribué au seul entraînement
+que si les deux contrats sont présents et identiques ; sinon il est présenté comme
+une comparaison de pipelines.
+
     python scripts/compare_test_nights.py \
         --predictions results/results_physionet2018_200.predictions.npz \
         --old-predictions results/results_physionet2018_100_auprc.predictions.npz
@@ -21,6 +27,7 @@ n'est pas établie.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -29,6 +36,7 @@ from sklearn.metrics import cohen_kappa_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src.data.cache_contract import contract_differences, missing_contract_keys  # noqa: E402
 from src.models.linear_probe import bootstrap_ci, paired_bootstrap_diff  # noqa: E402
 
 PROBES = {"logistic": "Baseline", "sequence": "BiGRU"}
@@ -69,8 +77,29 @@ def same_epochs_problem(old, new, rows_old: np.ndarray, rows_new: np.ndarray) ->
     return None
 
 
-def compare_same_epochs(old, new, is_old: np.ndarray) -> None:
-    """Écart apparié entre les deux runs, seulement si les époques sont identiques."""
+def input_contract(predictions_path: Path) -> dict | None:
+    """Contrat des embeddings d'une archive, lu dans son JSON voisin ; None s'il manque."""
+    source = predictions_path.with_name(predictions_path.name.removesuffix(".predictions.npz") + ".json")
+    if not source.exists():
+        return None
+    try:
+        contract = json.loads(source.read_text()).get("embeddings_manifest")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return contract if isinstance(contract, dict) and not missing_contract_keys(contract) else None
+
+
+def same_inputs_problem(old_contract: dict | None, new_contract: dict | None) -> str | None:
+    """Pourquoi les embeddings des deux runs ne sont pas établis identiques, ou None."""
+    if old_contract is None or new_contract is None:
+        return "contrat des embeddings absent d'un run"
+    differs = contract_differences(old_contract, new_contract)
+    return f"contrats des embeddings différents ({', '.join(differs)})" if differs else None
+
+
+def compare_same_epochs(old, new, is_old: np.ndarray, inputs_problem: str | None = None) -> None:
+    """Écart apparié entre les deux runs, seulement si les époques sont identiques.
+    Attribué au seul entraînement si, en plus, les contrats des embeddings le sont."""
     rows_old = sorted_rows(old["subject"], old["epoch_idx"])
     rows_new = np.flatnonzero(is_old)[sorted_rows(new["subject"][is_old], new["epoch_idx"][is_old])]
     problem = same_epochs_problem(old, new, rows_old, rows_new)
@@ -81,6 +110,13 @@ def compare_same_epochs(old, new, is_old: np.ndarray) -> None:
         )
         return
     print(f"Époques, temps et stades des anciennes nuits identiques entre les runs ({len(rows_old)} époques)")
+    if inputs_problem:
+        print(
+            f"Embeddings non établis identiques ({inputs_problem}) : écart apparié entre pipelines, "
+            "pas un effet du seul entraînement"
+        )
+    else:
+        print("Contrats des embeddings identiques : écart attribuable à l'entraînement")
     y, subjects = old["y_true"][rows_old], old["subject"][rows_old]
     for probe, name in PROBES.items():
         diff = paired_bootstrap_diff(
@@ -121,7 +157,9 @@ def main() -> None:
             + "".join(f"{kappa_with_ci(y, new[f'pred_{p}'][mask], subjects):>26}" for p in PROBES)
         )
 
-    compare_same_epochs(old, new, is_old)
+    compare_same_epochs(
+        old, new, is_old, same_inputs_problem(input_contract(args.old_predictions), input_contract(args.predictions))
+    )
 
     nights = []
     for subject in sorted(set(new["subject"])):

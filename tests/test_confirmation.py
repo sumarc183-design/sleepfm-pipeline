@@ -2,6 +2,7 @@
 
 import json
 
+import joblib
 import numpy as np
 import pytest
 
@@ -139,3 +140,42 @@ def test_rehearsal_refuses_reserved_subjects_and_is_labelled(setup):
         _write_cache(setup["embeddings_dir"], subject, 20 + i)
     report = confirm.run_confirmation(**setup, rehearsal=["tr03-2", "tr03-3"])
     assert report["kind"].startswith("répétition") and report["n_evaluated"] == 2
+
+
+def test_manifest_redirecting_a_probe_is_refused_before_any_trace(setup):
+    """Audit du 9 nov., constat A : un manifeste qui pointe la baseline vers une autre
+    sonde valide (mêmes classes) est refusé, même si les fichiers figés sont intacts."""
+    models = setup["models_dir"]
+    other = train_probe("logistic_unweighted", *_night(99), seed=0, max_iter=50)
+    joblib.dump(other, models / "autre.joblib")
+    manifest = json.loads((models / "manifest.json").read_text())
+    manifest["probes"]["logistic"]["file"] = "autre.joblib"
+    (models / "manifest.json").write_text(json.dumps(manifest))
+
+    with pytest.raises(SystemExit, match="empreinte du fichier chargé"):
+        confirm.run_confirmation(**setup)
+    assert not setup["out"].parent.exists()  # aucune trace ni score
+
+
+def test_loaded_model_files_are_recorded(setup):
+    report = confirm.run_confirmation(**setup)
+    assert set(report["loaded_models"]) == {"logistic", "sequence"}
+    assert report["loaded_models"]["logistic"]["file"] == "logistic.joblib"
+    assert report["models_manifest_sha256"] == file_sha256(setup["models_dir"] / "manifest.json")
+
+
+@pytest.mark.parametrize("content", [b"", b"   \n", b"\xff\xfe\xfa"])
+def test_empty_or_unreadable_rejection_is_refused_before_any_score(setup, content):
+    """Constat C : même règle que le bilan du run, appliquée avant le passage."""
+    (setup["embeddings_dir"] / f"{REJECTED}.skipped").write_bytes(content)
+    with pytest.raises(SystemExit, match="rejet"):
+        confirm.run_confirmation(**setup)
+    assert not setup["out"].parent.exists()
+
+
+def test_all_subjects_rejected_is_refused(setup):
+    for subject in RESERVED:
+        (setup["embeddings_dir"] / f"{subject}.npz").unlink()
+        (setup["embeddings_dir"] / f"{subject}.skipped").write_text("canaux manquants\n")
+    with pytest.raises(SystemExit, match="aucune nuit évaluable"):
+        confirm.run_confirmation(**setup)
