@@ -119,3 +119,25 @@ def test_bad_osf_inputs_are_refused(problem):
 def test_invalid_osf_geometry_is_refused(changes):
     with pytest.raises(ValueError):
         tiny_model(**({"num_leads": 4, "seq_len": 8, "patch_size": 2} | changes))
+
+
+def test_checkpoint_check_reports_strict_load_and_provenance(tmp_path, monkeypatch):
+    """scripts/check_osf_checkpoint.py : chargement strict, empreinte et formes, sans données patient."""
+    from scripts.check_osf_checkpoint import check_checkpoint
+    from src.data.cache_contract import file_sha256
+    from src.models import osf_vit1d
+
+    model = tiny_model(num_leads=4, seq_len=8, patch_size=2, lead_wise=1, patch_size_ch=2)
+    path = tmp_path / "osf.pth"
+    metadata = {"num_leads": 4, "seq_len": 8, "patch_size_time": 2, "lead_wise": 1, "patch_size_ch": 2}
+    torch.save({"metadata": metadata, "state_dict": model.state_dict()}, path)
+    monkeypatch.setattr(osf_vit1d, "vit_base", tiny_model)
+    report = check_checkpoint(path)
+    assert report["strict_load"] and report["checkpoint_sha256"] == file_sha256(path)
+    assert report["synthetic_forward"]["cls_shape"] == [2, 8] and report["metadata"] == metadata
+
+    state = model.state_dict()
+    state.pop(next(iter(state)))
+    torch.save({"metadata": metadata, "state_dict": state}, path)
+    with pytest.raises(ValueError, match="incompatible"):
+        check_checkpoint(path)
