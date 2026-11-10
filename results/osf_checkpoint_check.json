@@ -1,0 +1,48 @@
+{
+  "checkpoint_sha256": "c51190b1942556969af3c3d63c2e59430ddb1ea0377c50ea87df83712fc31857",
+  "environment": {
+    "code_commit": "7e8de96b52f4a48bd965b6ea6e6d290ef974a165",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "xgboost": "3.4.1"
+  },
+  "metadata": {
+    "depth": 12,
+    "encoder_name": "vit_base",
+    "lead_wise": 1,
+    "model_name": "dino",
+    "num_leads": 12,
+    "patch_size_ch": 4,
+    "patch_size_time": 64,
+    "sample_rate": 64,
+    "seq_len": 1920,
+    "width": 768,
+    "window_size_sec": 30
+  },
+  "parameters": 85325568,
+  "scope": "Chargement strict et passage avant sur tenseur synthétique ; aucune donnée patient, aucun score.",
+  "source": "https://huggingface.co/yang-ai-lab/OSF-Base/tree/f2067f2d95b3bff43e4a690a471ba3d4457f12a7",
+  "state_dict_keys": 150,
+  "strict_load": true,
+  "synthetic_forward": {
+    "cls_shape": [
+      2,
+      768
+    ],
+    "finite": true,
+    "input_shape": [
+      2,
+      12,
+      1920
+    ],
+    "patches_shape": [
+      2,
+      90,
+      768
+    ]
+  }
+}

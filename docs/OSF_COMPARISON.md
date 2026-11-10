@@ -22,9 +22,32 @@ testés (erreur maximale 0). Ce contrôle utilise un modèle réduit, 12 canaux 
 1 920 échantillons ; ses paramètres et la version exacte de la source sont dans
 [`results/osf_backbone_compatibility.json`](../results/osf_backbone_compatibility.json).
 
-**Limite :** aucun checkpoint préentraîné OSF n'a été téléchargé ou chargé lors
-de cette vérification. Elle établit une compatibilité de code sur les cas testés,
-pas une reproduction des performances OSF ni une validation sur patients.
+**Limite :** cette vérification utilise des poids aléatoires. Elle établit une
+compatibilité de code sur les cas testés, pas une reproduction des performances
+OSF ni une validation sur patients.
+
+## Checkpoint préentraîné chargé le 10 novembre 2026
+
+Le fichier publié `osf_backbone.pth` (licence MIT, accès libre, révision Hugging Face
+`f2067f2`, SHA-256 `c51190b1…31857`, conforme à l'empreinte publiée) se charge dans
+notre backbone **en mode strict** : 0 clé manquante, 0 inattendue, 85 325 568 paramètres.
+Métadonnées : DINO, ViT-Base, 12 canaux, 64 Hz, fenêtres de 30 s (1 920 échantillons),
+découpage par groupes de canaux (`lead_wise=1`, groupes de 4). Un passage avant sur un
+tenseur synthétique donne des sorties finies (CLS 768, 90 tokens). Le code
+`osf/backbone/vit1d_cls.py` publié avec ces poids a la même empreinte git (`ad070eb6`)
+que la source comparée à notre implémentation. Rapport :
+[`results/osf_checkpoint_check.json`](../results/osf_checkpoint_check.json).
+
+```bash
+mkdir -p third_party/osf
+curl -L -o third_party/osf/osf_backbone.pth \
+    https://huggingface.co/yang-ai-lab/OSF-Base/resolve/f2067f2d95b3bff43e4a690a471ba3d4457f12a7/osf_backbone.pth
+python scripts/check_osf_checkpoint.py third_party/osf/osf_backbone.pth --report results/osf_checkpoint_check.json
+```
+
+**Non fait :** comparer nos sorties à celles du code officiel avec ces vrais poids
+(l'équivalence n'est démontrée que sur poids aléatoires), et toute évaluation sur
+patients. Le mapping des canaux PhysioNet 2018 vers les 12 canaux OSF reste à écrire.
 
 ## 1. Conventions de canaux différentes
 
