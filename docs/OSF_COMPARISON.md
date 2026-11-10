@@ -124,3 +124,56 @@ ultérieure. L'accès aux données et leur harmonisation restent donc à établi
 1. Écrire le mapping de canaux PhysioNet 2018 -> format d'entrée OSF (12ch, 64Hz)
 2. Choisir le schéma de labels commun (4 classes, en fusionnant N1+N2 côté SleepFM)
 3. Évaluer les deux sur exactement les mêmes epochs de test
+
+## Proposition de protocole (10 novembre 2026, à valider avec le tuteur)
+
+Question : sur les mêmes nuits et les mêmes fenêtres, les embeddings figés d'OSF
+stadifient-ils mieux ou moins bien que ceux de SleepFM ?
+
+### Canaux PhysioNet 2018 face aux 12 canaux d'OSF
+
+OSF découpe les canaux par groupes de 4, dans cet ordre : l'ordre compte.
+
+| Groupe OSF | Canal OSF | PhysioNet 2018 | Statut |
+|---|---|---|---|
+| 1 | ECG | ECG | Présent |
+| 1 | EMG_Chin | Chin1-Chin2 | Présent |
+| 1 | EMG_LLeg, EMG_RLeg | — | **Absents** |
+| 2 | ABD | ABD | Présent |
+| 2 | THX | CHEST | Présent (même rôle) |
+| 2 | NP (pression nasale) | AIRFLOW | **À vérifier** : capteur peut-être différent |
+| 2 | SN (ronflement) | — | **Absent** |
+| 3 | EOG_E1_A2 | E1-M2 | Présent (M2 = mastoïde, comme A2) |
+| 3 | EOG_E2_A1 | — | **Absent** |
+| 3 | EEG_C3_A2, EEG_C4_A1 | C3-M2, C4-M1 | Présents |
+
+SaO2 et les EEG frontaux et occipitaux de PhysioNet 2018 n'ont pas de place chez OSF.
+4 canaux sur 12 manquent, et un est incertain. L'article d'OSF montre que les modèles
+fondamentaux généralisent mal aux canaux manquants : **sur PhysioNet 2018, la
+comparaison désavantagerait OSF**.
+
+Autres inconnues : le prétraitement de SleepBench (unités, normalisation d'amplitude,
+filtrage) n'est pas encore publié, et la manière dont OSF attend les canaux absents
+(zéros, ou autre) n'est pas documentée.
+
+### Deux options
+
+| | A. Exploratoire, tout de suite | B. Comparaison équitable, après NSRR |
+|---|---|---|
+| Données | PhysioNet 2018 : les 500 sujets de développement, découpage figé (400 / 100) | MESA ou SHHS, cohortes de SleepBench |
+| Canaux OSF | 8 sur 12, absents remplis de zéros, rééchantillonnage à 64 Hz | Montage proche de celui d'OSF |
+| Prérequis | Script d'entrée OSF, run Kaggle d'embeddings (environ 1 h) | Accès NSRR ; idéalement le prétraitement de SleepBench publié |
+| Ce que ça dit | Un premier ordre de grandeur, biaisé contre OSF | Une vraie comparaison des deux modèles |
+| Statut du résultat | Exploratoire, jamais présenté comme un classement | Comparaison principale, critère fixé avant |
+
+### Règles communes, quelle que soit l'option
+
+1. Mêmes nuits et mêmes fenêtres de 30 s pour les deux modèles ; embeddings figés.
+2. Mêmes sondes (logistique pondérée et BiGRU), entraînées sur les mêmes nuits d'entraînement, mêmes réglages.
+3. Deux schémas de stades : 5 classes, et 4 classes comme dans l'article d'OSF (éveil, sommeil léger = N1 + N2, profond = N3, REM).
+4. Critère fixé avant le calcul : écart de κ apparié par sujet (bootstrap, 1 000 tirages, graine 42), avec IC à 95 %.
+5. Nuits de test sans aucun choix de réglage ; résultat publié quel qu'il soit.
+
+**Recommandation : faire A maintenant, en exploratoire, pour avoir le pipeline OSF
+prêt et un premier chiffre ; réserver la conclusion à B.** Les 494 sujets réservés,
+déjà consultés, ne servent pas ici.

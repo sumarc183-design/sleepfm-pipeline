@@ -21,6 +21,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Proposition de protocole SleepFM / OSF** (`docs/OSF_COMPARISON.md`) : correspondance des canaux
+  PhysioNet 2018 (8 sur 12, dont un incertain), option exploratoire sur PhysioNet 2018 et comparaison
+  équitable sur MESA ou SHHS après NSRR, règles communes fixées avant le calcul. À valider avec le tuteur.
 - **Checkpoint préentraîné OSF vérifié** (`scripts/check_osf_checkpoint.py`, `results/osf_checkpoint_check.json`) :
   poids officiels (MIT, Hugging Face `f2067f2`) chargés en mode strict, 85,3 M paramètres, passage avant
   synthétique fini, empreinte et métadonnées enregistrées. Sorties identiques au code officiel avec ces
