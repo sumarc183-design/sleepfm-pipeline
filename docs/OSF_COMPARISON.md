@@ -190,3 +190,25 @@ déjà consultés, ne servent pas ici.
   et le même préchargement que les autres runs. Les poids sont vérifiés par leur SHA-256.
 - Reste à écrire avant tout chiffre : les sondes sur embeddings de 768 valeurs et la
   comparaison appariée, avec le critère fixé avant le calcul.
+
+### Option A : critère fixé avant le calcul (10 novembre 2026)
+
+Écrit et commité avant l'ouverture des embeddings OSF du run Kaggle (`a42e992`, 500 sujets,
+0 rejet). Commande : `python scripts/compare_osf_sleepfm.py --sleepfm-dir embeddings/physionet2018_v2
+--osf-dir embeddings/physionet2018_osf --out results/osf_vs_sleepfm_physionet2018`.
+
+- **Données** : les 400 nuits d'entraînement et les 100 nuits de test du découpage figé ; mêmes
+  fenêtres, mêmes stades et mêmes temps pour les deux modèles, sinon arrêt. Run OSF avec rejet refusé.
+- **Sondes** : logistique pondérée et BiGRU, réentraînées par le même code pour les deux modèles,
+  graine 42, réglages par défaut. Aucun réglage choisi sur le test.
+- **Critère principal** : écart de κ **OSF moins SleepFM**, BiGRU, 5 classes, bootstrap apparié par
+  sujet, 1 000 tirages, graine 42, IC à 95 %.
+- **Lecture** : IC au-dessus de 0, OSF au-dessus ; en dessous, SleepFM au-dessus ; contenant 0, pas
+  de différence établie. Dans tous les cas, **résultat exploratoire** : OSF tourne ici sans 4 de ses
+  12 canaux et avec une normalisation supposée. Un SleepFM au-dessus ne montre pas qu'OSF est moins
+  bon en général.
+- **Secondaires** : même écart pour la logistique ; 4 classes (N1 et N2 fusionnés, comme l'article
+  d'OSF, à partir des prédictions à 5 classes) ; F1 macro et F1 par stade.
+- **Contrôle** : les sondes SleepFM réentraînées doivent retrouver l'ordre de grandeur du run à
+  500 sujets (κ 0,599 et 0,664) ; un écart notable serait signalé.
+- Résultat publié quel qu'il soit.
