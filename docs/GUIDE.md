@@ -134,6 +134,7 @@ ce titre au notebook importé pour s'y retrouver.
 |---|---|---|
 | `notebooks/sleepfm_embeddings_physionet2018.ipynb` | SleepFM — embeddings PhysioNet 2018 (GPU) | Calcule les embeddings SleepFM sur GPU (Kaggle ou Colab) ; sondes ensuite sur le Mac, ou ici avec `EMBED_ONLY = False` |
 | `notebooks/sleepfm_raw_grid_physionet2018.ipynb` | SleepFM — prédiction sur PSG brute, grille fixe (PhysioNet 2018, GPU) | Embeddings des 100 nuits de test sur la grille fixe de 30 s, pour évaluer la prédiction sur PSG brute ; évaluation ensuite sur le Mac |
+| `notebooks/sleepfm_osf_physionet2018.ipynb` | SleepFM — embeddings OSF PhysioNet 2018 (comparaison exploratoire, GPU) | Embeddings OSF figés des 500 sujets de développement, mêmes fenêtres que SleepFM (option A de `docs/OSF_COMPARISON.md`) |
 
 ### Google Colab (GPU gratuit)
 

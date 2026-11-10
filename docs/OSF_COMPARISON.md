@@ -177,3 +177,16 @@ filtrage) n'est pas encore publié, et la manière dont OSF attend les canaux ab
 **Recommandation : faire A maintenant, en exploratoire, pour avoir le pipeline OSF
 prêt et un premier chiffre ; réserver la conclusion à B.** Les 494 sujets réservés,
 déjà consultés, ne servent pas ici.
+
+### Option A : code prêt (10 novembre 2026), run non lancé
+
+- `src/data/osf_physionet2018.py` : part des époques annotées extraites pour SleepFM
+  (mêmes fenêtres), rééchantillonne à 64 Hz, place les 8 canaux disponibles, met les
+  4 autres à zéro (comme le code officiel pour un canal absent), z-score chaque canal
+  sur la nuit puis borne à ±6. Le bornage vient du code officiel ; la normalisation
+  par nuit est **une hypothèse**, le prétraitement de SleepBench n'étant pas publié.
+- `scripts/embed_osf_physionet2018.py` et le notebook `sleepfm_osf_physionet2018.ipynb` :
+  embeddings CLS (768 valeurs) des 500 sujets de développement, avec la même reprise
+  et le même préchargement que les autres runs. Les poids sont vérifiés par leur SHA-256.
+- Reste à écrire avant tout chiffre : les sondes sur embeddings de 768 valeurs et la
+  comparaison appariée, avec le critère fixé avant le calcul.

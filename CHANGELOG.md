@@ -21,6 +21,10 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Entrée OSF depuis PhysioNet 2018** (option A, exploratoire) : `src/data/osf_physionet2018.py`
+  (mêmes fenêtres que SleepFM, 8 canaux sur 12 et 4 mis à zéro, 64 Hz, z-score par nuit et bornage à ±6),
+  `scripts/embed_osf_physionet2018.py` et notebook Kaggle `sleepfm_osf_physionet2018.ipynb`. Run non lancé ;
+  sondes et comparaison restent à écrire.
 - **Proposition de protocole SleepFM / OSF** (`docs/OSF_COMPARISON.md`) : correspondance des canaux
   PhysioNet 2018 (8 sur 12, dont un incertain), option exploratoire sur PhysioNet 2018 et comparaison
   équitable sur MESA ou SHHS après NSRR, règles communes fixées avant le calcul. À valider avec le tuteur.
