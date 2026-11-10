@@ -1,0 +1,115 @@
+{
+  "annotated_grid_same_nights": {
+    "logistic": 0.5994151191235563,
+    "nights": 100,
+    "sequence": 0.6642456980226079,
+    "source": "results/results_physionet2018_500.predictions.npz",
+    "source_sha256": "50adc4ecc4205ef2674f1286f51f7f94edb95813bbce160390df97ed48857ba1"
+  },
+  "caveat": "fenêtres à cheval sur deux stades (transitions) exclues du score : possiblement optimiste",
+  "embeddings_manifest": {
+    "channels": [
+      "F3-M2",
+      "F4-M1",
+      "C3-M2",
+      "C4-M1",
+      "O1-M2",
+      "O2-M1",
+      "E1-M2",
+      "Chin1-Chin2",
+      "ABD",
+      "CHEST",
+      "AIRFLOW",
+      "SaO2",
+      "ECG"
+    ],
+    "checkpoint_sha256": "a2fe7e5abf70f8a448c5577a085e0b7096332dcb1ec7497916e425446ac24575",
+    "epoch_selection": "fixed_30s_from_recording_start",
+    "preprocessing_version": 2,
+    "sample_rate": 256
+  },
+  "environment": {
+    "code_commit": "e94dbd7a37b96aa884d77d67bb01b89dec3574d2",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "xgboost": "3.4.1"
+  },
+  "grid": {
+    "logistic": {
+      "ci95": {
+        "cohen_kappa": [
+          0.6026440554101739,
+          0.6641088279460415
+        ],
+        "macro_f1": [
+          0.6817297311041,
+          0.7305869823087304
+        ],
+        "n_boot": 500,
+        "n_subjects": 100
+      },
+      "cohen_kappa": 0.6340470269230011,
+      "f1_by_stage": {
+        "nonrem1": 0.49569752281616686,
+        "nonrem2": 0.745088808821133,
+        "nonrem3": 0.7654592373124343,
+        "rem": 0.7302218686466897,
+        "wake": 0.7965923900950443
+      },
+      "macro_f1": 0.7066119655382938
+    },
+    "sequence": {
+      "ci95": {
+        "cohen_kappa": [
+          0.6784872257034553,
+          0.7416297751530532
+        ],
+        "macro_f1": [
+          0.7319634183059707,
+          0.7803924287410036
+        ],
+        "n_boot": 500,
+        "n_subjects": 100
+      },
+      "cohen_kappa": 0.7111887116558826,
+      "f1_by_stage": {
+        "nonrem1": 0.5201418664972738,
+        "nonrem2": 0.8371094534278521,
+        "nonrem3": 0.7870705244122965,
+        "rem": 0.8251121076233184,
+        "wake": 0.8268678599792291
+      },
+      "macro_f1": 0.759260362387994
+    }
+  },
+  "kind": "prédiction sur PSG brute, grille fixe de 30 s depuis le début",
+  "models_manifest_sha256": "3bed5560b6f5e8be9f7b022324f1467e2c91cdd2bb56c8afa9de468f9dc7f0b6",
+  "nights": 100,
+  "rejected": {},
+  "unscored_predictions": {
+    "logistic": {
+      "nonrem1": 4305,
+      "nonrem2": 3197,
+      "nonrem3": 1642,
+      "rem": 1614,
+      "wake": 4563
+    },
+    "sequence": {
+      "nonrem1": 3339,
+      "nonrem2": 5408,
+      "nonrem3": 934,
+      "rem": 944,
+      "wake": 4696
+    }
+  },
+  "windows": {
+    "mixed_stages": 12606,
+    "scored": 76626,
+    "total": 91947,
+    "undefined": 2715
+  }
+}

@@ -17,8 +17,11 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   (Wake, N1, N2, N3, REM).
 - **Inférence sans annotations** : `scripts/predict_raw_night.py`, pour les fichiers
   PhysioNet 2018 `.hea`/`.mat`, utilise une grille fixe depuis le début de la nuit.
-  Le traitement du signal et le checkpoint sont contrôlés ; les performances
-  mesurées sur les fenêtres annotées ne sont pas établies pour cette grille.
+  Le traitement du signal et le checkpoint sont contrôlés. Mesuré le 10 novembre 2026
+  sur les 100 nuits de test : sur les fenêtres d'un seul stade (83 % des fenêtres),
+  pas de baisse par rapport à la grille annotée (κ 0,711 [0,678 ; 0,742] pour le BiGRU, 0,634 [0,603 ; 0,664] pour la baseline).
+  Les transitions, à cheval sur deux stades, ne sont pas notées : score possiblement
+  optimiste. Voir [RESULTATS.md](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe).
 
 ## Usage prévu
 

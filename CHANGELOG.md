@@ -21,6 +21,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Performances de la prédiction sur PSG brute mesurées** (`results/raw_grid_physionet2018.json`) :
+  100 nuits de test, fenêtres d'un seul stade (83 %) : BiGRU κ 0,711 [0,678 ; 0,742], baseline 0,634.
+  Pas de baisse par rapport à la grille annotée ; transitions non notées, score possiblement optimiste.
 - **Évaluation de la prédiction sur PSG brute** : `scripts/embed_raw_grid.py` (embeddings des 100 nuits
   de test sur la grille fixe de 30 s, préchargement du sujet suivant, reprise, rejets motivés),
   `src/data/raw_grid_labels.py` (stade de l'expert par fenêtre, seulement pour noter ; fenêtres à cheval

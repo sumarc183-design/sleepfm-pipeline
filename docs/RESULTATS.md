@@ -65,6 +65,30 @@ sujets, ne tourne pas sur Mac, voir le [guide](GUIDE.md)).
   s'accordent sur l'éveil. Ce sont des observations : ni une erreur d'annotation ni une erreur de modèle
   ne sont établies, et une relecture indépendante reste à faire. Toutes les nuits restent dans le test.
 
+## Prédiction sur PSG brute, grille fixe
+
+Mesure du 10 novembre 2026 (`results/raw_grid_physionet2018.json`, embeddings du commit
+`e94dbd7`) : les 100 nuits de test, découpées en fenêtres de 30 s depuis le début de
+l'enregistrement, **sans lire les annotations**, puis prédites par les modèles figés du
+run à 500 sujets, sans entraînement.
+
+| 100 nuits, 76 626 fenêtres notées | κ [IC 95 %] | F1 macro | Grille annotée, mêmes nuits (κ) |
+|---|---|---|---|
+| Baseline | 0,634 [0,603 ; 0,664] | 0,707 | 0,599 |
+| BiGRU | **0,711** [0,678 ; 0,742] | **0,759** | 0,664 |
+
+- **Fenêtres notées** : 76 626 sur 91 947 (83 %). Non notées : 12 606 à cheval sur deux
+  stades et 2 715 hors annotation (début de l'enregistrement, en général). Les modèles
+  prédisent toute la nuit ; seules ces fenêtres sont exclues du score.
+- **Lecture** : sur les fenêtres d'un seul stade, la prédiction sur PSG brute ne perd rien.
+  Le score est plus haut que sur la grille annotée, mais les deux ne se comparent pas
+  directement : les fenêtres exclues sont surtout des transitions, les plus difficiles, que
+  la grille annotée garde. **Le score de la grille brute est donc possiblement optimiste.**
+- F1 par stade, baseline puis BiGRU : éveil 0,797 / 0,827 ; N1 0,496 / 0,520 ; N2 0,745 /
+  0,837 ; N3 0,765 / 0,787 ; REM 0,730 / 0,825.
+- **Limite** : les transitions ne sont pas mesurées sur cette grille ; nuits de test déjà
+  ouvertes, même cohorte.
+
 ## Analyses détaillées du run à 100 sujets
 
 Les analyses ci-dessous portent sur le run à 100 sujets du

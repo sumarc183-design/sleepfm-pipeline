@@ -249,7 +249,8 @@ caches d'entraînement.
 rééchantillonnée en mémoire, lots de tenseurs contrôlés par `--batch-size`, CPU
 par défaut et aucun worker enfant. Le BiGRU lit la nuit entière, après
 enregistrement. Les fenêtres diffèrent de celles de l'entraînement annoté :
-les performances publiées ne sont pas démontrées pour cette nouvelle grille.
+les performances ont été mesurées le 10 novembre 2026 sur les fenêtres d'un seul
+stade, pas sur les transitions ([résultats](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe)).
 Les tests synthétiques valident le fonctionnement, pas la qualité clinique.
 
 **Mesurer ses performances** : le notebook `sleepfm_raw_grid_physionet2018.ipynb`
