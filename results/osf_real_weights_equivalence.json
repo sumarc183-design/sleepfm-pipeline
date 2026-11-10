@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-10",
+  "scope": "Notre backbone et le code officiel OSF chargent les mêmes poids préentraînés publiés ; sorties comparées sur tenseurs synthétiques. Aucune donnée patient, aucun score.",
+  "reference_source": "https://huggingface.co/yang-ai-lab/OSF-Base/blob/f2067f2d95b3bff43e4a690a471ba3d4457f12a7/osf/backbone/vit1d_cls.py",
+  "reference_blob_sha1": "ad070eb6b03ad5aa22012036916a73ae933fd5a6",
+  "checkpoint_sha256": "c51190b1942556969af3c3d63c2e59430ddb1ea0377c50ea87df83712fc31857",
+  "code_commit": "35e4bd4d399bd2fd852ca27ceec9f077256481b5",
+  "torch": "2.2.2",
+  "batch": 4,
+  "seed": 0,
+  "reference_missing_keys": [],
+  "reference_unexpected_keys": [],
+  "cases": [
+    {
+      "input_std": 1.0,
+      "max_abs_diff_cls": 0.0,
+      "max_abs_diff_patches": 0.0,
+      "cls_std": 0.4106561541557312
+    },
+    {
+      "input_std": 50.0,
+      "max_abs_diff_cls": 0.0,
+      "max_abs_diff_patches": 0.0,
+      "cls_std": 0.408202588558197
+    }
+  ]
+}

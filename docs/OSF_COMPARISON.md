@@ -45,9 +45,13 @@ curl -L -o third_party/osf/osf_backbone.pth \
 python scripts/check_osf_checkpoint.py third_party/osf/osf_backbone.pth --report results/osf_checkpoint_check.json
 ```
 
-**Non fait :** comparer nos sorties à celles du code officiel avec ces vrais poids
-(l'équivalence n'est démontrée que sur poids aléatoires), et toute évaluation sur
-patients. Le mapping des canaux PhysioNet 2018 vers les 12 canaux OSF reste à écrire.
+**Équivalence avec le code officiel, vrais poids** : le code officiel (même révision)
+et notre backbone chargent ces poids sans clé manquante ni inattendue et donnent des
+sorties **identiques** (écart maximal 0 sur le CLS et les 90 tokens, entrées synthétiques
+d'écart-type 1 et 50) :
+[`results/osf_real_weights_equivalence.json`](../results/osf_real_weights_equivalence.json).
+
+**Non fait :** toute évaluation sur patients. Le mapping des canaux PhysioNet 2018 vers les 12 canaux OSF reste à écrire.
 
 ## 1. Conventions de canaux différentes
 

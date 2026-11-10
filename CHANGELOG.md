@@ -23,7 +23,8 @@ selon [SemVer](https://semver.org/lang/fr/).
 ### Ajouté
 - **Checkpoint préentraîné OSF vérifié** (`scripts/check_osf_checkpoint.py`, `results/osf_checkpoint_check.json`) :
   poids officiels (MIT, Hugging Face `f2067f2`) chargés en mode strict, 85,3 M paramètres, passage avant
-  synthétique fini, empreinte et métadonnées enregistrées. Aucune évaluation sur patients.
+  synthétique fini, empreinte et métadonnées enregistrées. Sorties identiques au code officiel avec ces
+  vrais poids (écart 0, `results/osf_real_weights_equivalence.json`). Aucune évaluation sur patients.
 - **Performances de la prédiction sur PSG brute mesurées** (`results/raw_grid_physionet2018.json`) :
   100 nuits de test, fenêtres d'un seul stade (83 %) : BiGRU κ 0,711 [0,678 ; 0,742], baseline 0,634.
   Pas de baisse par rapport à la grille annotée ; transitions non notées, score possiblement optimiste.
