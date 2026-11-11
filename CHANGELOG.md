@@ -21,6 +21,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Bootstrap accéléré** (suggestion 4 de l'audit) : IC calculés depuis les matrices de confusion par sujet,
+  mêmes tirages. Identiques sur données réelles (écart 0 sur la confirmation, 1e-16 sur le run à 500 sujets),
+  environ 250 fois plus rapide (2 s au lieu de 500 s pour la confirmation).
 - **Comparaison exploratoire SleepFM / OSF** (`scripts/compare_osf_sleepfm.py`, critère fixé avant le calcul) :
   sur les 100 nuits de test, mêmes fenêtres et mêmes sondes, OSF fait mieux (BiGRU κ 0,717 contre 0,664,
   écart +0,052 [+0,032 ; +0,073]) malgré 4 canaux absents. À confirmer sur MESA ou SHHS.

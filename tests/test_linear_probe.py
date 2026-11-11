@@ -343,3 +343,42 @@ def test_select_blocks_keeps_the_requested_columns_in_order():
     assert no_eeg.tolist() == np.concatenate([X[:, :512], X[:, 1024:]], axis=1).tolist()
     with pytest.raises(ValueError, match="dimension"):
         select_blocks(X[:, :512], ("resp",))
+
+
+def test_bootstrap_from_confusion_matrices_matches_the_row_by_row_reference():
+    """Audit du 9 nov., suggestion 4 : les IC calculés depuis les matrices de confusion
+    par sujet sont ceux de la méthode ligne à ligne (mêmes tirages, mêmes métriques),
+    y compris quand une classe manque chez certains sujets ou dans un tirage."""
+    import numpy as np
+    from sklearn.metrics import cohen_kappa_score, f1_score
+
+    from src.models.linear_probe import bootstrap_ci, paired_bootstrap_diff
+
+    rng = np.random.default_rng(7)
+    subjects = np.repeat([f"s{i:02d}" for i in range(12)], 30)
+    y = rng.integers(0, 5, len(subjects))
+    y[subjects == "s03"] = 0  # sujet sans les autres stades
+    pred_a = np.where(rng.random(len(y)) < 0.6, y, rng.integers(0, 5, len(y)))
+    pred_b = np.where(rng.random(len(y)) < 0.75, y, rng.integers(0, 4, len(y)))  # classe 4 rarement prédite
+
+    def reference(y_true, a, b, n_boot, seed):
+        generator = np.random.default_rng(seed)
+        unique = np.array(sorted(set(subjects)))
+        rows_of = {s: np.flatnonzero(subjects == s) for s in unique}
+        kappas, f1s, dk, df = [], [], [], []
+        for _ in range(n_boot):
+            rows = np.concatenate([rows_of[s] for s in generator.choice(unique, len(unique), replace=True)])
+            kappas.append(cohen_kappa_score(y_true[rows], b[rows]))
+            f1s.append(f1_score(y_true[rows], b[rows], average="macro"))
+            dk.append(kappas[-1] - cohen_kappa_score(y_true[rows], a[rows]))
+            df.append(f1s[-1] - f1_score(y_true[rows], a[rows], average="macro"))
+        q = lambda v: [np.percentile(v, 2.5), np.percentile(v, 97.5)]  # noqa: E731
+        return q(kappas), q(f1s), q(dk), q(df)
+
+    kappa, f1, dk, df = reference(y, pred_a, pred_b, 200, 3)
+    ci = bootstrap_ci(y, pred_b, subjects, n_boot=200, seed=3)
+    np.testing.assert_allclose(ci["cohen_kappa"], kappa, atol=1e-12)
+    np.testing.assert_allclose(ci["macro_f1"], f1, atol=1e-12)
+    paired = paired_bootstrap_diff(y, pred_a, pred_b, subjects, n_boot=200, seed=3)
+    np.testing.assert_allclose(paired["cohen_kappa"]["ci95"], dk, atol=1e-12)
+    np.testing.assert_allclose(paired["macro_f1"]["ci95"], df, atol=1e-12)

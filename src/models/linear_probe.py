@@ -215,6 +215,52 @@ def per_class_auc(proba: np.ndarray, classes: np.ndarray, y: np.ndarray) -> dict
     return out
 
 
+def _subject_confusions(
+    y_true: np.ndarray, predictions: list[np.ndarray], subjects: np.ndarray
+) -> tuple[np.ndarray, list[np.ndarray]]:
+    """(sujets triés, une matrice de confusion par sujet pour chaque prédiction).
+
+    Un tirage bootstrap additionne les matrices des sujets tirés, au lieu de
+    reconstruire des centaines de milliers de lignes : les métriques sont les
+    mêmes, calculées sur la matrice de confusion du tirage."""
+    unique = np.array(sorted(set(subjects)))
+    labels = np.unique(np.concatenate([y_true, *predictions]))
+    subject_idx = np.searchsorted(unique, subjects)
+    true_idx = np.searchsorted(labels, y_true)
+    confusions = []
+    for pred in predictions:
+        cm = np.zeros((len(unique), len(labels), len(labels)), dtype=np.int64)
+        np.add.at(cm, (subject_idx, true_idx, np.searchsorted(labels, pred)), 1)
+        confusions.append(cm)
+    return unique, confusions
+
+
+def _kappa_from_confusion(cm: np.ndarray) -> float:
+    """κ de Cohen, même formule que `sklearn.metrics.cohen_kappa_score` ; les
+    classes absentes du tirage (ligne et colonne nulles) ne changent rien."""
+    expected = np.outer(cm.sum(axis=1), cm.sum(axis=0)) / cm.sum()
+    weights = 1 - np.eye(len(cm))
+    return float(1 - (weights * cm).sum() / (weights * expected).sum())
+
+
+def _macro_f1_from_confusion(cm: np.ndarray) -> float:
+    """F1 macro sur les classes présentes dans le tirage (vraies ou prédites),
+    comme `f1_score(average="macro")` ; F1 nul pour une classe jamais bien prédite."""
+    tp = np.diag(cm).astype(float)
+    fp, fn = cm.sum(axis=0) - tp, cm.sum(axis=1) - tp
+    present = (cm.sum(axis=0) + cm.sum(axis=1)) > 0
+    denominator = 2 * tp + fp + fn
+    f1 = np.divide(2 * tp, denominator, out=np.zeros_like(tp), where=denominator > 0)
+    return float(f1[present].mean())
+
+
+def _draw_counts(rng: np.random.Generator, unique: np.ndarray) -> np.ndarray:
+    """Nombre de fois que chaque sujet est tiré, avec le même appel aléatoire
+    qu'avant (mêmes tirages, donc mêmes intervalles pour une graine donnée)."""
+    drawn = rng.choice(unique, len(unique), replace=True)
+    return np.bincount(np.searchsorted(unique, drawn), minlength=len(unique))
+
+
 def bootstrap_ci(
     y_true: np.ndarray, y_pred: np.ndarray, subjects: np.ndarray, n_boot: int = 500, seed: int = 42
 ) -> dict:
@@ -223,13 +269,12 @@ def bootstrap_ci(
     bonne unité d'échantillonnage, les époques d'une même nuit n'étant pas
     indépendantes. Avec ~20 sujets de test, l'intervalle est large."""
     rng = np.random.default_rng(seed)
-    unique = np.array(sorted(set(subjects)))
-    rows_of = {s: np.flatnonzero(subjects == s) for s in unique}
+    unique, (confusions,) = _subject_confusions(y_true, [y_pred], subjects)
     kappas, f1s = [], []
     for _ in range(n_boot):
-        rows = np.concatenate([rows_of[s] for s in rng.choice(unique, len(unique), replace=True)])
-        kappas.append(cohen_kappa_score(y_true[rows], y_pred[rows]))
-        f1s.append(f1_score(y_true[rows], y_pred[rows], average="macro"))
+        cm = np.tensordot(_draw_counts(rng, unique), confusions, axes=1)
+        kappas.append(_kappa_from_confusion(cm))
+        f1s.append(_macro_f1_from_confusion(cm))
     return {
         "cohen_kappa": [float(np.percentile(kappas, 2.5)), float(np.percentile(kappas, 97.5))],
         "macro_f1": [float(np.percentile(f1s, 2.5)), float(np.percentile(f1s, 97.5))],
@@ -253,20 +298,21 @@ def paired_bootstrap_diff(
     difficiles) s'annule dans la différence. Un écart dont l'IC exclut 0 est
     significatif."""
     rng = np.random.default_rng(seed)
-    unique = np.array(sorted(set(subjects)))
-    rows_of = {s: np.flatnonzero(subjects == s) for s in unique}
-    metrics = {"cohen_kappa": cohen_kappa_score, "macro_f1": lambda t, p: f1_score(t, p, average="macro")}
+    unique, (conf_a, conf_b) = _subject_confusions(y_true, [pred_a, pred_b], subjects)
+    metrics = {"cohen_kappa": _kappa_from_confusion, "macro_f1": _macro_f1_from_confusion}
     draws = {name: [] for name in metrics}
     for _ in range(n_boot):
-        rows = np.concatenate([rows_of[s] for s in rng.choice(unique, len(unique), replace=True)])
+        counts = _draw_counts(rng, unique)
+        cm_a, cm_b = np.tensordot(counts, conf_a, axes=1), np.tensordot(counts, conf_b, axes=1)
         for name, metric in metrics.items():
-            draws[name].append(metric(y_true[rows], pred_b[rows]) - metric(y_true[rows], pred_a[rows]))
+            draws[name].append(metric(cm_b) - metric(cm_a))
+    full = {"cohen_kappa": cohen_kappa_score, "macro_f1": lambda t, p: f1_score(t, p, average="macro")}
     result = {
         name: {
-            "diff": float(metric(y_true, pred_b) - metric(y_true, pred_a)),
+            "diff": float(full[name](y_true, pred_b) - full[name](y_true, pred_a)),
             "ci95": [float(np.percentile(draws[name], 2.5)), float(np.percentile(draws[name], 97.5))],
         }
-        for name, metric in metrics.items()
+        for name in metrics
     }
     return result | {"n_boot": n_boot, "n_subjects": len(unique)}
 
