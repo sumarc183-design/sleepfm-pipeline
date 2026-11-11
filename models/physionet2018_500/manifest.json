@@ -1,0 +1,134 @@
+{
+  "export_format": 1,
+  "input": {
+    "embedding_dim": 1536,
+    "embeddings_manifest": {
+      "checkpoint_sha256": "a2fe7e5abf70f8a448c5577a085e0b7096332dcb1ec7497916e425446ac24575",
+      "preprocessing_version": 2,
+      "channels": [
+        "F3-M2",
+        "F4-M1",
+        "C3-M2",
+        "C4-M1",
+        "O1-M2",
+        "O2-M1",
+        "E1-M2",
+        "Chin1-Chin2",
+        "ABD",
+        "CHEST",
+        "AIRFLOW",
+        "SaO2",
+        "ECG"
+      ],
+      "sample_rate": 256
+    },
+    "groups": "BiGRU : (sujet, numéro d'époque[, début en s]) par ligne"
+  },
+  "probes": {
+    "logistic": {
+      "file": "logistic.joblib",
+      "classes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "needs_groups": false,
+      "hyperparameters": {
+        "C": 1.0,
+        "class_weight": "balanced",
+        "dual": false,
+        "fit_intercept": true,
+        "intercept_scaling": 1,
+        "l1_ratio": 0.0,
+        "max_iter": 1000,
+        "n_jobs": null,
+        "penalty": "deprecated",
+        "random_state": null,
+        "solver": "lbfgs",
+        "tol": 0.0001,
+        "verbose": 0,
+        "warm_start": false
+      }
+    },
+    "logistic_unweighted": {
+      "file": "logistic_unweighted.joblib",
+      "classes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "needs_groups": false,
+      "hyperparameters": {
+        "C": 1.0,
+        "class_weight": null,
+        "dual": false,
+        "fit_intercept": true,
+        "intercept_scaling": 1,
+        "l1_ratio": 0.0,
+        "max_iter": 1000,
+        "n_jobs": null,
+        "penalty": "deprecated",
+        "random_state": null,
+        "solver": "lbfgs",
+        "tol": 0.0001,
+        "verbose": 0,
+        "warm_start": false
+      }
+    },
+    "mlp": {
+      "file": "mlp.joblib",
+      "classes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "needs_groups": false,
+      "hyperparameters": {
+        "hidden_dim": null,
+        "epochs": null,
+        "lr": null,
+        "dropout": null,
+        "window": null,
+        "batch_size": null,
+        "seed": 42,
+        "context": null,
+        "class_weight": null
+      }
+    },
+    "sequence": {
+      "file": "sequence.joblib",
+      "classes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "needs_groups": true,
+      "hyperparameters": {
+        "hidden_dim": 128,
+        "epochs": 25,
+        "lr": 0.001,
+        "dropout": 0.3,
+        "window": 120,
+        "batch_size": 16,
+        "seed": 42,
+        "context": null,
+        "class_weight": null
+      }
+    }
+  },
+  "code_commit": "9a76c1573f985195a25f0d3a0a725f6430dee71a",
+  "versions": {
+    "python": "3.12.7",
+    "numpy": "1.26.4",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2"
+  }
+}

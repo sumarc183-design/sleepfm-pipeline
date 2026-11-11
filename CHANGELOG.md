@@ -21,6 +21,8 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Sondes figées versionnées** (`models/physionet2018_200` et `_500`, 15 Mo) : le dépôt cloné suffit
+  pour relancer la confirmation ; empreintes identiques à celles de `results/confirmation_physionet2018.json`.
 - **Bootstrap accéléré** (suggestion 4 de l'audit) : IC calculés depuis les matrices de confusion par sujet,
   mêmes tirages. Identiques sur données réelles (écart 0 sur la confirmation, 1e-16 sur le run à 500 sujets),
   environ 250 fois plus rapide (2 s au lieu de 500 s pour la confirmation).
