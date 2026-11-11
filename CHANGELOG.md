@@ -21,6 +21,9 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Comparaison exploratoire SleepFM / OSF** (`scripts/compare_osf_sleepfm.py`, critère fixé avant le calcul) :
+  sur les 100 nuits de test, mêmes fenêtres et mêmes sondes, OSF fait mieux (BiGRU κ 0,717 contre 0,664,
+  écart +0,052 [+0,032 ; +0,073]) malgré 4 canaux absents. À confirmer sur MESA ou SHHS.
 - **Entrée OSF depuis PhysioNet 2018** (option A, exploratoire) : `src/data/osf_physionet2018.py`
   (mêmes fenêtres que SleepFM, 8 canaux sur 12 et 4 mis à zéro, 64 Hz, z-score par nuit et bornage à ±6),
   `scripts/embed_osf_physionet2018.py` et notebook Kaggle `sleepfm_osf_physionet2018.ipynb`. Run non lancé ;

@@ -212,3 +212,22 @@ déjà consultés, ne servent pas ici.
 - **Contrôle** : les sondes SleepFM réentraînées doivent retrouver l'ordre de grandeur du run à
   500 sujets (κ 0,599 et 0,664) ; un écart notable serait signalé.
 - Résultat publié quel qu'il soit.
+
+### Option A : résultat (passage unique, critère fixé avant)
+
+`results/osf_vs_sleepfm_physionet2018.json` — 400 nuits d'entraînement, 100 nuits de test,
+89 132 époques, mêmes fenêtres, mêmes sondes pour les deux modèles.
+
+| Sonde | SleepFM κ | OSF κ | Écart OSF − SleepFM [IC 95 %] | F1 macro SleepFM / OSF |
+|---|---|---|---|---|
+| **BiGRU (critère principal)** | 0,664 | **0,717** | **+0,052 [+0,032 ; +0,073]** | 0,731 / 0,773 |
+| Logistique | 0,599 | 0,656 | +0,056 [+0,037 ; +0,077] | 0,686 / 0,730 |
+
+- **Lecture du critère : OSF au-dessus**, même avec 4 de ses 12 canaux absents.
+- 4 classes (N1 et N2 fusionnés) : BiGRU +0,050 [+0,030 ; +0,071], logistique +0,056 [+0,034 ; +0,082].
+- F1 par stade, BiGRU, SleepFM puis OSF : éveil 0,795 / 0,836 ; N1 0,505 / 0,571 ; N2 0,805 / 0,829 ;
+  N3 0,752 / 0,787 ; REM 0,801 / 0,841. OSF fait mieux sur les 5 stades.
+- **Contrôle** : les sondes SleepFM réentraînées retrouvent exactement le run à 500 sujets (κ 0,599 et 0,664).
+- **Limites** : exploratoire. Une seule cohorte, normalisation d'OSF supposée. Les 100 nuits de test
+  étaient déjà ouvertes, et les sondes ont été mises au point sur SleepFM, ce qui ne favorise pas OSF.
+  À confirmer sur MESA ou SHHS (option B), avec tous les canaux.

@@ -1,0 +1,221 @@
+{
+  "caveat": "4 des 12 canaux OSF absents (mis à zéro) ; normalisation par nuit supposée ; exploratoire",
+  "difference_osf_minus_sleepfm": {
+    "logistic": {
+      "five_classes": {
+        "cohen_kappa": {
+          "ci95": [
+            0.037272562297395055,
+            0.07682661729912826
+          ],
+          "diff": 0.05620629539699018
+        },
+        "macro_f1": {
+          "ci95": [
+            0.029518130146090317,
+            0.06118490597799013
+          ],
+          "diff": 0.044556584974262514
+        },
+        "n_boot": 1000,
+        "n_subjects": 100
+      },
+      "four_classes": {
+        "cohen_kappa": {
+          "ci95": [
+            0.03416371982653849,
+            0.08233625404805392
+          ],
+          "diff": 0.0564368060535021
+        },
+        "macro_f1": {
+          "ci95": [
+            0.024246644754244782,
+            0.05886192245105294
+          ],
+          "diff": 0.04000497758883381
+        },
+        "n_boot": 1000,
+        "n_subjects": 100
+      }
+    },
+    "sequence": {
+      "five_classes": {
+        "cohen_kappa": {
+          "ci95": [
+            0.03232014395162778,
+            0.07276226467503631
+          ],
+          "diff": 0.052480614215476895
+        },
+        "macro_f1": {
+          "ci95": [
+            0.025598767734159925,
+            0.058044984312651406
+          ],
+          "diff": 0.04143690381807863
+        },
+        "n_boot": 1000,
+        "n_subjects": 100
+      },
+      "four_classes": {
+        "cohen_kappa": {
+          "ci95": [
+            0.029921445960355435,
+            0.07074128003263211
+          ],
+          "diff": 0.04955018668124944
+        },
+        "macro_f1": {
+          "ci95": [
+            0.017005200507463236,
+            0.05192305502187622
+          ],
+          "diff": 0.03364051389716671
+        },
+        "n_boot": 1000,
+        "n_subjects": 100
+      }
+    }
+  },
+  "environment": {
+    "code_commit": "feb067d33825a0f0b6ad9ccf61e6572834e50cb5",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "xgboost": "3.4.1"
+  },
+  "kind": "comparaison exploratoire SleepFM / OSF, PhysioNet 2018, option A",
+  "models": {
+    "osf/logistic": {
+      "cohen_kappa": 0.6556214145205465,
+      "cohen_kappa_4": 0.691892100621667,
+      "f1_by_stage": {
+        "nonrem1": 0.5480639386992432,
+        "nonrem2": 0.7700412928947743,
+        "nonrem3": 0.7602606414487603,
+        "rem": 0.7758235269307014,
+        "wake": 0.796465111092526
+      },
+      "macro_f1": 0.7301309022132012
+    },
+    "osf/sequence": {
+      "cohen_kappa": 0.7167263122380848,
+      "cohen_kappa_4": 0.7560924573101012,
+      "f1_by_stage": {
+        "nonrem1": 0.571470255680782,
+        "nonrem2": 0.8285623776062666,
+        "nonrem3": 0.7870769535701898,
+        "rem": 0.8411840411840412,
+        "wake": 0.8362350954943547
+      },
+      "macro_f1": 0.7729057447071269
+    },
+    "sleepfm/logistic": {
+      "cohen_kappa": 0.5994151191235563,
+      "cohen_kappa_4": 0.6354552945681649,
+      "f1_by_stage": {
+        "nonrem1": 0.49982296327292625,
+        "nonrem2": 0.7165331531705433,
+        "nonrem3": 0.7427176292305102,
+        "rem": 0.698608093973771,
+        "wake": 0.7701897465469424
+      },
+      "macro_f1": 0.6855743172389387
+    },
+    "sleepfm/sequence": {
+      "cohen_kappa": 0.6642456980226079,
+      "cohen_kappa_4": 0.7065422706288518,
+      "f1_by_stage": {
+        "nonrem1": 0.504601226993865,
+        "nonrem2": 0.8051621281603831,
+        "nonrem3": 0.7517035990106506,
+        "rem": 0.80086663456909,
+        "wake": 0.7950106157112526
+      },
+      "macro_f1": 0.7314688408890483
+    }
+  },
+  "nights": {
+    "test": 100,
+    "train": 400
+  },
+  "osf_manifest": {
+    "embedding": "CLS",
+    "extraction_preprocessing_version": 2,
+    "mapping": {
+      "ABD": "ABD",
+      "ECG": "ECG",
+      "EEG_C3_A2": "C3-M2",
+      "EEG_C4_A1": "C4-M1",
+      "EMG_Chin": "Chin1-Chin2",
+      "EOG_E1_A2": "E1-M2",
+      "NP": "AIRFLOW",
+      "THX": "CHEST"
+    },
+    "model": "OSF",
+    "normalization": "z-score par canal sur la nuit, bornage à ±6",
+    "osf_channels": [
+      "ECG",
+      "EMG_Chin",
+      "EMG_LLeg",
+      "EMG_RLeg",
+      "ABD",
+      "THX",
+      "NP",
+      "SN",
+      "EOG_E1_A2",
+      "EOG_E2_A1",
+      "EEG_C3_A2",
+      "EEG_C4_A1"
+    ],
+    "osf_checkpoint_sha256": "c51190b1942556969af3c3d63c2e59430ddb1ea0377c50ea87df83712fc31857",
+    "preparation_version": 1,
+    "resampling": "scipy.signal.resample_poly 1/4 par époque",
+    "sample_rate": 64,
+    "uncertain": [
+      "NP"
+    ],
+    "zero_filled": [
+      "EMG_LLeg",
+      "EMG_RLeg",
+      "SN",
+      "EOG_E2_A1"
+    ]
+  },
+  "primary": {
+    "kappa_osf_minus_sleepfm_bigru_5_classes": {
+      "ci95": [
+        0.03232014395162778,
+        0.07276226467503631
+      ],
+      "diff": 0.052480614215476895
+    },
+    "reading": "OSF au-dessus"
+  },
+  "sleepfm_manifest": {
+    "channels": [
+      "F3-M2",
+      "F4-M1",
+      "C3-M2",
+      "C4-M1",
+      "O1-M2",
+      "O2-M1",
+      "E1-M2",
+      "Chin1-Chin2",
+      "ABD",
+      "CHEST",
+      "AIRFLOW",
+      "SaO2",
+      "ECG"
+    ],
+    "checkpoint_sha256": "a2fe7e5abf70f8a448c5577a085e0b7096332dcb1ec7497916e425446ac24575",
+    "preprocessing_version": 2,
+    "sample_rate": 256
+  },
+  "split_sha256": "d4b33aa2aacd556b2f248883a41fe9d9d065e6a8a458d005e5d642dd9554ef72",
+  "test_epochs": 89132
+}

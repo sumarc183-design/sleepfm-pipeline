@@ -89,6 +89,14 @@ run à 500 sujets, sans entraînement.
 - **Limite** : les transitions ne sont pas mesurées sur cette grille ; nuits de test déjà
   ouvertes, même cohorte.
 
+## Comparaison exploratoire avec OSF
+
+Mêmes 100 nuits de test, mêmes fenêtres et mêmes sondes ; seule la représentation change
+(critère fixé avant le calcul, `docs/OSF_COMPARISON.md`). Avec le BiGRU, **OSF obtient κ 0,717
+contre 0,664 pour SleepFM, écart +0,052 [+0,032 ; +0,073]**, et fait mieux sur les 5 stades,
+alors que 4 de ses 12 canaux manquent dans PhysioNet 2018. Résultat exploratoire, à confirmer
+sur MESA ou SHHS : [détail](OSF_COMPARISON.md#option-a--résultat-passage-unique-critère-fixé-avant).
+
 ## Analyses détaillées du run à 100 sujets
 
 Les analyses ci-dessous portent sur le run à 100 sujets du
