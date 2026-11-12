@@ -44,7 +44,7 @@ from src.models.probe_export import run_environment
 
 MODELS = ("sleepfm", "osf")
 N_BOOT, SEED = 1000, 42
-PROBABILITY_TOLERANCE = 1e-6
+PROBABILITY_TOLERANCE = 1e-5
 REFERENCE_TOLERANCE = 0.01
 MIN_EVENT_OVERLAP_S = 10.0
 CODE = [
@@ -283,7 +283,9 @@ def run(args) -> dict:
                 evaluated = windows["y"] >= 0
                 expected = np.array([archive[(subject, int(i))] for i in windows["epoch_idx"][evaluated]])
                 gap = float(np.abs(probability[evaluated] - expected).max())
-                if gap > PROBABILITY_TOLERANCE:
+                threshold = sources["thresholds"][model]
+                crossed = int(((probability[evaluated] >= threshold) != (expected >= threshold)).sum())
+                if gap > PROBABILITY_TOLERANCE or crossed:
                     raise ValueError(f"Probabilités {model} différentes des archives : {subject} ({gap:.2e})")
                 max_gap, checked = max(max_gap, gap), checked + int(evaluated.sum())
                 rate, probability_sum, _ = positive_rate(probability, sources["thresholds"][model])

@@ -72,8 +72,11 @@ que le plan laissait ouverts, sans en changer les critères.
   un stade annoté, identiques pour SleepFM et OSF), labels respiratoires exclus compris. Les
   durées sans fenêtre en cache ne sont ni prédites ni comptées dans les heures.
 - **Seuils** : ceux archivés avec les modèles (SleepFM 0,6934 ; OSF 0,7636).
-- **Contrôle des probabilités** : sur les fenêtres déjà évaluées, écart maximal ≤ 1e-6 avec
-  les archives ; sinon arrêt.
+- **Contrôle des probabilités** : sur les fenêtres déjà évaluées, écart maximal ≤ 1e-5 avec
+  les archives **et aucune fenêtre classée différemment au seuil** ; sinon arrêt. *Modifié
+  avant toute lecture du test :* la tolérance initiale de 1e-6 a arrêté le premier lancement sur
+  la validation (tr03-0672, SleepFM, 1,19e-6, arrondi des archives en float32 ; 3 nuits au-dessus
+  de 1e-6, aucun franchissement de seuil). Aucun résultat écrit.
 - **IAH de référence** : réimplémentation de `compter.py` dans le dépôt ; contrôle : identique
   à `iah_500_sujets_ouverts.csv` (à 0,01 près) pour les 140 nuits utilisées ; sinon arrêt.
 - **Nuits écartées** : moins de 1 h de sommeil expert, en validation comme en test.
