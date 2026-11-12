@@ -1,0 +1,8 @@
+{
+  "status": "arrêt avant scores",
+  "plan_sha256": "376c850893089c8b70f8d5e09350ea5f9d75681e0377ef4c8ef19dea03c4944f",
+  "subject": "tr03-0052",
+  "uniform_label_mismatches": 84,
+  "observed_duration_difference_s": 0.005,
+  "action": "utiliser HDF5 et séparer les fenêtres à un échantillon minoritaire"
+}

@@ -1,0 +1,1015 @@
+{
+  "artifacts": {
+    "code.zip": {
+      "file": "stage_boundaries_physionet2018.code.zip",
+      "sha256": "4e70542f042b5cc73b2e0dc7f767cc3bb1c5419a5151a14bfba0e7c240a1f6ef"
+    },
+    "groups.npz": {
+      "file": "stage_boundaries_physionet2018.groups.npz",
+      "sha256": "d1eb3e2148a6693b9cb974c4805070ebf4e340c72463212f17b3a5268fd464f8"
+    }
+  },
+  "bootstrap": {
+    "n_boot": 500,
+    "n_subjects": 100,
+    "seed": 42,
+    "unit": "subject"
+  },
+  "by_stage": {
+    "nonrem1": {
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 2062,
+            "rate": 0.4731528223955943
+          },
+          "minority": {
+            "count": 1458,
+            "rate": 0.33455713630105555
+          },
+          "other": {
+            "count": 838,
+            "rate": 0.19229004130335017
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 1666,
+            "rate": 0.3822854520422212
+          },
+          "minority": {
+            "count": 2175,
+            "rate": 0.49908214777420834
+          },
+          "other": {
+            "count": 517,
+            "rate": 0.11863240018357045
+          }
+        }
+      },
+      "nights": 100,
+      "uniform_windows": 10401,
+      "windows": 4358
+    },
+    "nonrem2": {
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1694,
+            "rate": 0.44921771413418193
+          },
+          "minority": {
+            "count": 1400,
+            "rate": 0.37125430920180325
+          },
+          "other": {
+            "count": 677,
+            "rate": 0.17952797666401485
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 2627,
+            "rate": 0.6966321930522408
+          },
+          "minority": {
+            "count": 852,
+            "rate": 0.22593476531424025
+          },
+          "other": {
+            "count": 292,
+            "rate": 0.07743304163351895
+          }
+        }
+      },
+      "nights": 100,
+      "uniform_windows": 31471,
+      "windows": 3771
+    },
+    "nonrem3": {
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 813,
+            "rate": 0.6791979949874687
+          },
+          "minority": {
+            "count": 313,
+            "rate": 0.26148705096073516
+          },
+          "other": {
+            "count": 71,
+            "rate": 0.059314954051796154
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 490,
+            "rate": 0.4093567251461988
+          },
+          "minority": {
+            "count": 649,
+            "rate": 0.5421888053467001
+          },
+          "other": {
+            "count": 58,
+            "rate": 0.04845446950710108
+          }
+        }
+      },
+      "nights": 90,
+      "uniform_windows": 8936,
+      "windows": 1197
+    },
+    "rem": {
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 425,
+            "rate": 0.6213450292397661
+          },
+          "minority": {
+            "count": 140,
+            "rate": 0.2046783625730994
+          },
+          "other": {
+            "count": 119,
+            "rate": 0.1739766081871345
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 408,
+            "rate": 0.5964912280701754
+          },
+          "minority": {
+            "count": 138,
+            "rate": 0.20175438596491227
+          },
+          "other": {
+            "count": 138,
+            "rate": 0.20175438596491227
+          }
+        }
+      },
+      "nights": 92,
+      "uniform_windows": 10060,
+      "windows": 684
+    },
+    "wake": {
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1489,
+            "rate": 0.6004032258064517
+          },
+          "minority": {
+            "count": 782,
+            "rate": 0.3153225806451613
+          },
+          "other": {
+            "count": 209,
+            "rate": 0.0842741935483871
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 1435,
+            "rate": 0.5786290322580645
+          },
+          "minority": {
+            "count": 709,
+            "rate": 0.28588709677419355
+          },
+          "other": {
+            "count": 336,
+            "rate": 0.13548387096774195
+          }
+        }
+      },
+      "nights": 100,
+      "uniform_windows": 15758,
+      "windows": 2480
+    }
+  },
+  "caveat": "Descriptif sur nuits déjà examinées ; aucun signal relu, aucune cause clinique établie",
+  "code_sha256": "443eac646ee023aa1045f1da17437c813aff9cc504d30c212f17c680aaeed367",
+  "command": [
+    "scripts/analyse_stage_boundaries.py",
+    "--out",
+    "results/stage_boundaries_physionet2018"
+  ],
+  "counts": {
+    "near_uniform": 12490,
+    "partial_undefined": 116,
+    "transition_majority": 0,
+    "transition_no_majority": 0,
+    "undefined": 2715,
+    "uniform": 76626
+  },
+  "environment": {
+    "code_commit": "59efe4b106124f265586dbedafd53ed3f757adef",
+    "code_modified": true,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "xgboost": null
+  },
+  "kind": "analyse descriptive des frontières de stade",
+  "neighbor_match": {
+    "following": 12488,
+    "previous": 3610
+  },
+  "nights": 100,
+  "overall": {
+    "models": {
+      "logistic": {
+        "majority": {
+          "ci95": [
+            0.5013992300770852,
+            0.5373297118295813
+          ],
+          "count": 6483,
+          "rate": 0.5190552441953563,
+          "valid_draws": 500
+        },
+        "minority": {
+          "ci95": [
+            0.31320269938485296,
+            0.3425209304304039
+          ],
+          "count": 4093,
+          "rate": 0.3277021617293835,
+          "valid_draws": 500
+        },
+        "other": {
+          "ci95": [
+            0.13420482372393797,
+            0.1739212317702488
+          ],
+          "count": 1914,
+          "rate": 0.1532425940752602,
+          "valid_draws": 500
+        }
+      },
+      "sequence": {
+        "majority": {
+          "ci95": [
+            0.5145222136720285,
+            0.5458254998577863
+          ],
+          "count": 6626,
+          "rate": 0.5305044035228182,
+          "valid_draws": 500
+        },
+        "minority": {
+          "ci95": [
+            0.3498674018269382,
+            0.37402219776187856
+          ],
+          "count": 4523,
+          "rate": 0.3621297037630104,
+          "valid_draws": 500
+        },
+        "other": {
+          "ci95": [
+            0.09037228057446205,
+            0.12708142914366533
+          ],
+          "count": 1341,
+          "rate": 0.10736589271417134,
+          "valid_draws": 500
+        }
+      }
+    },
+    "nights": 100,
+    "windows": 12490
+  },
+  "pairs_majority_minority": {
+    "nonrem1/nonrem2": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1160,
+            "rate": 0.46418567426970786
+          },
+          "minority": {
+            "count": 773,
+            "rate": 0.3093237294917967
+          },
+          "other": {
+            "count": 566,
+            "rate": 0.2264905962384954
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 993,
+            "rate": 0.39735894357743096
+          },
+          "minority": {
+            "count": 1305,
+            "rate": 0.5222088835534213
+          },
+          "other": {
+            "count": 201,
+            "rate": 0.08043217286914765
+          }
+        }
+      },
+      "nights": 100,
+      "windows": 2499
+    },
+    "nonrem1/nonrem3": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1,
+            "rate": 1.0
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 0,
+            "rate": 0.0
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 1,
+            "rate": 1.0
+          }
+        }
+      },
+      "nights": 1,
+      "windows": 1
+    },
+    "nonrem1/rem": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 79,
+            "rate": 0.25
+          },
+          "minority": {
+            "count": 189,
+            "rate": 0.5981012658227848
+          },
+          "other": {
+            "count": 48,
+            "rate": 0.1518987341772152
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 68,
+            "rate": 0.21518987341772153
+          },
+          "minority": {
+            "count": 186,
+            "rate": 0.5886075949367089
+          },
+          "other": {
+            "count": 62,
+            "rate": 0.1962025316455696
+          }
+        }
+      },
+      "nights": 67,
+      "windows": 316
+    },
+    "nonrem1/wake": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 822,
+            "rate": 0.5330739299610895
+          },
+          "minority": {
+            "count": 496,
+            "rate": 0.3216601815823606
+          },
+          "other": {
+            "count": 224,
+            "rate": 0.14526588845654995
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 605,
+            "rate": 0.39234760051880674
+          },
+          "minority": {
+            "count": 684,
+            "rate": 0.44357976653696496
+          },
+          "other": {
+            "count": 253,
+            "rate": 0.16407263294422827
+          }
+        }
+      },
+      "nights": 99,
+      "windows": 1542
+    },
+    "nonrem2/nonrem1": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 688,
+            "rate": 0.4476252439817827
+          },
+          "minority": {
+            "count": 501,
+            "rate": 0.3259596616785947
+          },
+          "other": {
+            "count": 348,
+            "rate": 0.22641509433962265
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 1109,
+            "rate": 0.7215354586857514
+          },
+          "minority": {
+            "count": 280,
+            "rate": 0.18217306441119063
+          },
+          "other": {
+            "count": 148,
+            "rate": 0.09629147690305791
+          }
+        }
+      },
+      "nights": 99,
+      "windows": 1537
+    },
+    "nonrem2/nonrem3": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 483,
+            "rate": 0.40350877192982454
+          },
+          "minority": {
+            "count": 676,
+            "rate": 0.5647451963241437
+          },
+          "other": {
+            "count": 38,
+            "rate": 0.031746031746031744
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 817,
+            "rate": 0.6825396825396826
+          },
+          "minority": {
+            "count": 378,
+            "rate": 0.3157894736842105
+          },
+          "other": {
+            "count": 2,
+            "rate": 0.001670843776106934
+          }
+        }
+      },
+      "nights": 90,
+      "windows": 1197
+    },
+    "nonrem2/rem": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 185,
+            "rate": 0.5346820809248555
+          },
+          "minority": {
+            "count": 129,
+            "rate": 0.37283236994219654
+          },
+          "other": {
+            "count": 32,
+            "rate": 0.09248554913294797
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 224,
+            "rate": 0.6473988439306358
+          },
+          "minority": {
+            "count": 109,
+            "rate": 0.315028901734104
+          },
+          "other": {
+            "count": 13,
+            "rate": 0.03757225433526012
+          }
+        }
+      },
+      "nights": 90,
+      "windows": 346
+    },
+    "nonrem2/wake": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 338,
+            "rate": 0.48914616497829233
+          },
+          "minority": {
+            "count": 94,
+            "rate": 0.13603473227206947
+          },
+          "other": {
+            "count": 259,
+            "rate": 0.3748191027496382
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 477,
+            "rate": 0.6903039073806078
+          },
+          "minority": {
+            "count": 85,
+            "rate": 0.12301013024602026
+          },
+          "other": {
+            "count": 129,
+            "rate": 0.18668596237337193
+          }
+        }
+      },
+      "nights": 93,
+      "windows": 691
+    },
+    "nonrem3/nonrem1": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 30,
+            "rate": 0.6666666666666666
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 15,
+            "rate": 0.3333333333333333
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 20,
+            "rate": 0.4444444444444444
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 25,
+            "rate": 0.5555555555555556
+          }
+        }
+      },
+      "nights": 29,
+      "windows": 45
+    },
+    "nonrem3/nonrem2": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 728,
+            "rate": 0.6753246753246753
+          },
+          "minority": {
+            "count": 310,
+            "rate": 0.287569573283859
+          },
+          "other": {
+            "count": 40,
+            "rate": 0.03710575139146568
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 425,
+            "rate": 0.3942486085343228
+          },
+          "minority": {
+            "count": 648,
+            "rate": 0.601113172541744
+          },
+          "other": {
+            "count": 5,
+            "rate": 0.00463821892393321
+          }
+        }
+      },
+      "nights": 89,
+      "windows": 1078
+    },
+    "nonrem3/rem": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 10,
+            "rate": 0.9090909090909091
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 1,
+            "rate": 0.09090909090909091
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 10,
+            "rate": 0.9090909090909091
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 1,
+            "rate": 0.09090909090909091
+          }
+        }
+      },
+      "nights": 7,
+      "windows": 11
+    },
+    "nonrem3/wake": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 45,
+            "rate": 0.7142857142857143
+          },
+          "minority": {
+            "count": 3,
+            "rate": 0.047619047619047616
+          },
+          "other": {
+            "count": 15,
+            "rate": 0.23809523809523808
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 35,
+            "rate": 0.5555555555555556
+          },
+          "minority": {
+            "count": 1,
+            "rate": 0.015873015873015872
+          },
+          "other": {
+            "count": 27,
+            "rate": 0.42857142857142855
+          }
+        }
+      },
+      "nights": 43,
+      "windows": 63
+    },
+    "rem/nonrem1": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 278,
+            "rate": 0.6603325415676959
+          },
+          "minority": {
+            "count": 80,
+            "rate": 0.19002375296912113
+          },
+          "other": {
+            "count": 63,
+            "rate": 0.1496437054631829
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 274,
+            "rate": 0.6508313539192399
+          },
+          "minority": {
+            "count": 57,
+            "rate": 0.13539192399049882
+          },
+          "other": {
+            "count": 90,
+            "rate": 0.21377672209026127
+          }
+        }
+      },
+      "nights": 74,
+      "windows": 421
+    },
+    "rem/nonrem2": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 58,
+            "rate": 0.5225225225225225
+          },
+          "minority": {
+            "count": 38,
+            "rate": 0.34234234234234234
+          },
+          "other": {
+            "count": 15,
+            "rate": 0.13513513513513514
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 43,
+            "rate": 0.38738738738738737
+          },
+          "minority": {
+            "count": 55,
+            "rate": 0.4954954954954955
+          },
+          "other": {
+            "count": 13,
+            "rate": 0.11711711711711711
+          }
+        }
+      },
+      "nights": 47,
+      "windows": 111
+    },
+    "rem/nonrem3": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1,
+            "rate": 1.0
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 0,
+            "rate": 0.0
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 1,
+            "rate": 1.0
+          }
+        }
+      },
+      "nights": 1,
+      "windows": 1
+    },
+    "rem/wake": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 88,
+            "rate": 0.5827814569536424
+          },
+          "minority": {
+            "count": 22,
+            "rate": 0.1456953642384106
+          },
+          "other": {
+            "count": 41,
+            "rate": 0.271523178807947
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 91,
+            "rate": 0.6026490066225165
+          },
+          "minority": {
+            "count": 26,
+            "rate": 0.17218543046357615
+          },
+          "other": {
+            "count": 34,
+            "rate": 0.2251655629139073
+          }
+        }
+      },
+      "nights": 62,
+      "windows": 151
+    },
+    "wake/nonrem1": {
+      "enough_for_description": true,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1431,
+            "rate": 0.6048182586644125
+          },
+          "minority": {
+            "count": 773,
+            "rate": 0.32671174978867284
+          },
+          "other": {
+            "count": 162,
+            "rate": 0.06846999154691462
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 1398,
+            "rate": 0.5908706677937448
+          },
+          "minority": {
+            "count": 674,
+            "rate": 0.2848689771766695
+          },
+          "other": {
+            "count": 294,
+            "rate": 0.1242603550295858
+          }
+        }
+      },
+      "nights": 100,
+      "windows": 2366
+    },
+    "wake/nonrem2": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 46,
+            "rate": 0.46464646464646464
+          },
+          "minority": {
+            "count": 7,
+            "rate": 0.0707070707070707
+          },
+          "other": {
+            "count": 46,
+            "rate": 0.46464646464646464
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 28,
+            "rate": 0.2828282828282828
+          },
+          "minority": {
+            "count": 30,
+            "rate": 0.30303030303030304
+          },
+          "other": {
+            "count": 41,
+            "rate": 0.41414141414141414
+          }
+        }
+      },
+      "nights": 30,
+      "windows": 99
+    },
+    "wake/nonrem3": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 1,
+            "rate": 1.0
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 0,
+            "rate": 0.0
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 1,
+            "rate": 1.0
+          },
+          "minority": {
+            "count": 0,
+            "rate": 0.0
+          },
+          "other": {
+            "count": 0,
+            "rate": 0.0
+          }
+        }
+      },
+      "nights": 1,
+      "windows": 1
+    },
+    "wake/rem": {
+      "enough_for_description": false,
+      "models": {
+        "logistic": {
+          "majority": {
+            "count": 11,
+            "rate": 0.7857142857142857
+          },
+          "minority": {
+            "count": 2,
+            "rate": 0.14285714285714285
+          },
+          "other": {
+            "count": 1,
+            "rate": 0.07142857142857142
+          }
+        },
+        "sequence": {
+          "majority": {
+            "count": 8,
+            "rate": 0.5714285714285714
+          },
+          "minority": {
+            "count": 5,
+            "rate": 0.35714285714285715
+          },
+          "other": {
+            "count": 1,
+            "rate": 0.07142857142857142
+          }
+        }
+      },
+      "nights": 9,
+      "windows": 14
+    }
+  },
+  "plan_sha256": "a71f48eeaaa3a732d20c91e2bbeabcc90b2940fcc9d7454962bddb10b10c0d6f",
+  "position": {
+    "first": 0,
+    "inside": 0,
+    "last": 12490
+  },
+  "source_artifacts": {
+    "code.zip": {
+      "file": "raw_grid_transitions_physionet2018.code.zip",
+      "sha256": "580ae03f020e0ef65d472f65b17065018249714c534f21a64077823866f0e289"
+    },
+    "inputs.json": {
+      "file": "raw_grid_transitions_physionet2018.inputs.json",
+      "sha256": "d32acca5158a0640d5eb537f5bbf3b5b312d24ad2d1c8c668a53caa0bf6d52db"
+    },
+    "predictions.npz": {
+      "file": "raw_grid_transitions_physionet2018.predictions.npz",
+      "sha256": "a75dba66221421584c0ca3d11258b16c30a2816d7d554ea1939b20299d58c2d9"
+    }
+  },
+  "source_sha256": "b73c7f5cf35703e4ba45bbb74851e8949a319f045d539a0ea6cc11ff3763cd8d",
+  "status": "terminé",
+  "windows": 91947
+}

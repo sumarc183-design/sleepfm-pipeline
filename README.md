@@ -61,6 +61,11 @@ capteurs et nuits difficiles : **[résultats détaillés](docs/RESULTATS.md)**.
 
 Détail : [ROADMAP](docs/ROADMAP.md).
 
+**Exploration apnées/hypopnées** : baseline, comparaison OSF/SleepFM et
+[démonstration comparative d'une nuit](results/demo_night_comparison.html)
+(HTML à télécharger et ouvrir localement). Commandes dans le [guide](docs/GUIDE.md#baseline-respiratoire-et-démonstration-dune-nuit),
+résultats dans [RESULTATS.md](docs/RESULTATS.md#exploration-apnéeshypopnées-12-novembre-2026).
+
 ## Démarrage rapide
 
 **Sans installation** : bouton *Open in Colab* ci-dessus, `GPU T4`, `Tout exécuter`. Quota Colab épuisé : bouton *Open in Kaggle*, même notebook ([détails](docs/GUIDE.md#kaggle-autre-gpu-gratuit)).
@@ -113,7 +118,7 @@ docs/             résultats, guide, carte du modèle, protocole, roadmap, accè
 
 | Document | Contenu |
 |---|---|
-| [RESULTATS.md](docs/RESULTATS.md) | Tous les résultats, comparaison à l'article, limites |
+| [RESULTATS.md](docs/RESULTATS.md) | Tous les résultats, comparaison à l'article, limites ; comptes rendus datés dans [docs/resultats/](docs/resultats/) |
 | [GUIDE.md](docs/GUIDE.md) | Installation, modes d'exécution, sondes, tests, pièges connus |
 | [MODEL_CARD.md](docs/MODEL_CARD.md) | Usage prévu, données, métriques, limites |
 | [PROTOCOLE_CONFIRMATION.md](docs/PROTOCOLE_CONFIRMATION.md) | Protocole et résultat de la confirmation sur les 494 sujets réservés |

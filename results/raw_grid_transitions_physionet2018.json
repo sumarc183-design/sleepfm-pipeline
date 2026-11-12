@@ -1,0 +1,510 @@
+{
+  "artifacts": {
+    "code.zip": {
+      "file": "raw_grid_transitions_physionet2018.code.zip",
+      "sha256": "580ae03f020e0ef65d472f65b17065018249714c534f21a64077823866f0e289"
+    },
+    "inputs.json": {
+      "file": "raw_grid_transitions_physionet2018.inputs.json",
+      "sha256": "d32acca5158a0640d5eb537f5bbf3b5b312d24ad2d1c8c668a53caa0bf6d52db"
+    },
+    "predictions.npz": {
+      "file": "raw_grid_transitions_physionet2018.predictions.npz",
+      "sha256": "a75dba66221421584c0ca3d11258b16c30a2816d7d554ea1939b20299d58c2d9"
+    }
+  },
+  "caveat": "Majorité définie pour l'évaluation, sujets déjà examinés ; ni confirmation ni cotation clinique",
+  "code_files": {
+    "scripts/evaluate_grid_transitions.py": "b2b6e065fbc8680caae78bc37b54ac48364a15c1a9c3eedaef91207ca2d49671",
+    "src/data/majority_grid_labels.py": "37f93d9370ff0ccae518eecedba2732969a3f1e41105483486d0eb485bc008dc"
+  },
+  "command": [
+    "scripts/evaluate_grid_transitions.py",
+    "--out",
+    "results/raw_grid_transitions_physionet2018"
+  ],
+  "counts": {
+    "near_uniform": 12490,
+    "partial_undefined": 116,
+    "transition_majority": 0,
+    "transition_no_majority": 0,
+    "undefined": 2715,
+    "uniform": 76626
+  },
+  "embedding_manifest": {
+    "channels": [
+      "F3-M2",
+      "F4-M1",
+      "C3-M2",
+      "C4-M1",
+      "O1-M2",
+      "O2-M1",
+      "E1-M2",
+      "Chin1-Chin2",
+      "ABD",
+      "CHEST",
+      "AIRFLOW",
+      "SaO2",
+      "ECG"
+    ],
+    "checkpoint_sha256": "a2fe7e5abf70f8a448c5577a085e0b7096332dcb1ec7497916e425446ac24575",
+    "epoch_selection": "fixed_30s_from_recording_start",
+    "preprocessing_version": 2,
+    "sample_rate": 256
+  },
+  "environment": {
+    "code_commit": "59efe4b106124f265586dbedafd53ed3f757adef",
+    "code_modified": true,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "xgboost": null
+  },
+  "kind": "évaluation exploratoire des transitions sur grille brute",
+  "metrics": {
+    "logistic": {
+      "all_majority": {
+        "accuracy": 0.6908074868710444,
+        "ci95": {
+          "cohen_kappa": [
+            0.5701880391315381,
+            0.6270172940564132
+          ],
+          "macro_f1": [
+            0.6637551124702675,
+            0.7075165195232938
+          ],
+          "n_boot": 500,
+          "n_subjects": 100
+        },
+        "classes_present": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "cohen_kappa": 0.5995256297632823,
+        "confusion_matrix": [
+          [
+            14019,
+            3270,
+            671,
+            55,
+            223
+          ],
+          [
+            2717,
+            7765,
+            2129,
+            41,
+            2107
+          ],
+          [
+            997,
+            4328,
+            22270,
+            4674,
+            2973
+          ],
+          [
+            84,
+            24,
+            1081,
+            8822,
+            122
+          ],
+          [
+            341,
+            915,
+            770,
+            32,
+            8686
+          ]
+        ],
+        "f1_by_stage": [
+          0.770359380151665,
+          0.499983902643186,
+          0.7165033862587069,
+          0.7426863661236688,
+          0.6989338161335747
+        ],
+        "macro_f1": 0.6856933702621604,
+        "nights": 100,
+        "windows": 89116
+      },
+      "near_uniform": {
+        "accuracy": 0.5190552441953563,
+        "ci95": {
+          "cohen_kappa": [
+            0.34567496411562776,
+            0.39075307046608837
+          ],
+          "macro_f1": [
+            0.49500031603550004,
+            0.528591016481583
+          ],
+          "n_boot": 500,
+          "n_subjects": 100
+        },
+        "classes_present": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "cohen_kappa": 0.36888010706138497,
+        "confusion_matrix": [
+          [
+            1489,
+            817,
+            105,
+            4,
+            65
+          ],
+          [
+            662,
+            2062,
+            944,
+            26,
+            664
+          ],
+          [
+            239,
+            675,
+            1694,
+            787,
+            376
+          ],
+          [
+            20,
+            13,
+            336,
+            813,
+            15
+          ],
+          [
+            47,
+            126,
+            82,
+            4,
+            425
+          ]
+        ],
+        "f1_by_stage": [
+          0.6032003240834515,
+          0.512234505030431,
+          0.4887478361223312,
+          0.5743553514659131,
+          0.3813369223867205
+        ],
+        "macro_f1": 0.5119749878177695,
+        "nights": 100,
+        "windows": 12490
+      },
+      "transitions": null,
+      "uniform": {
+        "accuracy": 0.7188030172526296,
+        "ci95": {
+          "cohen_kappa": [
+            0.6026440554101739,
+            0.6641088279460414
+          ],
+          "macro_f1": [
+            0.6817297311041,
+            0.7305869823087304
+          ],
+          "n_boot": 500,
+          "n_subjects": 100
+        },
+        "classes_present": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "cohen_kappa": 0.6340470269230011,
+        "confusion_matrix": [
+          [
+            12530,
+            2453,
+            566,
+            51,
+            158
+          ],
+          [
+            2055,
+            5703,
+            1185,
+            15,
+            1443
+          ],
+          [
+            758,
+            3653,
+            20576,
+            3887,
+            2597
+          ],
+          [
+            64,
+            11,
+            745,
+            8009,
+            107
+          ],
+          [
+            294,
+            789,
+            688,
+            28,
+            8261
+          ]
+        ],
+        "f1_by_stage": [
+          0.7965923900950443,
+          0.49569752281616686,
+          0.745088808821133,
+          0.7654592373124343,
+          0.7302218686466897
+        ],
+        "macro_f1": 0.7066119655382938,
+        "nights": 100,
+        "windows": 76626
+      }
+    },
+    "sequence": {
+      "all_majority": {
+        "accuracy": 0.7524013645136676,
+        "ci95": {
+          "cohen_kappa": [
+            0.6338593272785762,
+            0.6938477331628886
+          ],
+          "macro_f1": [
+            0.7076810150695326,
+            0.7520728131911909
+          ],
+          "n_boot": 500,
+          "n_subjects": 100
+        },
+        "classes_present": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "cohen_kappa": 0.6640489127279386,
+        "confusion_matrix": [
+          [
+            14970,
+            2126,
+            1060,
+            19,
+            63
+          ],
+          [
+            3304,
+            6579,
+            3926,
+            22,
+            928
+          ],
+          [
+            572,
+            2045,
+            29728,
+            2163,
+            734
+          ],
+          [
+            32,
+            5,
+            2640,
+            7454,
+            2
+          ],
+          [
+            548,
+            580,
+            1260,
+            36,
+            8320
+          ]
+        ],
+        "f1_by_stage": [
+          0.7949235344095157,
+          0.5042538514601058,
+          0.8050259965337955,
+          0.7519039693347456,
+          0.8003463036890962
+        ],
+        "macro_f1": 0.7312907310854518,
+        "nights": 100,
+        "windows": 89116
+      },
+      "near_uniform": {
+        "accuracy": 0.5305044035228182,
+        "ci95": {
+          "cohen_kappa": [
+            0.34624253022849955,
+            0.3882682839135641
+          ],
+          "macro_f1": [
+            0.5028384414632046,
+            0.532530083753888
+          ],
+          "n_boot": 500,
+          "n_subjects": 100
+        },
+        "classes_present": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "cohen_kappa": 0.3667530059220119,
+        "confusion_matrix": [
+          [
+            1435,
+            715,
+            282,
+            8,
+            40
+          ],
+          [
+            801,
+            1666,
+            1578,
+            12,
+            301
+          ],
+          [
+            166,
+            380,
+            2627,
+            420,
+            178
+          ],
+          [
+            2,
+            2,
+            701,
+            490,
+            2
+          ],
+          [
+            42,
+            82,
+            148,
+            4,
+            408
+          ]
+        ],
+        "f1_by_stage": [
+          0.5826228177019894,
+          0.46258503401360546,
+          0.5769188536290766,
+          0.45987799155326137,
+          0.5058896466212027
+        ],
+        "macro_f1": 0.5175788687038271,
+        "nights": 100,
+        "windows": 12490
+      },
+      "transitions": null,
+      "uniform": {
+        "accuracy": 0.7885704591130948,
+        "ci95": {
+          "cohen_kappa": [
+            0.6784872257034553,
+            0.7416297751530532
+          ],
+          "macro_f1": [
+            0.7319634183059707,
+            0.7803924287410036
+          ],
+          "n_boot": 500,
+          "n_subjects": 100
+        },
+        "classes_present": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "cohen_kappa": 0.7111887116558826,
+        "confusion_matrix": [
+          [
+            13535,
+            1411,
+            778,
+            11,
+            23
+          ],
+          [
+            2503,
+            4913,
+            2348,
+            10,
+            627
+          ],
+          [
+            406,
+            1665,
+            27101,
+            1743,
+            556
+          ],
+          [
+            30,
+            3,
+            1939,
+            6964,
+            0
+          ],
+          [
+            506,
+            498,
+            1112,
+            32,
+            7912
+          ]
+        ],
+        "f1_by_stage": [
+          0.8268678599792291,
+          0.5201418664972738,
+          0.8371094534278521,
+          0.7870705244122965,
+          0.8251121076233184
+        ],
+        "macro_f1": 0.759260362387994,
+        "nights": 100,
+        "windows": 76626
+      }
+    }
+  },
+  "models": {
+    "logistic": {
+      "file": "logistic.joblib",
+      "sha256": "1e219b2e5e485f82bd990319234b9316c369127b577ba592870092807ee3cfc0"
+    },
+    "sequence": {
+      "file": "sequence.joblib",
+      "sha256": "85936d27eb2e136208113a53c61697f2005287ae4dcac084be601e8a2c861fe8"
+    }
+  },
+  "nights": 100,
+  "plan_sha256": "a407ba5362e5bba0370e64a928427f2b59c4011397bf58a865861d2bfdcceb23",
+  "reference_sha256": "4d0930a207b10a50f3d416c0d08b4899b2a993a6c560274910cac332dfdf28fc",
+  "split_sha256": "d4b33aa2aacd556b2f248883a41fe9d9d065e6a8a458d005e5d642dd9554ef72",
+  "status": "terminé",
+  "windows": 91947
+}

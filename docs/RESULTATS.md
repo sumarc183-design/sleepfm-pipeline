@@ -88,6 +88,21 @@ run à 500 sujets, sans entraînement.
   0,837 ; N3 0,765 / 0,787 ; REM 0,730 / 0,825.
 - **Limite** : les transitions ne sont pas mesurées sur cette grille ; nuits de test déjà
   ouvertes, même cohorte.
+- **Complément du 12 novembre** : les fenêtres mixtes entièrement annotées sont réintégrées par
+  majorité stricte (89 116 fenêtres notées) : BiGRU κ 0,664 [0,634 ; 0,694], baseline 0,600.
+  Les 12 490 fenêtres réintégrées n'ont qu'un échantillon minoritaire (5 ms) en fin de fenêtre :
+  ce ne sont pas des transitions cliniques. Détail : [fenêtres mixtes](resultats/grille_brute_transitions_2026-11-12.md)
+  et [frontières de stade](resultats/frontieres_stade_2026-11-12.md).
+
+## Exploration apnées/hypopnées (12 novembre 2026)
+
+Sur les mêmes 100 nuits de test (partition 360/40/100, embeddings figés, sans les 494 sujets de
+confirmation) : **OSF AP 0,661 contre 0,593 pour SleepFM**, écart **+0,068 [+0,023 ; +0,116]** ;
+sensibilité 62,2 % contre 59,8 %. Les hypopnées concentrent 73,7 % des fenêtres positives manquées
+par OSF. Exploratoire : cible regroupant plusieurs événements, même cohorte.
+Détail : [baseline et comparaison OSF](resultats/respiratoire_baseline_osf_2026-11-12.md),
+[analyse des erreurs](resultats/respiratoire_erreurs_2026-11-12.md) ; plans fixés avant calcul dans
+[`plans/`](plans/).
 
 ## Comparaison exploratoire avec OSF
 

@@ -20,8 +20,13 @@ Format inspiré des *Model Cards* (Mitchell et al., 2019).
   Le traitement du signal et le checkpoint sont contrôlés. Mesuré le 10 novembre 2026
   sur les 100 nuits de test : sur les fenêtres d'un seul stade (83 % des fenêtres),
   pas de baisse par rapport à la grille annotée (κ 0,711 [0,678 ; 0,742] pour le BiGRU, 0,634 [0,603 ; 0,664] pour la baseline).
-  Les transitions, à cheval sur deux stades, ne sont pas notées : score possiblement
-  optimiste. Voir [RESULTATS.md](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe).
+  Cette première mesure excluait les fenêtres mixtes. Le complément du 12 novembre
+  les réintègre par majorité stricte lorsqu'elles sont entièrement annotées :
+  il distingue les cas à un seul échantillon minoritaire, sans les interpréter
+  comme des transitions cliniques. Le score uniforme seul est optimiste pour
+  l'ensemble ainsi élargi. Voir les [résultats initiaux](../results/raw_grid_physionet2018.json)
+  et le [complément enregistré](../results/raw_grid_transitions_physionet2018.json) ;
+  [compte rendu](resultats/grille_brute_transitions_2026-11-12.md).
 
 ## Usage prévu
 

@@ -251,7 +251,7 @@ rééchantillonnée en mémoire, lots de tenseurs contrôlés par `--batch-size`
 par défaut et aucun worker enfant. Le BiGRU lit la nuit entière, après
 enregistrement. Les fenêtres diffèrent de celles de l'entraînement annoté :
 les performances ont été mesurées le 10 novembre 2026 sur les fenêtres d'un seul
-stade, pas sur les transitions ([résultats](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe)).
+stade, pas sur les transitions ([résultat enregistré](../results/raw_grid_physionet2018.json)).
 Les tests synthétiques valident le fonctionnement, pas la qualité clinique.
 
 **Mesurer ses performances** : le notebook `sleepfm_raw_grid_physionet2018.ipynb`
@@ -269,8 +269,11 @@ python scripts/evaluate_raw_grid.py --embeddings-dir embeddings/physionet2018_ra
 Les modèles figés du run à 500 sujets prédisent toute la nuit (le BiGRU voit
 aussi le début non annoté). La comparaison à la grille annotée des mêmes nuits
 est descriptive : les fenêtres diffèrent, il n'y a pas d'écart apparié. Les
-fenêtres à cheval sur deux stades, exclues du score, sont surtout des transitions,
-les plus difficiles : le score de la grille brute peut donc être optimiste.
+fenêtres mixtes étaient exclues de cette première mesure. Le complément du
+12 novembre distingue les cas à un seul échantillon minoritaire des autres
+fenêtres mixtes : leur exclusion rendait le score uniforme optimiste pour
+l'ensemble élargi. Elle ne permet pas de conclure à des transitions cliniques
+de plusieurs secondes. Voir la section sur l'évaluation complémentaire ci-dessous.
 
 **Réutiliser les embeddings sur Kaggle** : publier le zip
 `embeddings_physionet2018_v2.zip` comme Dataset Kaggle privé, puis l'ajouter
@@ -428,3 +431,151 @@ de canaux, même architecture.
 La commande vérifie d'abord les empreintes (modèles, liste, découpage), le contrat et la couverture
 exacte des sujets, et ne calcule aucun score en cas d'écart. `--rehearsal <sujets déjà ouverts>` la teste
 sans toucher aux sujets réservés.
+
+## Baseline respiratoire et démonstration d'une nuit
+
+Plan : [Plan SleepFM respiratoire 12-11.md](plans/Plan%20SleepFM%20respiratoire%2012-11.md). Cette tâche utilise
+les apnées et hypopnées annotées de PhysioNet 2018, tous types confondus. Elle
+ne change ni la demande NSRR, ni les modèles figés de stadification, ni leur
+confirmation. Les 494 sujets de confirmation ne sont pas utilisés ici.
+
+Installer le lecteur WFDB dans **un environnement séparé**, pour préserver
+les versions de l'environnement des modèles figés :
+
+```bash
+python -m venv /chemin/vers/sleepfm-respiratory-env
+source /chemin/vers/sleepfm-respiratory-env/bin/activate
+python -m pip install -r requirements-respiratory.txt
+```
+
+Réutiliser les embeddings SleepFM v2 des 500 sujets, avec le manifeste et le
+split versionné. Le téléchargement suivant ne récupère que `.hea` et `.arousal`
+(environ 8 Mo pour les 500 sujets), aucun signal PSG et aucun calcul GPU :
+
+```bash
+python scripts/respiratory_baseline.py --download \
+    --out results/respiratory_baseline_physionet2018
+```
+
+Les annotations sont conservées dans `data/respiratory_annotations/`, les
+labels alignés dans `data/respiratory_labels/` (hors Git). Les sorties comprennent
+JSON des métriques et exclusions, archive des probabilités de test, modèle
+`.joblib` et inventaire `.labels.json` des sources et empreintes. Un résultat
+existant n'est pas écrasé. Un run arrêté reste marqué « en cours » et ne doit
+pas être cité comme un résultat terminé. Ne charger que nos propres `.joblib`.
+
+Le seuil est choisi sur 40 sujets de validation pris parmi le train, après
+ajustement sur les 360 autres ; le test conserve ses 100 sujets. Les fenêtres
+partiellement couvertes (plus de 0 et moins de 10 secondes d'événement) sont
+exclues et comptées. Cette exclusion peut rendre le score plus favorable que
+sur toutes les fenêtres. Les probabilités de la logistique pondérée ne sont
+pas calibrées comme un risque clinique.
+
+Pour ouvrir une nuit sans serveur, à partir des résultats déjà enregistrés :
+
+```bash
+python scripts/demo_night.py \
+    --respiratory results/respiratory_baseline_physionet2018.json \
+    --labels data/respiratory_labels \
+    --out results/demo_night.html
+```
+
+Sans `--subject`, la page prend le premier identifiant de l'archive de test,
+sans sélectionner une réussite. Elle affiche les stades expert/logistique/BiGRU,
+les scores, les désaccords et les événements respiratoires. Les fenêtres exclues
+n'ont pas de score respiratoire. Les commandes n'effectuent aucune prédiction
+clinique ni mesure d'IAH ; la page fonctionne entièrement hors ligne.
+
+### Comparer OSF sur la même tâche respiratoire
+
+Plan fixé avant les scores OSF : [Plan comparaison OSF SleepFM respiratoire 12-11.md](plans/Plan%20comparaison%20OSF%20SleepFM%20respiratoire%2012-11.md).
+Réutiliser les embeddings OSF des 500 sujets déjà calculés et les labels de la
+baseline ; aucun téléchargement, lecteur WFDB ni nouveau GPU n'est nécessaire.
+
+```bash
+python scripts/compare_respiratory_osf.py \
+    --out results/respiratory_osf_vs_sleepfm_physionet2018
+```
+
+La commande vérifie l'inventaire des labels, les fichiers SleepFM, la couverture
+OSF et l'identité des fenêtres, puis entraîne seulement la logistique OSF sur
+les mêmes 360 sujets. Son seuil est choisi sur les mêmes 40 sujets de validation.
+Les probabilités SleepFM publiées sont conservées. Le critère principal est
+l'écart d'AP, avec 1 000 tirages appariés par sujet. Ce résultat reste exploratoire
+et dépend des canaux disponibles et des prétraitements différents des modèles.
+
+Sorties : JSON, probabilités des deux modèles, modèle OSF, inventaire des entrées
+et archive des sources exécutées. Un fichier présent empêche l'écrasement du run.
+Pour ajouter les scores OSF à une nouvelle page de démonstration :
+
+```bash
+python scripts/demo_night.py \
+    --respiratory results/respiratory_baseline_physionet2018.json \
+    --comparison results/respiratory_osf_vs_sleepfm_physionet2018.json \
+    --labels data/respiratory_labels \
+    --out results/demo_night_comparison.html
+```
+
+### Examiner les erreurs respiratoires
+
+Dans l'environnement disposant du lecteur WFDB (`requirements-respiratory.txt`),
+réutiliser les annotations déjà téléchargées et les prédictions sauvegardées :
+
+```bash
+python scripts/analyse_respiratory_errors.py \
+    --out results/respiratory_errors_physionet2018
+```
+
+La commande vérifie les empreintes et reconstitue les labels comme contrôle.
+Elle regroupe les erreurs par type exclusif, stade expert et nuit, sans entraîner
+de modèle ni déplacer les seuils. Les IC de rappel sont appariés par sujet ; les
+groupes absents ont des mesures non définies, pas des scores inventés.
+Plan et compte rendu datés dans `docs/plans/` et `docs/resultats/` ; JSON, groupes par fenêtre et sources
+exécutées dans `results/`. Aucune nouvelle donnée n'est téléchargée.
+
+### Compléter l'évaluation de la grille brute sur les transitions
+
+Plan daté dans `docs/plans/` : `Plan transitions PSG brute SleepFM 12-11 v2.md`.
+La règle d'évaluation retient le stade couvrant strictement plus de 15 s,
+seulement si la fenêtre est entièrement annotée. Les cas sans majorité et
+avec indéfini restent exclus et comptés ; les fenêtres à un seul échantillon
+minoritaire sont séparées des autres fenêtres mixtes.
+
+```bash
+python scripts/evaluate_grid_transitions.py --download-h5 \
+    --out results/raw_grid_transitions_physionet2018
+```
+
+Cette commande utilise les embeddings de la grille brute déjà calculés. Elle
+ne télécharge que les annotations HDF5 manquantes (`-arousal.mat`), pas les
+signaux PSG. En-têtes et annotations WFDB doivent déjà être présents dans
+`data/respiratory_annotations/`, comme pour la baseline respiratoire.
+Le lecteur utilise h5py, sans dépendance WFDB supplémentaire.
+
+Les labels uniformes doivent retrouver exactement ceux du premier run, puis
+les scores uniformes doivent être reproduits avec les deux sondes figées.
+En cas d'écart, aucun nouveau score n'est publié. JSON, probabilités, labels,
+groupes et inventaire des sources sont conservés sous le nouveau préfixe.
+Les résultats antérieurs ne sont pas écrasés. Ce complément reste exploratoire,
+avec une référence majoritaire choisie pour l'évaluation, sans cotation clinique
+nouvelle ni apprentissage sur les sujets de test.
+
+### Examiner les fenêtres à un échantillon minoritaire
+
+Après l'évaluation complémentaire, cette analyse reprend ses prédictions sans
+charger ni entraîner les sondes :
+
+```bash
+python scripts/analyse_stage_boundaries.py --out results/stage_boundaries_physionet2018
+```
+
+Elle vérifie les annotations et la référence archivée, localise l'échantillon
+minoritaire (premier, dernier ou intérieur), puis compte les prédictions du
+stade majoritaire, du stade minoritaire et des autres stades. Les fréquences
+par paire et par stade sont descriptives ; les proportions globales ont des
+IC par nuit. Un désaccord n'établit ni sa cause clinique ni un retard du modèle.
+
+Le plan et le compte rendu datés sont dans `docs/plans/` et `docs/resultats/`. Les fichiers JSON,
+groupes et sources archivées restent dans `results/`, sans écrasement des
+résultats existants. Le cache OSF annoté ne constitue pas une extraction OSF
+sur grille brute ; une telle comparaison nécessite des embeddings distincts.

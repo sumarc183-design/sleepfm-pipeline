@@ -21,6 +21,28 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Plans et comptes rendus dans le dépôt** : les plans fixés avant calcul (`docs/plans/`, identiques
+  aux empreintes enregistrées dans les résultats) et les comptes rendus du 12 novembre (`docs/resultats/`)
+  sont versionnés ; les scripts lisent leur plan dans `docs/plans/` par défaut. `docs/RESULTATS.md` est conservé.
+- **Analyse des frontières de stade** : localisation de l'échantillon minoritaire,
+  paires de stades et répartition des erreurs des sondes figées. Annotations et
+  matrices vérifiées contre l'évaluation source ; plan et compte rendu dans `docs/plans/` et `docs/resultats/`.
+- **Complément sur les transitions de la grille brute** : majorité stricte,
+  labels HDF5 contrôlés contre la référence, séparation des fenêtres mixtes
+  d'un échantillon, décompte des exclusions et conservation des prédictions.
+  Plan et compte rendu datés dans `docs/plans/` et `docs/resultats/`, modèles figés inchangés.
+- **Analyse descriptive des erreurs respiratoires** : groupes exclusifs par type
+  d'événement, stades experts, nuits et IC de rappel par sujet ; modèles et seuils
+  conservés. Plan et résultat datés dans `docs/plans/` et `docs/resultats/`, cas difficile ajouté à la démo.
+- **Comparaison respiratoire OSF/SleepFM** : même cible, mêmes sujets et fenêtres,
+  baseline SleepFM conservée ; 1 000 tirages par sujet. Plan, modèle, probabilités, inventaire
+  des entrées et sources exécutées conservés. Démonstration enrichie des scores OSF.
+- **Baseline respiratoire exploratoire** : annotations WFDB apnées/hypopnées alignées
+  sur les embeddings figés, séparation par sujet 360/40/100, seuil sur validation,
+  probabilités, modèle, empreintes et IC par sujet sauvegardés. Aucun usage des 494 sujets
+  de confirmation ni de NSRR ; cible de recherche regroupant plusieurs événements.
+- **Démonstration HTML autonome d'une nuit** : hypnogrammes et scores de stades,
+  désaccords, événements et scores respiratoires ; sélection par identifiant et sources vérifiées.
 - **Sondes figées versionnées** (`models/physionet2018_200` et `_500`, 15 Mo) : le dépôt cloné suffit
   pour relancer la confirmation ; empreintes identiques à celles de `results/confirmation_physionet2018.json`.
 - **Bootstrap accéléré** (suggestion 4 de l'audit) : IC calculés depuis les matrices de confusion par sujet,

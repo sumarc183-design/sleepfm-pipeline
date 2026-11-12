@@ -21,9 +21,16 @@
   - [x] Contrôle du format des entrées OSF : canaux, ordre explicite, 64 Hz, fenêtres de 30 s et valeurs finies ; tests synthétiques (`scripts/check_osf_input.py`). Unités, références d'électrodes et mapping de cohorte restent à valider
 - [ ] Tableau de résultats consolidé pour la comparaison multi-cohortes
   - [x] Consolidation des résultats PhysioNet 2018 déjà enregistrés (100, 200, 500 sujets et confirmation) en CSV et Markdown, avec sources et empreintes ; aucune nouvelle évaluation (`scripts/consolidate_results.py`)
-- [x] Prédiction sur une polysomnographie brute non annotée au format PhysioNet 2018 : fenêtres fixes de 30 s indépendantes des annotations, contrat du signal vérifié, traitement après enregistrement (`scripts/predict_raw_night.py`). Performances mesurées le 10 novembre sur les 100 nuits de test (`scripts/evaluate_raw_grid.py`) : pas de baisse sur les fenêtres d'un seul stade (BiGRU κ 0,711) ; transitions non notées
+- [x] Prédiction sur une polysomnographie brute non annotée au format PhysioNet 2018 : fenêtres fixes de 30 s indépendantes des annotations, contrat du signal vérifié, traitement après enregistrement (`scripts/predict_raw_night.py`). Première évaluation uniforme le 10 novembre (`scripts/evaluate_raw_grid.py`), complétée le 12 novembre par majorité stricte (`scripts/evaluate_grid_transitions.py`) : cas à un seul échantillon minoritaire séparés, indéfini exclu, anciens scores retrouvés. Résultats et limites dans [RESULTATS.md](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe).
 
 ## J90 — Différenciation
+- [x] Analyse descriptive des frontières de stade sur la grille brute : position
+  de l'échantillon minoritaire, stades voisins et erreurs des sondes figées ;
+  annotations et prédictions contrôlées, [compte rendu du 12 novembre](resultats/frontieres_stade_2026-11-12.md).
+- [x] Première exploration apnées/hypopnées sur PhysioNet 2018 (12 novembre) :
+  logistique sur embeddings figés et démo d'une nuit. [Compte rendu](resultats/respiratoire_baseline_osf_2026-11-12.md). La cible produit reste à choisir.
+- [x] Comparaison respiratoire exploratoire, mêmes fenêtres et partition 360/40/100 :
+  réalisée le 12 novembre ; démo comparative et [compte rendu](resultats/respiratoire_baseline_osf_2026-11-12.md).
 - [ ] Choix de la tâche différenciante (détection apnée OU robustesse pédiatrique CHAT)
 - [ ] Baseline mesurée sur cette tâche
 - [ ] Note de synthèse pour décision sur la phase 2
