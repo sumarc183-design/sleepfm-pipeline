@@ -33,9 +33,9 @@ EXPORT_FORMAT = 2
 READABLE_EXPORT_FORMATS = (1, 2)
 
 
-def _git(*arguments: str) -> str | None:
+def _git(*arguments: str, root: Path | None = None) -> str | None:
     try:
-        root = Path(__file__).resolve().parents[2]
+        root = root or Path(__file__).resolve().parents[2]
         return subprocess.run(
             ["git", "-C", str(root), *arguments], capture_output=True, text=True, check=True
         ).stdout.strip()
@@ -50,12 +50,20 @@ def _version(package: str) -> str | None:
         return None
 
 
-def run_environment() -> dict:
-    """Code et bibliothèques réellement utilisés par un run."""
-    status = _git("status", "--porcelain", "--untracked-files=no")
+def run_environment(root: Path | None = None) -> dict:
+    """Code et bibliothèques réellement utilisés par un run.
+
+    Un fichier Python de ``src/`` ou ``scripts/`` pas encore suivi par Git compte comme du
+    code modifié : sinon ``code_commit`` désignerait un commit qui ne contient pas le script
+    exécuté. Ces fichiers sont listés dans ``untracked_code``.
+    """
+    status = _git("status", "--porcelain", "--untracked-files=no", root=root)
+    untracked = _git("ls-files", "--others", "--exclude-standard", "--", "src/*.py", "scripts/*.py", root=root)
+    untracked_code = sorted(untracked.splitlines()) if untracked else []
     return {
-        "code_commit": _git("rev-parse", "HEAD") or "inconnu",
-        "code_modified": None if status is None else bool(status),
+        "code_commit": _git("rev-parse", "HEAD", root=root) or "inconnu",
+        "code_modified": None if status is None or untracked is None else bool(status or untracked_code),
+        "untracked_code": untracked_code,
         "platform": platform.platform(),
         "python": platform.python_version(),
         "numpy": np.__version__,

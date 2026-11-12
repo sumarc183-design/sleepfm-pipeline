@@ -20,6 +20,10 @@ selon [SemVer](https://semver.org/lang/fr/).
   identiques. Sinon il est présenté comme une comparaison de pipelines.
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
+### Corrigé (audit du 2026-11-12)
+- **Commit annoncé par un run** : un fichier Python non suivi dans `src/` ou `scripts/` compte comme
+  du code modifié et est listé dans `untracked_code` ; la confirmation le refuse comme tout code modifié.
+
 ### Ajouté
 - **Séquences respiratoires descriptives** : regroupement sans franchir les
   lacunes, distinction des séquences mixtes et des séquences de faux positifs,
