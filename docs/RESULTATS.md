@@ -119,6 +119,15 @@ fenêtre. Ce sont des fenêtres, pas des événements ni des alertes cliniques.
 Détail : [seuils](resultats/respiratoire_seuils_2026-11-12.md) (cibles 70 et 90 % incluses),
 [séquences](resultats/respiratoire_sequences_2026-11-12.md).
 
+Diagnostics sur les seules 40 nuits de validation (aucune nouvelle lecture du test) :
+
+- **Événements** : pour OSF au seuil initial, 72,5 % des événements évaluables sont recouverts,
+  mais 33,5 % seulement sont appariés un à un aux séquences prédites
+  ([compte rendu](resultats/respiratoire_evenements_validation_2026-11-12.md)).
+- **Stabilité des seuils** : pour OSF à la cible 80 %, le rappel des nuits absentes du tirage
+  va de 63,8 à 89,5 % ; le choix du seuil dépend nettement des nuits de calibration
+  ([compte rendu](resultats/respiratoire_stabilite_seuils_2026-11-12.md)).
+
 ## Comparaison exploratoire avec OSF
 
 Mêmes 100 nuits de test, mêmes fenêtres et mêmes sondes ; seule la représentation change

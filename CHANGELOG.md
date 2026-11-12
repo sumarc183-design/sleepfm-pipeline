@@ -25,6 +25,14 @@ selon [SemVer](https://semver.org/lang/fr/).
   du code modifié et est listé dans `untracked_code` ; la confirmation le refuse comme tout code modifié.
 
 ### Ajouté
+- **Stabilité du choix des seuils sur validation** : bootstrap par nuit avec
+  sélection pondérée puis évaluation des nuits absentes, et validation croisée
+  laissant une nuit de côté. Seuils et matrices archivés ; aucun réentraînement
+  ni nouveau calcul sur le test. Plan et compte rendu dans `docs/`.
+- **Diagnostic par événements sur validation** : références individuelles,
+  couverture des événements, recouvrement par fenêtres positives et appariement
+  un à un à cardinalité maximale. Les huit seuils restent fixes ; aucune
+  nouvelle lecture des prédictions de test. Plan et compte rendu dans `docs/`.
 - **Séquences respiratoires descriptives** : regroupement sans franchir les
   lacunes, distinction des séquences mixtes et des séquences de faux positifs,
   durées et taux par heure évaluée avec IC par nuit. Les seuils sont repris

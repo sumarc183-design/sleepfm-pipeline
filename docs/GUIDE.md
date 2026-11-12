@@ -630,3 +630,62 @@ cliniques par heure de sommeil. Aucun appariement aux événements complets ni
 aucune nouvelle règle d'alerte n'est évalué. Plan dans `docs/plans/`, [compte rendu](resultats/respiratoire_sequences_2026-11-12.md) dans `docs/resultats/` ;
 intervalles, permutation, résultats et sources dans `results/`. Le plan v2
 documente le contrôle de l'ordre de stockage, arrêté avant tout premier décompte.
+
+### Examiner les événements sur la validation
+
+Dans l'environnement respiratoire muni de WFDB (`requirements-respiratory.txt`) :
+
+```bash
+python scripts/evaluate_respiratory_events.py \
+    --out results/respiratory_events_validation_physionet2018
+```
+
+Cette commande reprend uniquement l'archive des probabilités de validation et
+les annotations existantes de ces nuits. Les huit seuils sont conservés ; les
+archives de prédictions de test ne sont pas lues. Les labels par fenêtre sont
+reconstruits et les matrices de validation doivent être retrouvées.
+
+Les événements de référence restent individuels. Le dénominateur des rappels
+comprend uniquement ceux entièrement couverts par les fenêtres évaluées et
+durant au moins 10 s, avec une tolérance de 0,01 s. Les autres sont comptés à part.
+Deux mesures sont distinctes : au moins 10 s de recouvrement par fenêtres
+positives et appariement un à un aux séquences (nombre maximal de paires, puis
+somme des IoU). Les recouvrements des paires utilisent l'union des fenêtres
+réelles de chaque séquence, sans combler les lacunes.
+
+Les seuils ont déjà été choisis sur cette validation : ce diagnostic n'est pas
+une confirmation indépendante. Il ne fournit ni précision événementielle,
+faux événements par heure ou IAH. Les IC par nuit gardent les seuils fixes.
+
+Plan dans `docs/plans/` (lu par défaut), compte rendu dans
+[`docs/resultats/`](resultats/respiratoire_evenements_validation_2026-11-12.md) ;
+le plan est aussi inclus dans `code.zip`. Événements, paires, permutation et
+résultats restent dans `results/`.
+
+### Quantifier la stabilité du choix des seuils
+
+```bash
+python scripts/analyse_threshold_stability.py \
+    --out results/respiratory_threshold_stability_physionet2018
+```
+
+L'analyse utilise uniquement les probabilités de validation archivées. Elle
+retrouve d'abord les huit seuils et matrices sur la validation entière. À chaque
+tirage bootstrap de nuits, elle recalcule les seuils selon les multiplicités des
+nuits tirées, puis les applique aux nuits absentes de ce tirage (OOB), une seule
+fois chacune. Les deux modèles et les quatre règles partagent les mêmes tirages.
+Les exclusions de tirages non évaluables sont conservées, sans remplacement.
+
+Les percentiles des métriques OOB décrivent une distribution de rééchantillonnage,
+avec sélection du seuil incluse. Ils ne constituent pas des IC cliniques de
+généralisation ; les petits groupes OOB et les tirages dépendants doivent être
+pris en compte. Un contrôle complémentaire choisit le seuil sur toutes les nuits
+sauf une, puis prédit la nuit retirée, jusqu'à couvrir toute la validation.
+Ce résultat agrégé correspond à des seuils variables selon les nuits.
+
+Les modèles et seuils d'origine sont conservés ; aucun résultat de test n'est
+recalculé. Multiplicités, seuils, matrices et prédictions laissées de côté sont
+archivés dans `results/`. Plan dans `docs/plans/` (lu par défaut) et
+[compte rendu](resultats/respiratoire_stabilite_seuils_2026-11-12.md) dans `docs/resultats/` ;
+plan également inclus dans l'archive du code. Le transfert à une autre cohorte reste
+à confirmer ; ce diagnostic ne suffit pas à clore le constat de l'audit.

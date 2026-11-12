@@ -1,0 +1,2633 @@
+{
+  "annotation_inventory": {
+    "tr03-0304": {
+      "annotation_sha256": "ef80930da3faa5ccb34506952c197a89c82afa18f35a20eaf673254c82e6088e",
+      "header_sha256": "0917096a8daa25f89be6416e8c63ae2dcee34c1defa2b01e47ecf77e03d6a837"
+    },
+    "tr03-0396": {
+      "annotation_sha256": "86431fed53981c6ceac76d4299751f8fd6768e4539dd998959b6db112e532f9e",
+      "header_sha256": "1028bad668ad4759bf47861b2c37bb13dbf5ea39d11db14c82455216d7c7e83d"
+    },
+    "tr03-0541": {
+      "annotation_sha256": "b6fd288e53a759b781453fec25f6aa188050d0970bccbffbcd3211e8719b3633",
+      "header_sha256": "eec5b04a7c578eb73bfb342a1124153b54088e224ab6c33c710eafdadef8ce73"
+    },
+    "tr03-0672": {
+      "annotation_sha256": "b7159686e5d825222f416f05c106d3de2e3c072d1c1f180f844ead6b2fd5946a",
+      "header_sha256": "691e400da4db6aeb3ea8c3f48612ff84615d0dbbe4e7b23c977e264b14bb8806"
+    },
+    "tr03-0686": {
+      "annotation_sha256": "5cd47abeea199e9389ad60e078f52e54e9ccb1d1d43007ee72407d1f23aa7178",
+      "header_sha256": "b3a317805fae829e9041731c0bab80fa5e02155aa2bcdd3a146b6285003a5ee1"
+    },
+    "tr03-0733": {
+      "annotation_sha256": "0dd094392d7affdf910e03a6f00e00e9cf7ba12e7b4c308f625f84cdfec37eb1",
+      "header_sha256": "06f209a82fa45835c25c80e5f4873ddb11e4d2577e4bd341cb7d4aaca23d3fa7"
+    },
+    "tr03-0764": {
+      "annotation_sha256": "f784811dd6fc67cb9485a1f74b07347cef3bd8d31858201c979bf0b14b65341e",
+      "header_sha256": "75e2a25e0e3c968ffd5e62aa8a70c1c4f6a877470290adba5ac86b8a75bb41ec"
+    },
+    "tr03-0879": {
+      "annotation_sha256": "9fab449bd1e80e83e88ff151fb0f9c18cb7a02c8b56e87394d54154159dd3461",
+      "header_sha256": "67da198b0abef90c17f590878470ace29ff367ea755d8184040880cf5646a16f"
+    },
+    "tr03-1294": {
+      "annotation_sha256": "9dd46d0aa48db5703669bbed5481de6f5339717b0a844867efdda329de926815",
+      "header_sha256": "2cd5836403402480e0cb0644d1aa7dec17e903087c61c3a5bbea58e459c97d97"
+    },
+    "tr03-1319": {
+      "annotation_sha256": "085ca39762eaad04ffbdd0056f3176efb01c37b23d200a215b54becb9402d839",
+      "header_sha256": "adb027536e81fa7b1825acb3144e85d953f4fa6740658f907f69f36bd24976be"
+    },
+    "tr04-0255": {
+      "annotation_sha256": "54918e7746fecb00fc66e4ffe92cbb80d5edae24b0f75639ec19517658c70ba4",
+      "header_sha256": "6027984ad870c8aec9bfb0ae015a4c85a75feca37428f0794e0dfefe72f10709"
+    },
+    "tr04-0265": {
+      "annotation_sha256": "6cdef0208277ac32a19932c8a0857e2865f04831a224db823b6953b73f9d9f2f",
+      "header_sha256": "ab939df0ea67d70ee967d56221b64517a701e5502a64596edbadd3b2430a3227"
+    },
+    "tr04-0468": {
+      "annotation_sha256": "4664855e1db00eb67769b3a27d744b057c5f85a900446deba0fe2002d1ec2ebd",
+      "header_sha256": "6f5337a905c39408a87cd46b8a9572b2aa34c69cae9fe204fd46fe4255055537"
+    },
+    "tr04-0569": {
+      "annotation_sha256": "69921983fa40629d3610eb8d706ab98ac3c199f499277718ace0fe375296832b",
+      "header_sha256": "e1b798432da90ee5dfcab5310c83ca9cfd693bb34346a5486a2cec2ffb9e74d4"
+    },
+    "tr04-1032": {
+      "annotation_sha256": "f09dafb61ec148dd67323606ee6d71fa916946a066ffb5b495d083c838e605a0",
+      "header_sha256": "76552ceff02b2c35127217b00f0bfc90f30f2b1155f69dd4910a6505bafd7734"
+    },
+    "tr05-0048": {
+      "annotation_sha256": "a2f0f4fe62251edf5c40c96b0db39a1870529eccae22812f66b020a056f7f7df",
+      "header_sha256": "533c41be40da8ff78246f4a8f86437a22c80eb32caea28dcb14cd69133577553"
+    },
+    "tr05-0114": {
+      "annotation_sha256": "c4d80effd3daff26ac7a56b80819d5c86e4d23aadf83366fd165d4ea3e774e48",
+      "header_sha256": "e540d449dfec40b79d75dccda8cad32e3dee124c3722d8421b4f5dec2d36063f"
+    },
+    "tr05-0531": {
+      "annotation_sha256": "8f27d482b08fc1394bf0365ef2e62fa06f45a15e594a04355f2a936c7706c2bb",
+      "header_sha256": "2b11cb39b3dddf02c8ead555394aca86467fafd3ff7ef880c2c2f38327bef83d"
+    },
+    "tr05-0629": {
+      "annotation_sha256": "0dd6a383606c1b24604ddb42ded0521626b8b05680f532a88567a43e88c49632",
+      "header_sha256": "dca9bdd6fe937e56a9c19327e151962e7173c55e95261f9f9d45fa82cbabffb7"
+    },
+    "tr05-0664": {
+      "annotation_sha256": "2453671745a6c64d8184a770bc39e38b3e6f33e5a0fc68093b8a533d21de9105",
+      "header_sha256": "b066d5a8d58113f948b6de397b473c3acb1c963ec8364cd95eec8942c89104cd"
+    },
+    "tr05-0744": {
+      "annotation_sha256": "19722353d5e3566c445986d11f51fe4eb84a2eda0c77ee36ad39ac6a0b412103",
+      "header_sha256": "c3dfe977b45df4db137c0fea62a3ae968dfac6b52edb8b6a6fbcfb549922edcb"
+    },
+    "tr05-0849": {
+      "annotation_sha256": "2ea1e643a5b2456a20833bae777d0d7a082af81c784ca65a6c3e884da03e8996",
+      "header_sha256": "bdd95415538094093dcd86be0bd31166ec899e132a2680193c41ea1e55156dfd"
+    },
+    "tr05-0905": {
+      "annotation_sha256": "af9e3bc3fb66bec026c85781620b9d1f164578b51b6f5b3e4fdd2247e880d4ac",
+      "header_sha256": "ccba26844c5bf686996906be4754f89a5f841b12b9c4232918237eb2beeb2b29"
+    },
+    "tr05-0949": {
+      "annotation_sha256": "90053dbfa6696a5473fa16783d01caec5adce748ba2e3b9e15ecd80ced02c14a",
+      "header_sha256": "62c048f3f5bf25cf3407155e0d34a97560308f43b5a12be920b73fb58bd64336"
+    },
+    "tr05-1034": {
+      "annotation_sha256": "069626f95277be93995e1e6f7c3290b2e32abc21348387113213ba9746c04daf",
+      "header_sha256": "dc2d4bf2e57dc8b7bf2f84d5ff601570e6383d31658b91aa08227fe0a329ed3c"
+    },
+    "tr05-1042": {
+      "annotation_sha256": "94da57e379834427456a7637b7be94c821feaffa09d16c2178665032ce8f4d03",
+      "header_sha256": "6591d6bbca3c80da51592769f1e153dcb2d0d4fe050ab8f731bdc975ba834f4f"
+    },
+    "tr05-1371": {
+      "annotation_sha256": "d9f552cebe205bef83dccb0cc77e9a1d030de0c3531d502016895a51d6cf9786",
+      "header_sha256": "967ae53ad972dc45f9af64133c75a13884cceb3df4e1d073daf64aa031ff0ed2"
+    },
+    "tr05-1386": {
+      "annotation_sha256": "24f3fc22306095906fe10df267f81f7683aaf99ab67d8178d10751249c366a43",
+      "header_sha256": "cde60e46e54b679bb85330d6960068fbaeb71e072ce12734bf7a84b2b9dab0ec"
+    },
+    "tr06-0103": {
+      "annotation_sha256": "2a908aa741f988566b49e1e911ba7e4b0200a0ec8e1e89141874a7c86caf13e1",
+      "header_sha256": "65990c9826fb9b10beba1c01db0719d1fe99c7eeca29d99e034569ed8453d294"
+    },
+    "tr06-0108": {
+      "annotation_sha256": "8357f120d1d0a75797777f206badcc7a4099f69b8c4b9691538da1c5a2975713",
+      "header_sha256": "34aacf3700b15190372197722283a0b1cb54f55d390ef3509f464ffe339778cb"
+    },
+    "tr06-0249": {
+      "annotation_sha256": "2987a139ed3d17883487a6ab43ad682ee99352f0ceb7143e6d927aecc40ab33b",
+      "header_sha256": "8ea4802be61ff4a8daa4a96f53c1adc55f898498dd54c1de4bc31cd951a5d9bb"
+    },
+    "tr06-0262": {
+      "annotation_sha256": "50057c2cf0a58660c3b95fb0626c9689b69fb3a324c21cd634802f1779d6b16e",
+      "header_sha256": "ea2666cc052c8aad451624552d4c28e89a2bcf9ff220154dabd64eb7c2ee1784"
+    },
+    "tr06-0313": {
+      "annotation_sha256": "65b5041894cb7faf4b1e293638efc4a5441a9e85fdd00f95809cc5ab2c23c547",
+      "header_sha256": "1e2d690f138899a296ff5346b2ba0418c1a61da07718075a37d265a824b0416e"
+    },
+    "tr06-0404": {
+      "annotation_sha256": "0d3b27a564a89a69c744c8df38f83936a3b2064abd869bfc744609f12717c79d",
+      "header_sha256": "91e4649a2b5122febe74355e06d3f57c20aa475bb7821ae02e7d7615759fb220"
+    },
+    "tr06-0429": {
+      "annotation_sha256": "5a3ae2f8739c7711c0540e90302e31734c03e8a75a770144cf54530e33f1d941",
+      "header_sha256": "070aab6c1785c7b69d822ca2694bbfdc8858b6d3699baa724cae8dd8eeb3f229"
+    },
+    "tr06-0452": {
+      "annotation_sha256": "6a49d5c80c74c28146867c64674e4d1736982cece39ef85ef400cba9a0011145",
+      "header_sha256": "732f1da6e1d066ff0d9a151c36f90154eb8ee70bcb59d5f3bf18f53e17e3b1da"
+    },
+    "tr06-0515": {
+      "annotation_sha256": "5b8918465a180a440672a7f77f3031d96fe688ee59c6567fb6af8a45b96a411b",
+      "header_sha256": "929dc396b63ab8cc5872b52a4400bf8c3a4da21f2fee537d6c39345ef2d21b61"
+    },
+    "tr06-0570": {
+      "annotation_sha256": "eb330454ee4f76bbeeb7080869661a6e7c91c698149633518bbfa14b58dc5c23",
+      "header_sha256": "12faa8d454f0388b227a3fa9e158ff90265e1b1f3a2fcea859add23010f92417"
+    },
+    "tr06-0696": {
+      "annotation_sha256": "ff3ab4080a1dea626a055461be06c4e2fd6524a617ca48133bed3d5f776c26d0",
+      "header_sha256": "a2acdf8c1f4c33b77e571bd7d45e9e9d034ec6fe01f9df20cdf964f6270fab36"
+    },
+    "tr06-0802": {
+      "annotation_sha256": "fe432f098b4d84e9cfc14f67d55a6625c04fd305b764b65093e6b314d6578a6a",
+      "header_sha256": "f8a26de31249fbf216dfd374534c003f25029363b85d2d6d2cbe4448f4eb66db"
+    }
+  },
+  "artifacts": {
+    "code.zip": {
+      "file": "respiratory_events_validation_physionet2018.code.zip",
+      "sha256": "362d5e50dec70e1fc1922389eb2527ae3b094e928c0e284e4e5de2ca43e69ea4"
+    },
+    "events.npz": {
+      "file": "respiratory_events_validation_physionet2018.events.npz",
+      "sha256": "02f4e7938b4fd50adfe694235af129b2ecf4d381c0b81b3aea959e1e5223f1f7"
+    },
+    "ordering.npz": {
+      "file": "respiratory_events_validation_physionet2018.ordering.npz",
+      "sha256": "b162cc47eacb63a3f30b06c6cbfe73735f04667e4fe40a66f0d2df346f2dfcfd"
+    },
+    "runs.npz": {
+      "file": "respiratory_events_validation_physionet2018.runs.npz",
+      "sha256": "dc73811300777a81225451497d44397c228f1af2b0af349fe5cec9d558a57e45"
+    }
+  },
+  "by_night": {
+    "tr03-0304": {
+      "complete": 112,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 70,
+          "matched": 39,
+          "runs": 69
+        },
+        "osf_sensitivity_70": {
+          "covered": 71,
+          "matched": 40,
+          "runs": 71
+        },
+        "osf_sensitivity_80": {
+          "covered": 85,
+          "matched": 49,
+          "runs": 87
+        },
+        "osf_sensitivity_90": {
+          "covered": 100,
+          "matched": 53,
+          "runs": 116
+        },
+        "sleepfm_initial_f1": {
+          "covered": 87,
+          "matched": 45,
+          "runs": 100
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 90,
+          "matched": 46,
+          "runs": 109
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 99,
+          "matched": 46,
+          "runs": 136
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 108,
+          "matched": 51,
+          "runs": 177
+        }
+      },
+      "eligible": 112,
+      "none": 5,
+      "partial": 95,
+      "too_short": 0,
+      "total": 212
+    },
+    "tr03-0396": {
+      "complete": 19,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 12,
+          "matched": 12,
+          "runs": 51
+        },
+        "osf_sensitivity_70": {
+          "covered": 13,
+          "matched": 13,
+          "runs": 54
+        },
+        "osf_sensitivity_80": {
+          "covered": 15,
+          "matched": 14,
+          "runs": 73
+        },
+        "osf_sensitivity_90": {
+          "covered": 17,
+          "matched": 14,
+          "runs": 98
+        },
+        "sleepfm_initial_f1": {
+          "covered": 3,
+          "matched": 3,
+          "runs": 22
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 5,
+          "matched": 5,
+          "runs": 26
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 10,
+          "matched": 10,
+          "runs": 49
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 12,
+          "matched": 12,
+          "runs": 83
+        }
+      },
+      "eligible": 19,
+      "none": 5,
+      "partial": 8,
+      "too_short": 0,
+      "total": 32
+    },
+    "tr03-0541": {
+      "complete": 39,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 13,
+          "matched": 10,
+          "runs": 36
+        },
+        "osf_sensitivity_70": {
+          "covered": 15,
+          "matched": 12,
+          "runs": 39
+        },
+        "osf_sensitivity_80": {
+          "covered": 27,
+          "matched": 21,
+          "runs": 69
+        },
+        "osf_sensitivity_90": {
+          "covered": 36,
+          "matched": 23,
+          "runs": 107
+        },
+        "sleepfm_initial_f1": {
+          "covered": 10,
+          "matched": 9,
+          "runs": 27
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 12,
+          "matched": 11,
+          "runs": 36
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 19,
+          "matched": 15,
+          "runs": 76
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 27,
+          "matched": 18,
+          "runs": 127
+        }
+      },
+      "eligible": 39,
+      "none": 3,
+      "partial": 22,
+      "too_short": 2,
+      "total": 64
+    },
+    "tr03-0672": {
+      "complete": 89,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 25,
+          "matched": 20,
+          "runs": 32
+        },
+        "osf_sensitivity_70": {
+          "covered": 25,
+          "matched": 20,
+          "runs": 34
+        },
+        "osf_sensitivity_80": {
+          "covered": 38,
+          "matched": 27,
+          "runs": 57
+        },
+        "osf_sensitivity_90": {
+          "covered": 57,
+          "matched": 32,
+          "runs": 105
+        },
+        "sleepfm_initial_f1": {
+          "covered": 66,
+          "matched": 34,
+          "runs": 99
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 76,
+          "matched": 33,
+          "runs": 109
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 80,
+          "matched": 32,
+          "runs": 123
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 85,
+          "matched": 29,
+          "runs": 144
+        }
+      },
+      "eligible": 89,
+      "none": 3,
+      "partial": 52,
+      "too_short": 0,
+      "total": 144
+    },
+    "tr03-0686": {
+      "complete": 43,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 32,
+          "matched": 23,
+          "runs": 77
+        },
+        "osf_sensitivity_70": {
+          "covered": 32,
+          "matched": 23,
+          "runs": 77
+        },
+        "osf_sensitivity_80": {
+          "covered": 37,
+          "matched": 23,
+          "runs": 86
+        },
+        "osf_sensitivity_90": {
+          "covered": 41,
+          "matched": 25,
+          "runs": 107
+        },
+        "sleepfm_initial_f1": {
+          "covered": 18,
+          "matched": 13,
+          "runs": 78
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 21,
+          "matched": 15,
+          "runs": 91
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 24,
+          "matched": 18,
+          "runs": 118
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 33,
+          "matched": 20,
+          "runs": 147
+        }
+      },
+      "eligible": 43,
+      "none": 0,
+      "partial": 41,
+      "too_short": 0,
+      "total": 84
+    },
+    "tr03-0733": {
+      "complete": 256,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 219,
+          "matched": 20,
+          "runs": 42
+        },
+        "osf_sensitivity_70": {
+          "covered": 221,
+          "matched": 19,
+          "runs": 42
+        },
+        "osf_sensitivity_80": {
+          "covered": 240,
+          "matched": 24,
+          "runs": 62
+        },
+        "osf_sensitivity_90": {
+          "covered": 250,
+          "matched": 22,
+          "runs": 89
+        },
+        "sleepfm_initial_f1": {
+          "covered": 224,
+          "matched": 20,
+          "runs": 45
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 233,
+          "matched": 25,
+          "runs": 53
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 243,
+          "matched": 26,
+          "runs": 91
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 253,
+          "matched": 19,
+          "runs": 105
+        }
+      },
+      "eligible": 255,
+      "none": 0,
+      "partial": 26,
+      "too_short": 1,
+      "total": 282
+    },
+    "tr03-0764": {
+      "complete": 14,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 9,
+          "matched": 6,
+          "runs": 33
+        },
+        "osf_sensitivity_70": {
+          "covered": 9,
+          "matched": 6,
+          "runs": 33
+        },
+        "osf_sensitivity_80": {
+          "covered": 11,
+          "matched": 8,
+          "runs": 55
+        },
+        "osf_sensitivity_90": {
+          "covered": 13,
+          "matched": 10,
+          "runs": 82
+        },
+        "sleepfm_initial_f1": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 15
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 2,
+          "matched": 2,
+          "runs": 21
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 4,
+          "matched": 4,
+          "runs": 60
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 7,
+          "matched": 7,
+          "runs": 137
+        }
+      },
+      "eligible": 14,
+      "none": 7,
+      "partial": 8,
+      "too_short": 1,
+      "total": 29
+    },
+    "tr03-0879": {
+      "complete": 152,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 113,
+          "matched": 46,
+          "runs": 80
+        },
+        "osf_sensitivity_70": {
+          "covered": 114,
+          "matched": 46,
+          "runs": 81
+        },
+        "osf_sensitivity_80": {
+          "covered": 129,
+          "matched": 47,
+          "runs": 103
+        },
+        "osf_sensitivity_90": {
+          "covered": 142,
+          "matched": 39,
+          "runs": 145
+        },
+        "sleepfm_initial_f1": {
+          "covered": 135,
+          "matched": 38,
+          "runs": 117
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 138,
+          "matched": 38,
+          "runs": 132
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 145,
+          "matched": 39,
+          "runs": 149
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 151,
+          "matched": 38,
+          "runs": 150
+        }
+      },
+      "eligible": 152,
+      "none": 3,
+      "partial": 48,
+      "too_short": 0,
+      "total": 203
+    },
+    "tr03-1294": {
+      "complete": 82,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 81,
+          "matched": 40,
+          "runs": 92
+        },
+        "osf_sensitivity_70": {
+          "covered": 81,
+          "matched": 40,
+          "runs": 93
+        },
+        "osf_sensitivity_80": {
+          "covered": 82,
+          "matched": 41,
+          "runs": 100
+        },
+        "osf_sensitivity_90": {
+          "covered": 82,
+          "matched": 40,
+          "runs": 117
+        },
+        "sleepfm_initial_f1": {
+          "covered": 80,
+          "matched": 39,
+          "runs": 106
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 80,
+          "matched": 39,
+          "runs": 115
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 81,
+          "matched": 40,
+          "runs": 125
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 82,
+          "matched": 40,
+          "runs": 130
+        }
+      },
+      "eligible": 82,
+      "none": 2,
+      "partial": 69,
+      "too_short": 0,
+      "total": 153
+    },
+    "tr03-1319": {
+      "complete": 64,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 56,
+          "matched": 34,
+          "runs": 86
+        },
+        "osf_sensitivity_70": {
+          "covered": 56,
+          "matched": 34,
+          "runs": 87
+        },
+        "osf_sensitivity_80": {
+          "covered": 58,
+          "matched": 36,
+          "runs": 116
+        },
+        "osf_sensitivity_90": {
+          "covered": 63,
+          "matched": 39,
+          "runs": 138
+        },
+        "sleepfm_initial_f1": {
+          "covered": 52,
+          "matched": 34,
+          "runs": 82
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 55,
+          "matched": 36,
+          "runs": 95
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 57,
+          "matched": 36,
+          "runs": 127
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 60,
+          "matched": 38,
+          "runs": 169
+        }
+      },
+      "eligible": 64,
+      "none": 5,
+      "partial": 76,
+      "too_short": 0,
+      "total": 145
+    },
+    "tr04-0255": {
+      "complete": 51,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 39,
+          "matched": 32,
+          "runs": 87
+        },
+        "osf_sensitivity_70": {
+          "covered": 40,
+          "matched": 33,
+          "runs": 89
+        },
+        "osf_sensitivity_80": {
+          "covered": 42,
+          "matched": 34,
+          "runs": 106
+        },
+        "osf_sensitivity_90": {
+          "covered": 47,
+          "matched": 31,
+          "runs": 140
+        },
+        "sleepfm_initial_f1": {
+          "covered": 23,
+          "matched": 17,
+          "runs": 51
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 27,
+          "matched": 17,
+          "runs": 55
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 39,
+          "matched": 23,
+          "runs": 75
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 43,
+          "matched": 25,
+          "runs": 108
+        }
+      },
+      "eligible": 51,
+      "none": 2,
+      "partial": 50,
+      "too_short": 0,
+      "total": 103
+    },
+    "tr04-0265": {
+      "complete": 52,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 19,
+          "matched": 19,
+          "runs": 41
+        },
+        "osf_sensitivity_70": {
+          "covered": 19,
+          "matched": 19,
+          "runs": 42
+        },
+        "osf_sensitivity_80": {
+          "covered": 29,
+          "matched": 28,
+          "runs": 72
+        },
+        "osf_sensitivity_90": {
+          "covered": 42,
+          "matched": 34,
+          "runs": 99
+        },
+        "sleepfm_initial_f1": {
+          "covered": 19,
+          "matched": 18,
+          "runs": 48
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 22,
+          "matched": 20,
+          "runs": 65
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 30,
+          "matched": 26,
+          "runs": 99
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 43,
+          "matched": 29,
+          "runs": 128
+        }
+      },
+      "eligible": 51,
+      "none": 1,
+      "partial": 41,
+      "too_short": 1,
+      "total": 94
+    },
+    "tr04-0468": {
+      "complete": 18,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 2,
+          "matched": 2,
+          "runs": 7
+        },
+        "osf_sensitivity_70": {
+          "covered": 2,
+          "matched": 2,
+          "runs": 7
+        },
+        "osf_sensitivity_80": {
+          "covered": 4,
+          "matched": 4,
+          "runs": 20
+        },
+        "osf_sensitivity_90": {
+          "covered": 9,
+          "matched": 5,
+          "runs": 41
+        },
+        "sleepfm_initial_f1": {
+          "covered": 3,
+          "matched": 2,
+          "runs": 7
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 4,
+          "matched": 3,
+          "runs": 11
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 9,
+          "matched": 5,
+          "runs": 24
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 14,
+          "matched": 7,
+          "runs": 68
+        }
+      },
+      "eligible": 18,
+      "none": 1,
+      "partial": 11,
+      "too_short": 0,
+      "total": 30
+    },
+    "tr04-0569": {
+      "complete": 123,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 83,
+          "matched": 26,
+          "runs": 64
+        },
+        "osf_sensitivity_70": {
+          "covered": 83,
+          "matched": 26,
+          "runs": 64
+        },
+        "osf_sensitivity_80": {
+          "covered": 93,
+          "matched": 30,
+          "runs": 82
+        },
+        "osf_sensitivity_90": {
+          "covered": 102,
+          "matched": 31,
+          "runs": 131
+        },
+        "sleepfm_initial_f1": {
+          "covered": 52,
+          "matched": 23,
+          "runs": 37
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 61,
+          "matched": 23,
+          "runs": 40
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 85,
+          "matched": 31,
+          "runs": 62
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 98,
+          "matched": 30,
+          "runs": 106
+        }
+      },
+      "eligible": 122,
+      "none": 6,
+      "partial": 34,
+      "too_short": 2,
+      "total": 163
+    },
+    "tr04-1032": {
+      "complete": 55,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 41,
+          "matched": 22,
+          "runs": 64
+        },
+        "osf_sensitivity_70": {
+          "covered": 41,
+          "matched": 22,
+          "runs": 64
+        },
+        "osf_sensitivity_80": {
+          "covered": 48,
+          "matched": 21,
+          "runs": 79
+        },
+        "osf_sensitivity_90": {
+          "covered": 54,
+          "matched": 20,
+          "runs": 94
+        },
+        "sleepfm_initial_f1": {
+          "covered": 25,
+          "matched": 17,
+          "runs": 46
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 32,
+          "matched": 18,
+          "runs": 53
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 44,
+          "matched": 16,
+          "runs": 79
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 52,
+          "matched": 19,
+          "runs": 93
+        }
+      },
+      "eligible": 55,
+      "none": 3,
+      "partial": 28,
+      "too_short": 0,
+      "total": 86
+    },
+    "tr05-0048": {
+      "complete": 32,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 4,
+          "matched": 4,
+          "runs": 61
+        },
+        "osf_sensitivity_70": {
+          "covered": 4,
+          "matched": 4,
+          "runs": 66
+        },
+        "osf_sensitivity_80": {
+          "covered": 11,
+          "matched": 10,
+          "runs": 119
+        },
+        "osf_sensitivity_90": {
+          "covered": 23,
+          "matched": 20,
+          "runs": 134
+        },
+        "sleepfm_initial_f1": {
+          "covered": 13,
+          "matched": 12,
+          "runs": 74
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 17,
+          "matched": 16,
+          "runs": 89
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 25,
+          "matched": 20,
+          "runs": 142
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 29,
+          "matched": 24,
+          "runs": 187
+        }
+      },
+      "eligible": 32,
+      "none": 2,
+      "partial": 38,
+      "too_short": 0,
+      "total": 72
+    },
+    "tr05-0114": {
+      "complete": 65,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 20,
+          "matched": 19,
+          "runs": 60
+        },
+        "osf_sensitivity_70": {
+          "covered": 22,
+          "matched": 19,
+          "runs": 64
+        },
+        "osf_sensitivity_80": {
+          "covered": 34,
+          "matched": 21,
+          "runs": 97
+        },
+        "osf_sensitivity_90": {
+          "covered": 47,
+          "matched": 29,
+          "runs": 145
+        },
+        "sleepfm_initial_f1": {
+          "covered": 37,
+          "matched": 25,
+          "runs": 97
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 41,
+          "matched": 25,
+          "runs": 108
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 55,
+          "matched": 33,
+          "runs": 148
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 60,
+          "matched": 35,
+          "runs": 199
+        }
+      },
+      "eligible": 65,
+      "none": 2,
+      "partial": 46,
+      "too_short": 0,
+      "total": 113
+    },
+    "tr05-0531": {
+      "complete": 137,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 106,
+          "matched": 45,
+          "runs": 111
+        },
+        "osf_sensitivity_70": {
+          "covered": 106,
+          "matched": 45,
+          "runs": 112
+        },
+        "osf_sensitivity_80": {
+          "covered": 117,
+          "matched": 50,
+          "runs": 140
+        },
+        "osf_sensitivity_90": {
+          "covered": 126,
+          "matched": 48,
+          "runs": 154
+        },
+        "sleepfm_initial_f1": {
+          "covered": 69,
+          "matched": 29,
+          "runs": 88
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 73,
+          "matched": 29,
+          "runs": 104
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 88,
+          "matched": 29,
+          "runs": 136
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 111,
+          "matched": 38,
+          "runs": 137
+        }
+      },
+      "eligible": 136,
+      "none": 9,
+      "partial": 71,
+      "too_short": 4,
+      "total": 217
+    },
+    "tr05-0629": {
+      "complete": 100,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 48,
+          "matched": 25,
+          "runs": 86
+        },
+        "osf_sensitivity_70": {
+          "covered": 49,
+          "matched": 24,
+          "runs": 89
+        },
+        "osf_sensitivity_80": {
+          "covered": 76,
+          "matched": 37,
+          "runs": 111
+        },
+        "osf_sensitivity_90": {
+          "covered": 98,
+          "matched": 33,
+          "runs": 109
+        },
+        "sleepfm_initial_f1": {
+          "covered": 91,
+          "matched": 32,
+          "runs": 107
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 93,
+          "matched": 31,
+          "runs": 116
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 97,
+          "matched": 31,
+          "runs": 124
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 100,
+          "matched": 28,
+          "runs": 140
+        }
+      },
+      "eligible": 100,
+      "none": 7,
+      "partial": 38,
+      "too_short": 0,
+      "total": 145
+    },
+    "tr05-0664": {
+      "complete": 39,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 28,
+          "matched": 23,
+          "runs": 60
+        },
+        "osf_sensitivity_70": {
+          "covered": 28,
+          "matched": 23,
+          "runs": 60
+        },
+        "osf_sensitivity_80": {
+          "covered": 30,
+          "matched": 25,
+          "runs": 83
+        },
+        "osf_sensitivity_90": {
+          "covered": 34,
+          "matched": 27,
+          "runs": 115
+        },
+        "sleepfm_initial_f1": {
+          "covered": 12,
+          "matched": 10,
+          "runs": 44
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 14,
+          "matched": 12,
+          "runs": 52
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 23,
+          "matched": 19,
+          "runs": 96
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 30,
+          "matched": 21,
+          "runs": 125
+        }
+      },
+      "eligible": 39,
+      "none": 2,
+      "partial": 46,
+      "too_short": 1,
+      "total": 87
+    },
+    "tr05-0744": {
+      "complete": 99,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 59,
+          "matched": 36,
+          "runs": 88
+        },
+        "osf_sensitivity_70": {
+          "covered": 60,
+          "matched": 35,
+          "runs": 88
+        },
+        "osf_sensitivity_80": {
+          "covered": 77,
+          "matched": 39,
+          "runs": 108
+        },
+        "osf_sensitivity_90": {
+          "covered": 91,
+          "matched": 44,
+          "runs": 136
+        },
+        "sleepfm_initial_f1": {
+          "covered": 81,
+          "matched": 38,
+          "runs": 128
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 83,
+          "matched": 39,
+          "runs": 125
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 92,
+          "matched": 40,
+          "runs": 124
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 97,
+          "matched": 42,
+          "runs": 132
+        }
+      },
+      "eligible": 99,
+      "none": 2,
+      "partial": 64,
+      "too_short": 0,
+      "total": 165
+    },
+    "tr05-0849": {
+      "complete": 93,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 88,
+          "matched": 24,
+          "runs": 43
+        },
+        "osf_sensitivity_70": {
+          "covered": 88,
+          "matched": 24,
+          "runs": 44
+        },
+        "osf_sensitivity_80": {
+          "covered": 89,
+          "matched": 25,
+          "runs": 53
+        },
+        "osf_sensitivity_90": {
+          "covered": 92,
+          "matched": 27,
+          "runs": 74
+        },
+        "sleepfm_initial_f1": {
+          "covered": 86,
+          "matched": 31,
+          "runs": 53
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 86,
+          "matched": 30,
+          "runs": 62
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 89,
+          "matched": 25,
+          "runs": 105
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 91,
+          "matched": 25,
+          "runs": 145
+        }
+      },
+      "eligible": 93,
+      "none": 2,
+      "partial": 39,
+      "too_short": 0,
+      "total": 134
+    },
+    "tr05-0905": {
+      "complete": 66,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 47,
+          "matched": 25,
+          "runs": 69
+        },
+        "osf_sensitivity_70": {
+          "covered": 47,
+          "matched": 25,
+          "runs": 71
+        },
+        "osf_sensitivity_80": {
+          "covered": 54,
+          "matched": 26,
+          "runs": 96
+        },
+        "osf_sensitivity_90": {
+          "covered": 63,
+          "matched": 27,
+          "runs": 110
+        },
+        "sleepfm_initial_f1": {
+          "covered": 59,
+          "matched": 28,
+          "runs": 86
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 62,
+          "matched": 28,
+          "runs": 91
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 64,
+          "matched": 29,
+          "runs": 105
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 65,
+          "matched": 28,
+          "runs": 133
+        }
+      },
+      "eligible": 65,
+      "none": 8,
+      "partial": 45,
+      "too_short": 4,
+      "total": 119
+    },
+    "tr05-0949": {
+      "complete": 540,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 455,
+          "matched": 106,
+          "runs": 133
+        },
+        "osf_sensitivity_70": {
+          "covered": 458,
+          "matched": 106,
+          "runs": 131
+        },
+        "osf_sensitivity_80": {
+          "covered": 491,
+          "matched": 95,
+          "runs": 120
+        },
+        "osf_sensitivity_90": {
+          "covered": 515,
+          "matched": 89,
+          "runs": 115
+        },
+        "sleepfm_initial_f1": {
+          "covered": 502,
+          "matched": 93,
+          "runs": 126
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 506,
+          "matched": 93,
+          "runs": 125
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 524,
+          "matched": 86,
+          "runs": 110
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 532,
+          "matched": 82,
+          "runs": 103
+        }
+      },
+      "eligible": 532,
+      "none": 42,
+      "partial": 97,
+      "too_short": 32,
+      "total": 679
+    },
+    "tr05-1034": {
+      "complete": 26,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 12,
+          "matched": 12,
+          "runs": 37
+        },
+        "osf_sensitivity_70": {
+          "covered": 12,
+          "matched": 12,
+          "runs": 38
+        },
+        "osf_sensitivity_80": {
+          "covered": 14,
+          "matched": 14,
+          "runs": 63
+        },
+        "osf_sensitivity_90": {
+          "covered": 17,
+          "matched": 15,
+          "runs": 108
+        },
+        "sleepfm_initial_f1": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 6
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 12
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 4,
+          "matched": 4,
+          "runs": 41
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 13,
+          "matched": 13,
+          "runs": 99
+        }
+      },
+      "eligible": 26,
+      "none": 4,
+      "partial": 17,
+      "too_short": 0,
+      "total": 47
+    },
+    "tr05-1042": {
+      "complete": 103,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 51,
+          "matched": 38,
+          "runs": 94
+        },
+        "osf_sensitivity_70": {
+          "covered": 53,
+          "matched": 39,
+          "runs": 98
+        },
+        "osf_sensitivity_80": {
+          "covered": 65,
+          "matched": 42,
+          "runs": 123
+        },
+        "osf_sensitivity_90": {
+          "covered": 83,
+          "matched": 49,
+          "runs": 144
+        },
+        "sleepfm_initial_f1": {
+          "covered": 44,
+          "matched": 32,
+          "runs": 109
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 50,
+          "matched": 34,
+          "runs": 121
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 80,
+          "matched": 46,
+          "runs": 144
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 95,
+          "matched": 45,
+          "runs": 131
+        }
+      },
+      "eligible": 102,
+      "none": 4,
+      "partial": 54,
+      "too_short": 2,
+      "total": 161
+    },
+    "tr05-1371": {
+      "complete": 2,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 4
+        },
+        "osf_sensitivity_70": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 4
+        },
+        "osf_sensitivity_80": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 7
+        },
+        "osf_sensitivity_90": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 21
+        },
+        "sleepfm_initial_f1": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 8
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 12
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 27
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 56
+        }
+      },
+      "eligible": 2,
+      "none": 0,
+      "partial": 5,
+      "too_short": 0,
+      "total": 7
+    },
+    "tr05-1386": {
+      "complete": 100,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 86,
+          "matched": 46,
+          "runs": 60
+        },
+        "osf_sensitivity_70": {
+          "covered": 86,
+          "matched": 46,
+          "runs": 61
+        },
+        "osf_sensitivity_80": {
+          "covered": 95,
+          "matched": 42,
+          "runs": 61
+        },
+        "osf_sensitivity_90": {
+          "covered": 99,
+          "matched": 42,
+          "runs": 82
+        },
+        "sleepfm_initial_f1": {
+          "covered": 79,
+          "matched": 41,
+          "runs": 69
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 80,
+          "matched": 39,
+          "runs": 73
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 91,
+          "matched": 42,
+          "runs": 102
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 97,
+          "matched": 41,
+          "runs": 140
+        }
+      },
+      "eligible": 100,
+      "none": 5,
+      "partial": 67,
+      "too_short": 0,
+      "total": 172
+    },
+    "tr06-0103": {
+      "complete": 121,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 76,
+          "matched": 46,
+          "runs": 110
+        },
+        "osf_sensitivity_70": {
+          "covered": 79,
+          "matched": 47,
+          "runs": 112
+        },
+        "osf_sensitivity_80": {
+          "covered": 104,
+          "matched": 43,
+          "runs": 126
+        },
+        "osf_sensitivity_90": {
+          "covered": 117,
+          "matched": 39,
+          "runs": 119
+        },
+        "sleepfm_initial_f1": {
+          "covered": 76,
+          "matched": 39,
+          "runs": 83
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 83,
+          "matched": 38,
+          "runs": 87
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 101,
+          "matched": 42,
+          "runs": 100
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 110,
+          "matched": 41,
+          "runs": 102
+        }
+      },
+      "eligible": 120,
+      "none": 3,
+      "partial": 37,
+      "too_short": 1,
+      "total": 161
+    },
+    "tr06-0108": {
+      "complete": 19,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 8,
+          "matched": 8,
+          "runs": 69
+        },
+        "osf_sensitivity_70": {
+          "covered": 9,
+          "matched": 9,
+          "runs": 70
+        },
+        "osf_sensitivity_80": {
+          "covered": 12,
+          "matched": 11,
+          "runs": 83
+        },
+        "osf_sensitivity_90": {
+          "covered": 16,
+          "matched": 15,
+          "runs": 98
+        },
+        "sleepfm_initial_f1": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 9
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 16
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 3,
+          "matched": 2,
+          "runs": 44
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 6,
+          "matched": 5,
+          "runs": 91
+        }
+      },
+      "eligible": 19,
+      "none": 8,
+      "partial": 10,
+      "too_short": 0,
+      "total": 37
+    },
+    "tr06-0249": {
+      "complete": 1,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 25
+        },
+        "osf_sensitivity_70": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 28
+        },
+        "osf_sensitivity_80": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 57
+        },
+        "osf_sensitivity_90": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 110
+        },
+        "sleepfm_initial_f1": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 41
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 0,
+          "matched": 0,
+          "runs": 57
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 77
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 124
+        }
+      },
+      "eligible": 1,
+      "none": 0,
+      "partial": 1,
+      "too_short": 0,
+      "total": 2
+    },
+    "tr06-0262": {
+      "complete": 11,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 1,
+          "matched": 1,
+          "runs": 4
+        },
+        "osf_sensitivity_70": {
+          "covered": 3,
+          "matched": 3,
+          "runs": 6
+        },
+        "osf_sensitivity_80": {
+          "covered": 4,
+          "matched": 4,
+          "runs": 12
+        },
+        "osf_sensitivity_90": {
+          "covered": 6,
+          "matched": 5,
+          "runs": 44
+        },
+        "sleepfm_initial_f1": {
+          "covered": 8,
+          "matched": 6,
+          "runs": 16
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 10,
+          "matched": 6,
+          "runs": 17
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 10,
+          "matched": 5,
+          "runs": 32
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 11,
+          "matched": 5,
+          "runs": 66
+        }
+      },
+      "eligible": 11,
+      "none": 2,
+      "partial": 4,
+      "too_short": 0,
+      "total": 17
+    },
+    "tr06-0313": {
+      "complete": 28,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 26,
+          "matched": 21,
+          "runs": 77
+        },
+        "osf_sensitivity_70": {
+          "covered": 26,
+          "matched": 21,
+          "runs": 77
+        },
+        "osf_sensitivity_80": {
+          "covered": 27,
+          "matched": 21,
+          "runs": 90
+        },
+        "osf_sensitivity_90": {
+          "covered": 28,
+          "matched": 19,
+          "runs": 107
+        },
+        "sleepfm_initial_f1": {
+          "covered": 15,
+          "matched": 12,
+          "runs": 54
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 15,
+          "matched": 12,
+          "runs": 60
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 18,
+          "matched": 14,
+          "runs": 95
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 23,
+          "matched": 18,
+          "runs": 128
+        }
+      },
+      "eligible": 28,
+      "none": 20,
+      "partial": 21,
+      "too_short": 0,
+      "total": 69
+    },
+    "tr06-0404": {
+      "complete": 72,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 68,
+          "matched": 48,
+          "runs": 115
+        },
+        "osf_sensitivity_70": {
+          "covered": 68,
+          "matched": 48,
+          "runs": 115
+        },
+        "osf_sensitivity_80": {
+          "covered": 69,
+          "matched": 48,
+          "runs": 128
+        },
+        "osf_sensitivity_90": {
+          "covered": 70,
+          "matched": 49,
+          "runs": 140
+        },
+        "sleepfm_initial_f1": {
+          "covered": 62,
+          "matched": 44,
+          "runs": 101
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 63,
+          "matched": 44,
+          "runs": 116
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 64,
+          "matched": 45,
+          "runs": 136
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 69,
+          "matched": 49,
+          "runs": 161
+        }
+      },
+      "eligible": 72,
+      "none": 7,
+      "partial": 99,
+      "too_short": 1,
+      "total": 178
+    },
+    "tr06-0429": {
+      "complete": 57,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 51,
+          "matched": 43,
+          "runs": 88
+        },
+        "osf_sensitivity_70": {
+          "covered": 51,
+          "matched": 43,
+          "runs": 90
+        },
+        "osf_sensitivity_80": {
+          "covered": 55,
+          "matched": 43,
+          "runs": 101
+        },
+        "osf_sensitivity_90": {
+          "covered": 57,
+          "matched": 40,
+          "runs": 112
+        },
+        "sleepfm_initial_f1": {
+          "covered": 10,
+          "matched": 10,
+          "runs": 17
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 12,
+          "matched": 12,
+          "runs": 22
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 20,
+          "matched": 20,
+          "runs": 44
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 33,
+          "matched": 31,
+          "runs": 97
+        }
+      },
+      "eligible": 57,
+      "none": 6,
+      "partial": 53,
+      "too_short": 0,
+      "total": 116
+    },
+    "tr06-0452": {
+      "complete": 23,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 7,
+          "matched": 6,
+          "runs": 47
+        },
+        "osf_sensitivity_70": {
+          "covered": 7,
+          "matched": 6,
+          "runs": 50
+        },
+        "osf_sensitivity_80": {
+          "covered": 13,
+          "matched": 9,
+          "runs": 85
+        },
+        "osf_sensitivity_90": {
+          "covered": 19,
+          "matched": 11,
+          "runs": 127
+        },
+        "sleepfm_initial_f1": {
+          "covered": 7,
+          "matched": 4,
+          "runs": 21
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 12,
+          "matched": 8,
+          "runs": 32
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 15,
+          "matched": 11,
+          "runs": 48
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 19,
+          "matched": 11,
+          "runs": 105
+        }
+      },
+      "eligible": 23,
+      "none": 2,
+      "partial": 15,
+      "too_short": 0,
+      "total": 40
+    },
+    "tr06-0515": {
+      "complete": 141,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 141,
+          "matched": 76,
+          "runs": 164
+        },
+        "osf_sensitivity_70": {
+          "covered": 141,
+          "matched": 76,
+          "runs": 163
+        },
+        "osf_sensitivity_80": {
+          "covered": 141,
+          "matched": 73,
+          "runs": 165
+        },
+        "osf_sensitivity_90": {
+          "covered": 141,
+          "matched": 71,
+          "runs": 180
+        },
+        "sleepfm_initial_f1": {
+          "covered": 136,
+          "matched": 73,
+          "runs": 147
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 138,
+          "matched": 71,
+          "runs": 154
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 140,
+          "matched": 72,
+          "runs": 171
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 141,
+          "matched": 70,
+          "runs": 174
+        }
+      },
+      "eligible": 141,
+      "none": 10,
+      "partial": 139,
+      "too_short": 1,
+      "total": 290
+    },
+    "tr06-0570": {
+      "complete": 19,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 19,
+          "matched": 13,
+          "runs": 125
+        },
+        "osf_sensitivity_70": {
+          "covered": 19,
+          "matched": 13,
+          "runs": 125
+        },
+        "osf_sensitivity_80": {
+          "covered": 19,
+          "matched": 13,
+          "runs": 146
+        },
+        "osf_sensitivity_90": {
+          "covered": 19,
+          "matched": 13,
+          "runs": 138
+        },
+        "sleepfm_initial_f1": {
+          "covered": 15,
+          "matched": 12,
+          "runs": 76
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 15,
+          "matched": 12,
+          "runs": 94
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 17,
+          "matched": 13,
+          "runs": 129
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 19,
+          "matched": 13,
+          "runs": 140
+        }
+      },
+      "eligible": 19,
+      "none": 1,
+      "partial": 34,
+      "too_short": 0,
+      "total": 54
+    },
+    "tr06-0696": {
+      "complete": 24,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 17,
+          "matched": 11,
+          "runs": 48
+        },
+        "osf_sensitivity_70": {
+          "covered": 17,
+          "matched": 11,
+          "runs": 49
+        },
+        "osf_sensitivity_80": {
+          "covered": 17,
+          "matched": 10,
+          "runs": 71
+        },
+        "osf_sensitivity_90": {
+          "covered": 22,
+          "matched": 14,
+          "runs": 91
+        },
+        "sleepfm_initial_f1": {
+          "covered": 12,
+          "matched": 11,
+          "runs": 69
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 15,
+          "matched": 14,
+          "runs": 82
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 21,
+          "matched": 16,
+          "runs": 142
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 22,
+          "matched": 15,
+          "runs": 145
+        }
+      },
+      "eligible": 24,
+      "none": 1,
+      "partial": 22,
+      "too_short": 0,
+      "total": 47
+    },
+    "tr06-0802": {
+      "complete": 24,
+      "configurations": {
+        "osf_initial_f1": {
+          "covered": 12,
+          "matched": 10,
+          "runs": 34
+        },
+        "osf_sensitivity_70": {
+          "covered": 12,
+          "matched": 10,
+          "runs": 36
+        },
+        "osf_sensitivity_80": {
+          "covered": 17,
+          "matched": 14,
+          "runs": 59
+        },
+        "osf_sensitivity_90": {
+          "covered": 21,
+          "matched": 17,
+          "runs": 95
+        },
+        "sleepfm_initial_f1": {
+          "covered": 3,
+          "matched": 2,
+          "runs": 8
+        },
+        "sleepfm_sensitivity_70": {
+          "covered": 4,
+          "matched": 3,
+          "runs": 13
+        },
+        "sleepfm_sensitivity_80": {
+          "covered": 10,
+          "matched": 7,
+          "runs": 34
+        },
+        "sleepfm_sensitivity_90": {
+          "covered": 19,
+          "matched": 13,
+          "runs": 59
+        }
+      },
+      "eligible": 24,
+      "none": 7,
+      "partial": 21,
+      "too_short": 0,
+      "total": 52
+    }
+  },
+  "caveat": "Validation déjà utilisée pour les seuils ; pas confirmation, précision événementielle ou IAH",
+  "code_files": {
+    "scripts/analyse_respiratory_runs.py": "8554919eb6cb9a188a6b87abb8ea793433b4341342edae5fa9da6126bd039ae3",
+    "scripts/evaluate_respiratory_events.py": "602f87f9538e0ee4f9d8a2cdc51934a2a8466e30ac1216fd60af7d18a0c29e4c",
+    "src/data/respiratory_event_eval.py": "2ce14cb7e54e2f7a34555ed4dc963c0e5bcfec1a1d44dc52fb84afadaafa98e3",
+    "src/data/respiratory_events.py": "dafa60f5bedba7f4b05b5bbf7384e12c42db931d9e2fc99ab3963d98ef003f6b"
+  },
+  "command": [
+    "scripts/evaluate_respiratory_events.py",
+    "--plan",
+    "../Journal/Plan événements respiratoires validation SleepFM OSF 12-11.md",
+    "--out",
+    "results/respiratory_events_validation_physionet2018"
+  ],
+  "coverage": {
+    "complete": 3111,
+    "eligible": 3096,
+    "none": 202,
+    "partial": 1692,
+    "too_short": 53,
+    "total": 5005
+  },
+  "environment": {
+    "code_commit": "2c61addfadb2394b456b2c8aebbfdb7a22783d08",
+    "code_modified": true,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "untracked_code": [
+      "scripts/evaluate_respiratory_events.py",
+      "src/data/respiratory_event_eval.py"
+    ],
+    "xgboost": null
+  },
+  "kind": "diagnostic événementiel sur validation seulement",
+  "minimum_overlap_s": 10.0,
+  "results": {
+    "osf": {
+      "initial_f1": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 349,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 889,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 34,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 972,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.26782497226124985,
+            0.41740586116568434
+          ],
+          "count": 1037,
+          "recall": 0.3349483204134367
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.6395256684235613,
+            0.7857040257605458
+          ],
+          "count": 2244,
+          "recall": 0.7248062015503876
+        },
+        "threshold": 0.763603687286377
+      },
+      "sensitivity_70": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 355,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 902,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 34,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 976,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.2683510439896975,
+            0.41970734882629596
+          ],
+          "count": 1044,
+          "recall": 0.3372093023255814
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.6491436982738672,
+            0.7918743995730824
+          ],
+          "count": 2267,
+          "recall": 0.7322351421188631
+        },
+        "threshold": 0.7553014755249023
+      },
+      "sensitivity_80": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 394,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 1076,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 35,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 1065,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.2913577439249605,
+            0.4546643330250576
+          ],
+          "count": 1123,
+          "recall": 0.3627260981912145
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.7678200894910481,
+            0.8742724598505779
+          ],
+          "count": 2570,
+          "recall": 0.8301033591731266
+        },
+        "threshold": 0.5907782316207886
+      },
+      "sensitivity_90": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 437,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 1254,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 36,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 1134,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.2994222381098441,
+            0.4803504660592975
+          ],
+          "count": 1163,
+          "recall": 0.37564599483204136
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.8910483870967741,
+            0.9472866604753266
+          ],
+          "count": 2861,
+          "recall": 0.9240956072351422
+        },
+        "threshold": 0.3484327793121338
+      }
+    },
+    "sleepfm": {
+      "initial_f1": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 281,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 1000,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 34,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 902,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.23563922959453656,
+            0.3593111272521878
+          ],
+          "count": 899,
+          "recall": 0.29037467700258396
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.5941885452462772,
+            0.8091934947437494
+          ],
+          "count": 2217,
+          "recall": 0.7160852713178295
+        },
+        "threshold": 0.693376898765564
+      },
+      "sensitivity_70": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 300,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 1058,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 34,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 940,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.24564945555874454,
+            0.36850795236784656
+          ],
+          "count": 929,
+          "recall": 0.30006459948320413
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.6427032445893447,
+            0.8358675091048513
+          ],
+          "count": 2332,
+          "recall": 0.7532299741602068
+        },
+        "threshold": 0.6375746726989746
+      },
+      "sensitivity_80": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 361,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 1200,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 36,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 1024,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.26589505615965275,
+            0.40731046404335586
+          ],
+          "count": 1019,
+          "recall": 0.3291343669250646
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.7689455602536998,
+            0.9032721625845832
+          ],
+          "count": 2621,
+          "recall": 0.8465762273901809
+        },
+        "threshold": 0.48833152651786804
+      },
+      "sensitivity_90": {
+        "bootstrap": {
+          "n_boot": 500,
+          "n_subjects": 40,
+          "seed": 42,
+          "valid_draws": 500
+        },
+        "by_type": {
+          "resp_centralapnea": {
+            "covered_events": 409,
+            "eligible_events": 471
+          },
+          "resp_hypopnea": {
+            "covered_events": 1308,
+            "eligible_events": 1392
+          },
+          "resp_mixedapnea": {
+            "covered_events": 36,
+            "eligible_events": 36
+          },
+          "resp_obstructiveapnea": {
+            "covered_events": 1108,
+            "eligible_events": 1197
+          }
+        },
+        "eligible_events": 3096,
+        "one_to_one_matching": {
+          "ci95": [
+            0.27548631830289944,
+            0.43576841609731787
+          ],
+          "count": 1076,
+          "recall": 0.3475452196382429
+        },
+        "positive_window_coverage": {
+          "ci95": [
+            0.8745392812385165,
+            0.9573285418820414
+          ],
+          "count": 2861,
+          "recall": 0.9240956072351422
+        },
+        "threshold": 0.30470922589302063
+      }
+    }
+  },
+  "source_sha256": {
+    "baseline": "a9036860635fad9fec6ab9d1e63be8438838e690f77366d62e5ffdeadeb7b8ee",
+    "labels_manifest": "efafe6d6c98642d9760eae04ea1558f56e5aade7e4f50be382caf55855e5953e",
+    "plan": "e026f796ebcc96fed9054a2b0463711047cc23b4fadd23568aa371eea0421ef8",
+    "thresholds": "27b7eb4400017cd3c495bea6e831e2e744e7d4bf87c33f65d24cfc4d360bf066"
+  },
+  "status": "terminé",
+  "subjects": [
+    "tr03-0304",
+    "tr03-0396",
+    "tr03-0541",
+    "tr03-0672",
+    "tr03-0686",
+    "tr03-0733",
+    "tr03-0764",
+    "tr03-0879",
+    "tr03-1294",
+    "tr03-1319",
+    "tr04-0255",
+    "tr04-0265",
+    "tr04-0468",
+    "tr04-0569",
+    "tr04-1032",
+    "tr05-0048",
+    "tr05-0114",
+    "tr05-0531",
+    "tr05-0629",
+    "tr05-0664",
+    "tr05-0744",
+    "tr05-0849",
+    "tr05-0905",
+    "tr05-0949",
+    "tr05-1034",
+    "tr05-1042",
+    "tr05-1371",
+    "tr05-1386",
+    "tr06-0103",
+    "tr06-0108",
+    "tr06-0249",
+    "tr06-0262",
+    "tr06-0313",
+    "tr06-0404",
+    "tr06-0429",
+    "tr06-0452",
+    "tr06-0515",
+    "tr06-0570",
+    "tr06-0696",
+    "tr06-0802"
+  ],
+  "tolerance_s": 0.01,
+  "validation_archive_sha256": "47b444677730ce35689d4286b839a60caf3113715d4ce6e40334c94329970f4a",
+  "wfdb_version": "4.1.2",
+  "windows": 34437
+}
