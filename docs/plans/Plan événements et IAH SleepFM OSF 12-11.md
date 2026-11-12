@@ -63,6 +63,28 @@ Ni NSRR, ni les **494 sujets de confirmation** des stades. Aucun téléchargemen
   rapidement, avec une règle figée avant d'ouvrir ces données.
 - Seuil : le seuil F1 initial (« normal »), sans nouvelle sélection.
 
+## Précisions d'exécution (12 novembre 2026, avant tout calcul)
+
+Ajoutées après la validation du tuteur, avant d'écrire le script ; elles fixent des choix
+que le plan laissait ouverts, sans en changer les critères.
+
+- **Fenêtres prédites** : toutes celles présentes dans les caches d'embeddings (fenêtres avec
+  un stade annoté, identiques pour SleepFM et OSF), labels respiratoires exclus compris. Les
+  durées sans fenêtre en cache ne sont ni prédites ni comptées dans les heures.
+- **Seuils** : ceux archivés avec les modèles (SleepFM 0,6934 ; OSF 0,7636).
+- **Contrôle des probabilités** : sur les fenêtres déjà évaluées, écart maximal ≤ 1e-6 avec
+  les archives ; sinon arrêt.
+- **IAH de référence** : réimplémentation de `compter.py` dans le dépôt ; contrôle : identique
+  à `iah_500_sujets_ouverts.csv` (à 0,01 près) pour les 140 nuits utilisées ; sinon arrêt.
+- **Nuits écartées** : moins de 1 h de sommeil expert, en validation comme en test.
+- **IAH estimé** : `a + b·x` sans troncature ; une valeur négative compte comme < 5.
+- **Statistiques** : AUC de Mann-Whitney (ex æquo comptés 0,5) ; IC percentiles 2,5–97,5 ;
+  mêmes 1 000 tirages de nuits pour les deux modèles, tirage écarté (et compté) s'il manque une
+  classe ; κ à **pondération linéaire** ; Bland-Altman : biais (estimé − référence) ± 1,96 écart-type.
+- **Événements** : références individuelles (`individual_events`), retrouvées si l'union des
+  fenêtres prédites positives en couvre au moins 10 s. Séquence prédite = fenêtres positives
+  d'indices consécutifs ; fausse détection = séquence sans aucun recouvrement avec un événement.
+
 ## Limites connues
 
 Fenêtres de 30 s : résolution grossière pour des événements de 10 à 60 s. Indice par heure
