@@ -1,0 +1,1287 @@
+{
+  "artifacts": {
+    "code.zip": {
+      "file": "respiratory_thresholds_physionet2018.code.zip",
+      "sha256": "41165b430cd425bfebb032ead74973703b90f9dad1cc24782f407b8c8a1e956e"
+    },
+    "inputs.json": {
+      "file": "respiratory_thresholds_physionet2018.inputs.json",
+      "sha256": "76cdff89e1289b44978f0deec0577f159bda6a47dca9c818c881b8332f9ffe63"
+    },
+    "validation.npz": {
+      "file": "respiratory_thresholds_physionet2018.validation.npz",
+      "sha256": "47b444677730ce35689d4286b839a60caf3113715d4ce6e40334c94329970f4a"
+    }
+  },
+  "caveat": "Exploratoire par fenêtre, pas événements ni diagnostic ; IC conditionnels aux seuils figés",
+  "code_files": {
+    "scripts/compare_respiratory_osf.py": "04cc81f0c8e98550f496496789884506415df5642b9644d273b5fc6525176bcc",
+    "scripts/evaluate_respiratory_thresholds.py": "b55ff531c544a3191ced44957a8d5876f22e48c91ffb9d9e7db9e37f8e0aafe4",
+    "scripts/respiratory_baseline.py": "69919dd431b424ca151861f83450d5143c1faab15ff3902abbd02c5f975200b4",
+    "src/data/respiratory_events.py": "dafa60f5bedba7f4b05b5bbf7384e12c42db931d9e2fc99ab3963d98ef003f6b"
+  },
+  "command": [
+    "scripts/evaluate_respiratory_thresholds.py",
+    "--out",
+    "results/respiratory_thresholds_physionet2018"
+  ],
+  "environment": {
+    "code_commit": "921758d223b28579bcb25d33c50e72c5a589fc2c",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "xgboost": null
+  },
+  "kind": "compromis respiratoire, seuils choisis sur validation",
+  "partitions": {
+    "fit": [
+      "tr03-0005",
+      "tr03-0029",
+      "tr03-0061",
+      "tr03-0079",
+      "tr03-0083",
+      "tr03-0086",
+      "tr03-0087",
+      "tr03-0092",
+      "tr03-0100",
+      "tr03-0103",
+      "tr03-0134",
+      "tr03-0135",
+      "tr03-0141",
+      "tr03-0146",
+      "tr03-0152",
+      "tr03-0166",
+      "tr03-0179",
+      "tr03-0184",
+      "tr03-0198",
+      "tr03-0212",
+      "tr03-0251",
+      "tr03-0257",
+      "tr03-0267",
+      "tr03-0287",
+      "tr03-0289",
+      "tr03-0299",
+      "tr03-0314",
+      "tr03-0322",
+      "tr03-0333",
+      "tr03-0373",
+      "tr03-0392",
+      "tr03-0394",
+      "tr03-0402",
+      "tr03-0411",
+      "tr03-0413",
+      "tr03-0418",
+      "tr03-0426",
+      "tr03-0428",
+      "tr03-0434",
+      "tr03-0494",
+      "tr03-0523",
+      "tr03-0532",
+      "tr03-0560",
+      "tr03-0584",
+      "tr03-0618",
+      "tr03-0623",
+      "tr03-0645",
+      "tr03-0674",
+      "tr03-0678",
+      "tr03-0697",
+      "tr03-0708",
+      "tr03-0715",
+      "tr03-0726",
+      "tr03-0743",
+      "tr03-0759",
+      "tr03-0773",
+      "tr03-0780",
+      "tr03-0785",
+      "tr03-0793",
+      "tr03-0796",
+      "tr03-0802",
+      "tr03-0816",
+      "tr03-0862",
+      "tr03-0863",
+      "tr03-0876",
+      "tr03-0885",
+      "tr03-0900",
+      "tr03-0906",
+      "tr03-0907",
+      "tr03-0909",
+      "tr03-0919",
+      "tr03-0933",
+      "tr03-0955",
+      "tr03-0982",
+      "tr03-1010",
+      "tr03-1023",
+      "tr03-1050",
+      "tr03-1056",
+      "tr03-1075",
+      "tr03-1082",
+      "tr03-1100",
+      "tr03-1112",
+      "tr03-1115",
+      "tr03-1119",
+      "tr03-1129",
+      "tr03-1135",
+      "tr03-1143",
+      "tr03-1155",
+      "tr03-1181",
+      "tr03-1183",
+      "tr03-1197",
+      "tr03-1226",
+      "tr03-1333",
+      "tr03-1346",
+      "tr03-1362",
+      "tr03-1367",
+      "tr03-1373",
+      "tr03-1374",
+      "tr03-1387",
+      "tr03-1389",
+      "tr03-1397",
+      "tr04-0008",
+      "tr04-0014",
+      "tr04-0015",
+      "tr04-0029",
+      "tr04-0030",
+      "tr04-0039",
+      "tr04-0041",
+      "tr04-0075",
+      "tr04-0079",
+      "tr04-0117",
+      "tr04-0144",
+      "tr04-0187",
+      "tr04-0196",
+      "tr04-0209",
+      "tr04-0210",
+      "tr04-0216",
+      "tr04-0227",
+      "tr04-0231",
+      "tr04-0239",
+      "tr04-0247",
+      "tr04-0261",
+      "tr04-0269",
+      "tr04-0275",
+      "tr04-0287",
+      "tr04-0332",
+      "tr04-0342",
+      "tr04-0358",
+      "tr04-0362",
+      "tr04-0374",
+      "tr04-0393",
+      "tr04-0400",
+      "tr04-0402",
+      "tr04-0417",
+      "tr04-0425",
+      "tr04-0471",
+      "tr04-0474",
+      "tr04-0503",
+      "tr04-0536",
+      "tr04-0551",
+      "tr04-0568",
+      "tr04-0579",
+      "tr04-0583",
+      "tr04-0587",
+      "tr04-0603",
+      "tr04-0613",
+      "tr04-0653",
+      "tr04-0675",
+      "tr04-0679",
+      "tr04-0695",
+      "tr04-0699",
+      "tr04-0702",
+      "tr04-0703",
+      "tr04-0710",
+      "tr04-0726",
+      "tr04-0746",
+      "tr04-0762",
+      "tr04-0785",
+      "tr04-0805",
+      "tr04-0806",
+      "tr04-0808",
+      "tr04-0829",
+      "tr04-0864",
+      "tr04-0878",
+      "tr04-0882",
+      "tr04-0909",
+      "tr04-0913",
+      "tr04-0931",
+      "tr04-0933",
+      "tr04-0939",
+      "tr04-0959",
+      "tr04-0960",
+      "tr04-0963",
+      "tr04-0966",
+      "tr04-0983",
+      "tr04-1013",
+      "tr04-1021",
+      "tr04-1023",
+      "tr04-1034",
+      "tr04-1064",
+      "tr04-1078",
+      "tr04-1096",
+      "tr04-1097",
+      "tr04-1105",
+      "tr05-0028",
+      "tr05-0067",
+      "tr05-0069",
+      "tr05-0119",
+      "tr05-0174",
+      "tr05-0193",
+      "tr05-0226",
+      "tr05-0243",
+      "tr05-0256",
+      "tr05-0260",
+      "tr05-0266",
+      "tr05-0292",
+      "tr05-0301",
+      "tr05-0312",
+      "tr05-0315",
+      "tr05-0326",
+      "tr05-0327",
+      "tr05-0334",
+      "tr05-0356",
+      "tr05-0379",
+      "tr05-0403",
+      "tr05-0404",
+      "tr05-0405",
+      "tr05-0411",
+      "tr05-0418",
+      "tr05-0443",
+      "tr05-0449",
+      "tr05-0456",
+      "tr05-0459",
+      "tr05-0471",
+      "tr05-0497",
+      "tr05-0549",
+      "tr05-0550",
+      "tr05-0572",
+      "tr05-0596",
+      "tr05-0627",
+      "tr05-0635",
+      "tr05-0646",
+      "tr05-0647",
+      "tr05-0652",
+      "tr05-0655",
+      "tr05-0685",
+      "tr05-0686",
+      "tr05-0701",
+      "tr05-0707",
+      "tr05-0715",
+      "tr05-0724",
+      "tr05-0738",
+      "tr05-0739",
+      "tr05-0782",
+      "tr05-0784",
+      "tr05-0800",
+      "tr05-0812",
+      "tr05-0827",
+      "tr05-0838",
+      "tr05-0864",
+      "tr05-0880",
+      "tr05-0900",
+      "tr05-0910",
+      "tr05-0924",
+      "tr05-0932",
+      "tr05-0994",
+      "tr05-1060",
+      "tr05-1097",
+      "tr05-1112",
+      "tr05-1118",
+      "tr05-1128",
+      "tr05-1129",
+      "tr05-1146",
+      "tr05-1149",
+      "tr05-1167",
+      "tr05-1175",
+      "tr05-1176",
+      "tr05-1183",
+      "tr05-1190",
+      "tr05-1197",
+      "tr05-1215",
+      "tr05-1222",
+      "tr05-1225",
+      "tr05-1229",
+      "tr05-1233",
+      "tr05-1234",
+      "tr05-1238",
+      "tr05-1243",
+      "tr05-1247",
+      "tr05-1258",
+      "tr05-1270",
+      "tr05-1302",
+      "tr05-1313",
+      "tr05-1317",
+      "tr05-1324",
+      "tr05-1356",
+      "tr05-1372",
+      "tr05-1375",
+      "tr05-1377",
+      "tr05-1385",
+      "tr05-1404",
+      "tr05-1406",
+      "tr05-1419",
+      "tr05-1434",
+      "tr05-1453",
+      "tr05-1457",
+      "tr05-1464",
+      "tr05-1475",
+      "tr05-1489",
+      "tr05-1497",
+      "tr05-1513",
+      "tr05-1528",
+      "tr05-1547",
+      "tr05-1551",
+      "tr05-1554",
+      "tr05-1570",
+      "tr05-1572",
+      "tr05-1591",
+      "tr05-1604",
+      "tr05-1624",
+      "tr05-1649",
+      "tr05-1653",
+      "tr05-1659",
+      "tr05-1675",
+      "tr05-1681",
+      "tr05-1684",
+      "tr05-1687",
+      "tr05-1688",
+      "tr05-1689",
+      "tr05-1720",
+      "tr05-1728",
+      "tr06-0014",
+      "tr06-0017",
+      "tr06-0041",
+      "tr06-0062",
+      "tr06-0084",
+      "tr06-0107",
+      "tr06-0117",
+      "tr06-0122",
+      "tr06-0126",
+      "tr06-0154",
+      "tr06-0168",
+      "tr06-0177",
+      "tr06-0204",
+      "tr06-0221",
+      "tr06-0234",
+      "tr06-0242",
+      "tr06-0282",
+      "tr06-0302",
+      "tr06-0307",
+      "tr06-0315",
+      "tr06-0317",
+      "tr06-0318",
+      "tr06-0332",
+      "tr06-0333",
+      "tr06-0347",
+      "tr06-0379",
+      "tr06-0397",
+      "tr06-0449",
+      "tr06-0475",
+      "tr06-0488",
+      "tr06-0503",
+      "tr06-0517",
+      "tr06-0536",
+      "tr06-0544",
+      "tr06-0567",
+      "tr06-0576",
+      "tr06-0579",
+      "tr06-0584",
+      "tr06-0609",
+      "tr06-0644",
+      "tr06-0705",
+      "tr06-0709",
+      "tr06-0721",
+      "tr06-0750",
+      "tr06-0769",
+      "tr06-0771",
+      "tr06-0780",
+      "tr06-0785",
+      "tr06-0812"
+    ],
+    "test": [
+      "tr03-0052",
+      "tr03-0078",
+      "tr03-0167",
+      "tr03-0187",
+      "tr03-0216",
+      "tr03-0241",
+      "tr03-0256",
+      "tr03-0300",
+      "tr03-0401",
+      "tr03-0473",
+      "tr03-0485",
+      "tr03-0487",
+      "tr03-0536",
+      "tr03-0567",
+      "tr03-0592",
+      "tr03-0713",
+      "tr03-0792",
+      "tr03-0904",
+      "tr03-0921",
+      "tr03-0940",
+      "tr03-1004",
+      "tr03-1013",
+      "tr03-1160",
+      "tr03-1185",
+      "tr03-1231",
+      "tr03-1292",
+      "tr03-1302",
+      "tr03-1371",
+      "tr04-0020",
+      "tr04-0120",
+      "tr04-0121",
+      "tr04-0133",
+      "tr04-0208",
+      "tr04-0214",
+      "tr04-0223",
+      "tr04-0279",
+      "tr04-0404",
+      "tr04-0570",
+      "tr04-0611",
+      "tr04-0631",
+      "tr04-0649",
+      "tr04-0658",
+      "tr04-0671",
+      "tr04-0741",
+      "tr04-0825",
+      "tr04-0887",
+      "tr04-0900",
+      "tr04-0908",
+      "tr04-0915",
+      "tr04-1006",
+      "tr04-1087",
+      "tr04-1117",
+      "tr05-0011",
+      "tr05-0074",
+      "tr05-0206",
+      "tr05-0253",
+      "tr05-0284",
+      "tr05-0332",
+      "tr05-0348",
+      "tr05-0400",
+      "tr05-0501",
+      "tr05-0570",
+      "tr05-0574",
+      "tr05-0610",
+      "tr05-0613",
+      "tr05-0857",
+      "tr05-0860",
+      "tr05-1121",
+      "tr05-1135",
+      "tr05-1163",
+      "tr05-1268",
+      "tr05-1277",
+      "tr05-1452",
+      "tr05-1510",
+      "tr05-1521",
+      "tr05-1558",
+      "tr05-1575",
+      "tr05-1716",
+      "tr06-0050",
+      "tr06-0166",
+      "tr06-0182",
+      "tr06-0193",
+      "tr06-0202",
+      "tr06-0232",
+      "tr06-0362",
+      "tr06-0363",
+      "tr06-0390",
+      "tr06-0418",
+      "tr06-0447",
+      "tr06-0532",
+      "tr06-0538",
+      "tr06-0547",
+      "tr06-0556",
+      "tr06-0627",
+      "tr06-0677",
+      "tr06-0694",
+      "tr06-0764",
+      "tr06-0773",
+      "tr06-0791",
+      "tr06-0797"
+    ],
+    "validation": [
+      "tr03-0304",
+      "tr03-0396",
+      "tr03-0541",
+      "tr03-0672",
+      "tr03-0686",
+      "tr03-0733",
+      "tr03-0764",
+      "tr03-0879",
+      "tr03-1294",
+      "tr03-1319",
+      "tr04-0255",
+      "tr04-0265",
+      "tr04-0468",
+      "tr04-0569",
+      "tr04-1032",
+      "tr05-0048",
+      "tr05-0114",
+      "tr05-0531",
+      "tr05-0629",
+      "tr05-0664",
+      "tr05-0744",
+      "tr05-0849",
+      "tr05-0905",
+      "tr05-0949",
+      "tr05-1034",
+      "tr05-1042",
+      "tr05-1371",
+      "tr05-1386",
+      "tr06-0103",
+      "tr06-0108",
+      "tr06-0249",
+      "tr06-0262",
+      "tr06-0313",
+      "tr06-0404",
+      "tr06-0429",
+      "tr06-0452",
+      "tr06-0515",
+      "tr06-0570",
+      "tr06-0696",
+      "tr06-0802"
+    ]
+  },
+  "plan_sha256": "a7828b0963ade5142f6224fbe1e4a5633f5c9aa9f9a4f824d1bf1080d5c14420",
+  "reload_checks": {
+    "osf": {
+      "absolute_difference": 0.0,
+      "initial_threshold": 0.763603687286377,
+      "model_sha256": "501fcd888f2154d95d95697e78cd017eaefb281022405be903683044d22d526d",
+      "recomputed_f1_threshold": 0.763603687286377,
+      "tolerance": 2e-06
+    },
+    "sleepfm": {
+      "absolute_difference": 0.0,
+      "initial_threshold": 0.693376898765564,
+      "model_sha256": "1595e39b16013550b742f986ab6931912a3574810484e61b3c7f117ea60b385d",
+      "recomputed_f1_threshold": 0.693376898765564,
+      "tolerance": 2e-06
+    }
+  },
+  "results": {
+    "osf": {
+      "initial_f1": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.414929278228754,
+                0.5678320027003587
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.5355434792122539,
+                0.6544087047742397
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.5535134712534228,
+                0.694913667681345
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.918957066283058,
+                0.9514616546929391
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              69015,
+              4777
+            ],
+            [
+              4319,
+              7119
+            ]
+          ],
+          "f1": 0.610182566212394,
+          "false_positive_windows": 4777,
+          "hypopnea": {
+            "recall": 0.48941968579672973,
+            "true_positive": 3053,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.5984364492266308,
+          "predicted_positive": 11896,
+          "sensitivity": 0.6223990208078335,
+          "specificity": 0.9352639852558543,
+          "windows": 85230
+        },
+        "threshold": 0.763603687286377,
+        "validation": {
+          "confusion_matrix": [
+            [
+              27169,
+              1918
+            ],
+            [
+              1644,
+              3706
+            ]
+          ],
+          "f1": 0.6754146163659559,
+          "false_positive_windows": 1918,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.6589615931721194,
+          "predicted_positive": 5624,
+          "sensitivity": 0.6927102803738318,
+          "specificity": 0.9340598892976244,
+          "windows": 34437
+        }
+      },
+      "sensitivity_70": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.4240902839305556,
+                0.5775059351820223
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.5303960265192837,
+                0.6489968425856105
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.5635851449208122,
+                0.7034359682317385
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.9161183010559278,
+                0.9493473189455237
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              68837,
+              4955
+            ],
+            [
+              4216,
+              7222
+            ]
+          ],
+          "f1": 0.6116451408003387,
+          "false_positive_windows": 4955,
+          "hypopnea": {
+            "recall": 0.4993587688361654,
+            "true_positive": 3115,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.5930853247926419,
+          "predicted_positive": 12177,
+          "sensitivity": 0.6314040916244099,
+          "specificity": 0.932851799653079,
+          "windows": 85230
+        },
+        "threshold": 0.7553014755249023,
+        "validation": {
+          "confusion_matrix": [
+            [
+              27087,
+              2000
+            ],
+            [
+              1605,
+              3745
+            ]
+          ],
+          "f1": 0.6750788643533123,
+          "false_positive_windows": 2000,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.6518711923411662,
+          "predicted_positive": 5745,
+          "sensitivity": 0.7,
+          "specificity": 0.9312407604771891,
+          "windows": 34437
+        }
+      },
+      "sensitivity_80": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.5549535697107468,
+                0.7102423748312696
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.433925233214568,
+                0.5408851046976298
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.6797488710213565,
+                0.8029271175827242
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.856359167117984,
+                0.9046487620860421
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              64975,
+              8817
+            ],
+            [
+              2957,
+              8481
+            ]
+          ],
+          "f1": 0.5902700445434298,
+          "false_positive_windows": 8817,
+          "hypopnea": {
+            "recall": 0.6325745431227958,
+            "true_positive": 3946,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.49028789455428373,
+          "predicted_positive": 17298,
+          "sensitivity": 0.7414757824794544,
+          "specificity": 0.8805155030355594,
+          "windows": 85230
+        },
+        "threshold": 0.5907782316207886,
+        "validation": {
+          "confusion_matrix": [
+            [
+              25538,
+              3549
+            ],
+            [
+              1070,
+              4280
+            ]
+          ],
+          "f1": 0.6495181728507474,
+          "false_positive_windows": 3549,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.5466854004342828,
+          "predicted_positive": 7829,
+          "sensitivity": 0.8,
+          "specificity": 0.8779867294667721,
+          "windows": 34437
+        }
+      },
+      "sensitivity_90": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.7111352968994461,
+                0.8428954165016377
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.3244228289959822,
+                0.4103760808537236
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.8013123006529189,
+                0.9003925814250644
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.7416121131721987,
+                0.8069396168236985
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              57144,
+              16648
+            ],
+            [
+              1687,
+              9751
+            ]
+          ],
+          "f1": 0.5154214129027143,
+          "false_positive_windows": 16648,
+          "hypopnea": {
+            "recall": 0.7795767874318692,
+            "true_positive": 4863,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.36937005189590516,
+          "predicted_positive": 26399,
+          "sensitivity": 0.8525091799265606,
+          "specificity": 0.7743928881179531,
+          "windows": 85230
+        },
+        "threshold": 0.3484327793121338,
+        "validation": {
+          "confusion_matrix": [
+            [
+              22472,
+              6615
+            ],
+            [
+              535,
+              4815
+            ]
+          ],
+          "f1": 0.5738974970202623,
+          "false_positive_windows": 6615,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.421259842519685,
+          "predicted_positive": 11430,
+          "sensitivity": 0.9,
+          "specificity": 0.7725788152783031,
+          "windows": 34437
+        }
+      }
+    },
+    "sleepfm": {
+      "initial_f1": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.47831645276126006,
+                0.6013027798158623
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.45402019732939236,
+                0.5782643344997026
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.5381607546779564,
+                0.6520713738427164
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.8904118565940731,
+                0.9305274215816625
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              67272,
+              6520
+            ],
+            [
+              4600,
+              6838
+            ]
+          ],
+          "f1": 0.5515405710598483,
+          "false_positive_windows": 6520,
+          "hypopnea": {
+            "recall": 0.541038794485412,
+            "true_positive": 3375,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.5119029794879473,
+          "predicted_positive": 13358,
+          "sensitivity": 0.5978317887742612,
+          "specificity": 0.9116435385949696,
+          "windows": 85230
+        },
+        "threshold": 0.693376898765564,
+        "validation": {
+          "confusion_matrix": [
+            [
+              27104,
+              1983
+            ],
+            [
+              1824,
+              3526
+            ]
+          ],
+          "f1": 0.6494152316051202,
+          "false_positive_windows": 1983,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.6400435650753312,
+          "predicted_positive": 5509,
+          "sensitivity": 0.6590654205607477,
+          "specificity": 0.931825214013133,
+          "windows": 34437
+        }
+      },
+      "sensitivity_70": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.5444586139209355,
+                0.6598549949490956
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.41728727857488146,
+                0.5366695616903285
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.5943308092042259,
+                0.6977113243583853
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.8632698316643286,
+                0.9095788439788972
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              65476,
+              8316
+            ],
+            [
+              3997,
+              7441
+            ]
+          ],
+          "f1": 0.5472329472329472,
+          "false_positive_windows": 8316,
+          "hypopnea": {
+            "recall": 0.604841295286951,
+            "true_positive": 3773,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.4722345624167037,
+          "predicted_positive": 15757,
+          "sensitivity": 0.6505507955936353,
+          "specificity": 0.8873048568950563,
+          "windows": 85230
+        },
+        "threshold": 0.6375746726989746,
+        "validation": {
+          "confusion_matrix": [
+            [
+              26505,
+              2582
+            ],
+            [
+              1605,
+              3745
+            ]
+          ],
+          "f1": 0.6414318746253318,
+          "false_positive_windows": 2582,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.5919076971708551,
+          "predicted_positive": 6327,
+          "sensitivity": 0.7,
+          "specificity": 0.9112318217760511,
+          "windows": 34437
+        }
+      },
+      "sensitivity_80": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.697998248446673,
+                0.7839329786674073
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.3318504691137941,
+                0.4311654522350368
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.724482026008582,
+                0.8063089436469804
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.7745482021324455,
+                0.8353490511318215
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              59492,
+              14300
+            ],
+            [
+              2651,
+              8787
+            ]
+          ],
+          "f1": 0.5090224475018102,
+          "false_positive_windows": 14300,
+          "hypopnea": {
+            "recall": 0.742225072138506,
+            "true_positive": 4630,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.3806038030060207,
+          "predicted_positive": 23087,
+          "sensitivity": 0.7682287113131666,
+          "specificity": 0.8062120555073721,
+          "windows": 85230
+        },
+        "threshold": 0.48833152651786804,
+        "validation": {
+          "confusion_matrix": [
+            [
+              24481,
+              4606
+            ],
+            [
+              1070,
+              4280
+            ]
+          ],
+          "f1": 0.6012924978926665,
+          "false_positive_windows": 4606,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.48165653837497185,
+          "predicted_positive": 8886,
+          "sensitivity": 0.8,
+          "specificity": 0.8416474713789666,
+          "windows": 34437
+        }
+      },
+      "sensitivity_90": {
+        "ci95": {
+          "metrics": {
+            "hypopnea_recall": {
+              "ci95": [
+                0.8461194887632807,
+                0.8992733944693657
+              ],
+              "valid_draws": 500
+            },
+            "precision": {
+              "ci95": [
+                0.2443639909978214,
+                0.323395677994996
+              ],
+              "valid_draws": 500
+            },
+            "sensitivity": {
+              "ci95": [
+                0.8539385959500934,
+                0.9054546609316227
+              ],
+              "valid_draws": 500
+            },
+            "specificity": {
+              "ci95": [
+                0.6152454243127915,
+                0.6945430354278712
+              ],
+              "valid_draws": 500
+            }
+          },
+          "n_boot": 500,
+          "n_subjects": 100,
+          "seed": 42,
+          "unit": "subject"
+        },
+        "test": {
+          "confusion_matrix": [
+            [
+              48514,
+              25278
+            ],
+            [
+              1345,
+              10093
+            ]
+          ],
+          "f1": 0.43124185519878655,
+          "false_positive_windows": 25278,
+          "hypopnea": {
+            "recall": 0.8743186918884258,
+            "true_positive": 5454,
+            "windows": 6238
+          },
+          "negative": 73792,
+          "positive": 11438,
+          "precision": 0.28534675298973733,
+          "predicted_positive": 35371,
+          "sensitivity": 0.8824095121524742,
+          "specificity": 0.6574425411968777,
+          "windows": 85230
+        },
+        "threshold": 0.30470922589302063,
+        "validation": {
+          "confusion_matrix": [
+            [
+              20473,
+              8614
+            ],
+            [
+              535,
+              4815
+            ]
+          ],
+          "f1": 0.5128068587251717,
+          "false_positive_windows": 8614,
+          "negative": 29087,
+          "positive": 5350,
+          "precision": 0.35855238662595873,
+          "predicted_positive": 13429,
+          "sensitivity": 0.9,
+          "specificity": 0.7038539553752535,
+          "windows": 34437
+        }
+      }
+    }
+  },
+  "source_artifacts": {
+    "code.zip": {
+      "file": "respiratory_osf_vs_sleepfm_physionet2018.code.zip",
+      "sha256": "78f2c40f9b621fa4883c088dd15b97dca5d0a979d0412df8d219cf73b1dcdb1a"
+    },
+    "inputs.json": {
+      "file": "respiratory_osf_vs_sleepfm_physionet2018.inputs.json",
+      "sha256": "04af40dfa95cfbe6fb00a2e108d6347f4fdfeec7c98d53fa11c60477bb293500"
+    },
+    "joblib": {
+      "file": "respiratory_osf_vs_sleepfm_physionet2018.joblib",
+      "sha256": "501fcd888f2154d95d95697e78cd017eaefb281022405be903683044d22d526d"
+    },
+    "predictions.npz": {
+      "file": "respiratory_osf_vs_sleepfm_physionet2018.predictions.npz",
+      "sha256": "91f257ef403d0576f6327a2ffaea95a312f64bea144b8a0d0a5c2954422315f4"
+    }
+  },
+  "source_sha256": {
+    "baseline": "a9036860635fad9fec6ab9d1e63be8438838e690f77366d62e5ffdeadeb7b8ee",
+    "comparison": "70270694004871c812d56216198cdac6d100c2ae763c110419b2336111e62131",
+    "errors": "df164eaa368cd5772fd666f4c32fb36e59318c0721c6809491793cef4cdd7353"
+  },
+  "status": "terminé",
+  "targets": [
+    0.7,
+    0.8,
+    0.9
+  ]
+}

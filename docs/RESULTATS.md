@@ -104,6 +104,21 @@ Détail : [baseline et comparaison OSF](resultats/respiratoire_baseline_osf_2026
 [analyse des erreurs](resultats/respiratoire_erreurs_2026-11-12.md) ; plans fixés avant calcul dans
 [`plans/`](plans/).
 
+**Compromis des seuils** (seuils choisis sur les 40 nuits de validation, appliqués au test) :
+
+| Modèle | Seuil | Sensibilité test | Précision | Rappel hypopnées | Fausses fenêtres positives | Séquences de faux positifs / h évaluée |
+|---|---|---:|---:|---:|---:|---|
+| SleepFM | F1 initial | 59,8 % | 51,2 % | 54,1 % | 6 520 | 6,17 [5,18 ; 7,21] |
+| SleepFM | Cible 80 % | 76,8 % | 38,1 % | 74,2 % | 14 300 | 11,13 [10,13 ; 12,17] |
+| OSF | F1 initial | 62,2 % | 59,8 % | 48,9 % | 4 777 | 4,42 [3,62 ; 5,27] |
+| OSF | Cible 80 % | 74,1 % | 49,0 % | 63,3 % | 8 817 | 7,23 [6,26 ; 8,18] |
+
+Une cible de validation ne garantit pas la même sensibilité sur le test ; les deux modèles ne sont
+donc pas comparés à rappel identique. Environ 70 % des séquences de faux positifs ne durent qu'une
+fenêtre. Ce sont des fenêtres, pas des événements ni des alertes cliniques.
+Détail : [seuils](resultats/respiratoire_seuils_2026-11-12.md) (cibles 70 et 90 % incluses),
+[séquences](resultats/respiratoire_sequences_2026-11-12.md).
+
 ## Comparaison exploratoire avec OSF
 
 Mêmes 100 nuits de test, mêmes fenêtres et mêmes sondes ; seule la représentation change

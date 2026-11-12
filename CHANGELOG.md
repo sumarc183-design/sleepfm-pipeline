@@ -21,6 +21,14 @@ selon [SemVer](https://semver.org/lang/fr/).
 - **Fiche du modèle** : lien vers « Résultats en bref » réparé.
 
 ### Ajouté
+- **Séquences respiratoires descriptives** : regroupement sans franchir les
+  lacunes, distinction des séquences mixtes et des séquences de faux positifs,
+  durées et taux par heure évaluée avec IC par nuit. Les seuils sont repris
+  tels quels ; plan et compte rendu datés dans `docs/plans/` et `docs/resultats/`.
+- **Compromis des seuils respiratoires** : cibles de sensibilité fixées sur la
+  validation, modèles rechargés sans entraînement, test évalué avec ses scores
+  archivés et IC par nuit. Seuils initiaux conservés ; plan et compte rendu
+  datés dans `docs/plans/` et `docs/resultats/`.
 - **Plans et comptes rendus dans le dépôt** : les plans fixés avant calcul (`docs/plans/`, identiques
   aux empreintes enregistrées dans les résultats) et les comptes rendus du 12 novembre (`docs/resultats/`)
   sont versionnés ; les scripts lisent leur plan dans `docs/plans/` par défaut. `docs/RESULTATS.md` est conservé.

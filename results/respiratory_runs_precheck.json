@@ -1,0 +1,8 @@
+{
+  "status": "arrêt avant décompte des séquences",
+  "plan_sha256": "0b3c51c35fa33c2ef5eb47004abdfcd2a9c29b6286d142b26eb2a5b9dbd6a51c",
+  "prediction_sha256": "91f257ef403d0576f6327a2ffaea95a312f64bea144b8a0d0a5c2954422315f4",
+  "cause": "ordre des fichiers non chronologique ; tri conjoint nécessaire",
+  "original_adjacent_time_reversals": 7601,
+  "sorted_adjacent_time_reversals": 0
+}

@@ -24,6 +24,12 @@
 - [x] Prédiction sur une polysomnographie brute non annotée au format PhysioNet 2018 : fenêtres fixes de 30 s indépendantes des annotations, contrat du signal vérifié, traitement après enregistrement (`scripts/predict_raw_night.py`). Première évaluation uniforme le 10 novembre (`scripts/evaluate_raw_grid.py`), complétée le 12 novembre par majorité stricte (`scripts/evaluate_grid_transitions.py`) : cas à un seul échantillon minoritaire séparés, indéfini exclu, anciens scores retrouvés. Résultats et limites dans [RESULTATS.md](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe).
 
 ## J90 — Différenciation
+- [x] Regroupement descriptif des fenêtres respiratoires : séquences, lacunes,
+  durées et charge par heure évaluée, aux seuils déjà fixés ; [compte rendu
+  du 12 novembre](resultats/respiratoire_sequences_2026-11-12.md). Évaluation événementielle encore distincte.
+- [x] Compromis sensibilité/fausses fenêtres positives respiratoires : seuils
+  choisis uniquement sur validation, modèles inchangés, rappel des hypopnées
+  et IC par nuit ; [compte rendu du 12 novembre](resultats/respiratoire_seuils_2026-11-12.md).
 - [x] Analyse descriptive des frontières de stade sur la grille brute : position
   de l'échantillon minoritaire, stades voisins et erreurs des sondes figées ;
   annotations et prédictions contrôlées, [compte rendu du 12 novembre](resultats/frontieres_stade_2026-11-12.md).

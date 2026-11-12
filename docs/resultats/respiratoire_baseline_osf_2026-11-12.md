@@ -154,6 +154,8 @@ ne change aucune décision sur les 100 nuits ; écart maximal de score
 
 ## À faire
 
+Complément du 12 novembre : [compromis des seuils respiratoires](respiratoire_seuils_2026-11-12.md), cibles fixées sur validation et résultats sur test, sans modifier les modèles ou seuils initiaux.
+
 Suite descriptive : [analyse des erreurs du 12 novembre](respiratoire_erreurs_2026-11-12.md), par type, stade et nuit, avec les modèles et seuils inchangés.
 
 - Faire choisir la cible précise et l'usage avec le tuteur et le médecin.

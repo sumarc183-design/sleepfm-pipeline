@@ -579,3 +579,54 @@ Le plan et le compte rendu datés sont dans `docs/plans/` et `docs/resultats/`. 
 groupes et sources archivées restent dans `results/`, sans écrasement des
 résultats existants. Le cache OSF annoté ne constitue pas une extraction OSF
 sur grille brute ; une telle comparaison nécessite des embeddings distincts.
+
+### Comparer des seuils respiratoires choisis sur validation
+
+```bash
+python scripts/evaluate_respiratory_thresholds.py \
+    --out results/respiratory_thresholds_physionet2018
+```
+
+Cette commande recharge les régressions respiratoires existantes après contrôle
+de leurs empreintes. Elle lit les embeddings des seules nuits de validation
+et reprend les probabilités de test archivées, sans entraînement ni téléchargement.
+Les seuils visent des sensibilités de 70 %, 80 % et 90 % sur la validation.
+Tous sont fixés avant leurs métriques de test ; ces cibles peuvent ne pas y
+être atteintes. Les seuils F1 initiaux restent conservés et leurs résultats
+sont reproduits comme contrôle.
+
+Les faux positifs sont des fenêtres, pas des événements respiratoires ni des
+alertes cliniques validées. Le rappel des hypopnées est calculé sur le groupe
+exclusif déjà défini. Les IC par nuit gardent les seuils fixes et ne couvrent
+pas l'incertitude de leur sélection sur validation.
+
+Le plan est dans `docs/plans/`, le compte rendu dans [`docs/resultats/`](resultats/respiratoire_seuils_2026-11-12.md) ;
+`--plan` permet de fournir ce fichier depuis un autre emplacement. Les
+probabilités de validation, empreintes des entrées et sources exécutées sont
+archivées sous le nouveau préfixe. Aucun résultat existant n'est écrasé.
+
+### Regrouper les fenêtres respiratoires dans le temps
+
+```bash
+python scripts/analyse_respiratory_runs.py --out results/respiratory_runs_physionet2018
+```
+
+Cette analyse reprend les scores archivés et les huit configurations de seuils
+déjà évaluées. Elle remet tous les vecteurs dans l'ordre du sujet et de l'indice
+d'époque entier ; la permutation vers les lignes d'origine est conservée.
+Une séquence exige des fenêtres sélectionnées consécutives,
+dans la même nuit, à indices consécutifs et espacées de 30 s (tolérance 0,01 s).
+Une fenêtre non sélectionnée ou une lacune coupe la séquence ; aucune n'est comblée.
+
+Deux décomptes restent distincts : les séquences prédites positives (entièrement
+positives, entièrement négatives ou mixtes dans les annotations) et les
+séquences des seules fenêtres faussement positives. Ces dernières peuvent
+appartenir à une séquence prédite mixte. Les durées sont nominales, à 30 s
+par fenêtre ; les bornes observées sont également archivées.
+
+Le taux de séquences de faux positifs utilise uniquement les heures de fenêtres
+évaluées, avec IC par rééchantillonnage des nuits. Il ne mesure pas des alertes
+cliniques par heure de sommeil. Aucun appariement aux événements complets ni
+aucune nouvelle règle d'alerte n'est évalué. Plan dans `docs/plans/`, [compte rendu](resultats/respiratoire_sequences_2026-11-12.md) dans `docs/resultats/` ;
+intervalles, permutation, résultats et sources dans `results/`. Le plan v2
+documente le contrôle de l'ordre de stockage, arrêté avant tout premier décompte.
