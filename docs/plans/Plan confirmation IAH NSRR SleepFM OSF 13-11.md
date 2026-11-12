@@ -48,14 +48,37 @@ réentraînement, aucun nouveau seuil, aucune recalibration sur NSRR.
 
 ## Points ouverts avant l'accès
 
-1. **Canaux** : SleepFM a été appris sur 13 canaux de PhysioNet 2018, OSF sur 12 canaux.
-   MESA et SHHS n'ont pas le même montage (moins d'EEG, capteurs de débit différents). Table
-   de correspondance canal par canal à écrire et faire valider ; un canal absent est rempli
-   de zéros comme pour OSF sur PhysioNet, et signalé.
-2. **Fréquences et prétraitement** : rééchantillonnage vers 256 Hz (SleepFM) et 64 Hz (OSF)
-   avec le même code que PhysioNet ; à tester sur des signaux synthétiques.
-3. **Calcul** : extraction des embeddings sur Kaggle (GPU) ; volume MESA à estimer.
-4. **Différences de population** : MESA à domicile, adultes plus âgés ; la calibration peut
+1. **Canaux** (ébauche dans `src/data/nsrr_channels.py`, libellés EDF à vérifier). Règle
+   proposée : reproduire l'entrée PhysioNet. Un canal nul sur PhysioNet reste nul même s'il
+   existe ; un canal absent de NSRR est mis à zéro et signalé.
+
+   | Entrée | PhysioNet 2018 | MESA | SHHS-1 |
+   |---|---|---|---|
+   | EEG C3-M2 | oui | **zéros** | EEG(sec) |
+   | EEG C4-M1 | oui | EEG3 | EEG |
+   | EEG F3, F4, O1, O2 (SleepFM) | oui | **zéros** | **zéros** |
+   | EOG gauche | E1-M2 | EOG-L | EOG(L) |
+   | EMG menton | oui | EMG | EMG |
+   | Sangles thorax / abdomen | oui | Thor / Abdo | THOR RES / ABDO RES |
+   | Débit (`AIRFLOW`, `NP` d'OSF) | capteur non documenté | Flow (thermistance) | AIRFLOW (thermistance) |
+   | SaO2 (SleepFM) | oui | SpO2 | SaO2 |
+   | ECG | oui | EKG | ECG |
+   | EOG droit, jambes, ronflement (OSF) | zéros | zéros (gardés nuls) | zéros |
+
+   MESA perd 5 des 7 voies EEG de SleepFM et l'EEG C3 d'OSF ; SHHS-1 en perd 4 pour SleepFM
+   et aucune pour OSF. On peut donc s'attendre à une perte plus forte sur MESA, surtout pour SleepFM.
+2. **Échelle** : SleepFM reçoit les valeurs brutes du .mat PhysioNet, sans normalisation.
+   D'après les en-têtes, elles valent 1 unité par µV pour l'EEG, l'EOG, l'EMG et l'ECG, et
+   655,35 × % − 32768 pour la SaO2. Les EDF NSRR seront remis à cette échelle. **Décision
+   ouverte** : les sangles et le débit n'ont pas d'unité comparable d'un appareil à l'autre.
+   Proposition : aligner leur amplitude typique par nuit sur celle des nuits d'entraînement
+   PhysioNet (règle figée avant l'accès). OSF n'est pas concerné, car il normalise déjà
+   chaque canal sur la nuit.
+3. **Fréquences** : rééchantillonnage vers 256 Hz (SleepFM) et 64 Hz (OSF) avec le même code
+   que PhysioNet. La SpO2 NSRR est à 1 Hz et les sangles SHHS à 10 Hz, alors que PhysioNet
+   enregistre à 200 Hz : le contenu fréquentiel diffère, ce qui reste une limite.
+4. **Calcul** : extraction des embeddings sur Kaggle (GPU) ; volume MESA à estimer.
+5. **Différences de population** : MESA à domicile, adultes plus âgés ; la calibration peut
    se déplacer. C'est précisément ce que la confirmation mesure : aucun ajustement.
 
 ## Limites connues
