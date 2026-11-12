@@ -24,6 +24,10 @@
 - [x] Prédiction sur une polysomnographie brute non annotée au format PhysioNet 2018 : fenêtres fixes de 30 s indépendantes des annotations, contrat du signal vérifié, traitement après enregistrement (`scripts/predict_raw_night.py`). Première évaluation uniforme le 10 novembre (`scripts/evaluate_raw_grid.py`), complétée le 12 novembre par majorité stricte (`scripts/evaluate_grid_transitions.py`) : cas à un seul échantillon minoritaire séparés, indéfini exclu, anciens scores retrouvés. Résultats et limites dans [RESULTATS.md](RESULTATS.md#prédiction-sur-psg-brute-grille-fixe).
 
 ## J90 — Différenciation
+- [x] Premier diagnostic par événements sur les seules nuits de validation :
+  couverture des annotations, recouvrement positif et appariement un à un
+  aux seuils existants ; compte rendu daté dans `Journal`. Règle d'alerte,
+  évaluation complète et confirmation indépendante restent à définir.
 - [x] Regroupement descriptif des fenêtres respiratoires : séquences, lacunes,
   durées et charge par heure évaluée, aux seuils déjà fixés ; [compte rendu
   du 12 novembre](resultats/respiratoire_sequences_2026-11-12.md). Évaluation événementielle encore distincte.
@@ -37,6 +41,8 @@
   logistique sur embeddings figés et démo d'une nuit. [Compte rendu](resultats/respiratoire_baseline_osf_2026-11-12.md). La cible produit reste à choisir.
 - [x] Comparaison respiratoire exploratoire, mêmes fenêtres et partition 360/40/100 :
   réalisée le 12 novembre ; démo comparative et [compte rendu](resultats/respiratoire_baseline_osf_2026-11-12.md).
+- [ ] Des fenêtres aux événements et à l'IAH (IAH ≥ 15 par nuit) : [plan du 12 novembre](plans/Plan%20%C3%A9v%C3%A9nements%20et%20IAH%20SleepFM%20OSF%2012-11.md),
+  à valider avec le tuteur avant tout calcul
 - [ ] Choix de la tâche différenciante (détection apnée OU robustesse pédiatrique CHAT)
 - [ ] Baseline mesurée sur cette tâche
 - [ ] Note de synthèse pour décision sur la phase 2
