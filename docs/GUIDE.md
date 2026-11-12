@@ -631,6 +631,21 @@ aucune nouvelle règle d'alerte n'est évalué. Plan dans `docs/plans/`, [compte
 intervalles, permutation, résultats et sources dans `results/`. Le plan v2
 documente le contrôle de l'ordre de stockage, arrêté avant tout premier décompte.
 
+### Estimer l'IAH ≥ 15 par nuit
+
+Dans l'environnement respiratoire muni de WFDB (`requirements-respiratory.txt`) :
+
+```bash
+python scripts/estimate_respiratory_ahi.py --out results/respiratory_ahi_physionet2018
+```
+
+Le script relit les caches d'embeddings des 140 nuits (validation et test), recalcule les
+probabilités avec les modèles figés et vérifie qu'elles sont identiques aux archives. Il
+calcule l'IAH de référence comme l'étude de faisabilité, contrôlé par
+`--reference-csv` (par défaut `../Faisabilite_apnee_donnees/iah_500_sujets_ouverts.csv`,
+hors dépôt). La calibration est ajustée sur la validation seule. Plan dans `docs/plans/`
+(lu par défaut), [compte rendu](resultats/respiratoire_iah_2026-11-12.md) dans `docs/resultats/`.
+
 ### Examiner les événements sur la validation
 
 Dans l'environnement respiratoire muni de WFDB (`requirements-respiratory.txt`) :

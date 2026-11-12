@@ -25,6 +25,10 @@ selon [SemVer](https://semver.org/lang/fr/).
   du code modifié et est listé dans `untracked_code` ; la confirmation le refuse comme tout code modifié.
 
 ### Ajouté
+- **IAH ≥ 15 par nuit** (`scripts/estimate_respiratory_ahi.py`, `src/data/ahi.py`) : fenêtres
+  positives par heure, calibrées en IAH sur les 40 nuits de validation, un seul passage sur le
+  test. Contrôles : probabilités identiques aux archives (sans franchissement de seuil), IAH de
+  référence identique à l'étude de faisabilité. Plan et compte rendu dans `docs/`.
 - **Stabilité du choix des seuils sur validation** : bootstrap par nuit avec
   sélection pondérée puis évaluation des nuits absentes, et validation croisée
   laissant une nuit de côté. Seuils et matrices archivés ; aucun réentraînement

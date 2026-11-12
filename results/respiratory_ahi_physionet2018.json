@@ -1,0 +1,227 @@
+{
+  "artifacts": {
+    "code.zip": {
+      "file": "respiratory_ahi_physionet2018.code.zip",
+      "sha256": "515a56f82f826681300e7dce6831c117d640695563ac5950cf0d1b3b90644e2d"
+    },
+    "nights.npz": {
+      "file": "respiratory_ahi_physionet2018.nights.npz",
+      "sha256": "51fabd6950f62905c4d9ae225b56a5d6671a13c7925e952922034a4214e62a03"
+    }
+  },
+  "bootstrap": {
+    "auc_difference_osf_minus_sleepfm_ci95": [
+      -0.05020085020085021,
+      0.13101537338969396
+    ],
+    "ci95": {
+      "osf": {
+        "auc_rate": [
+          0.7567604740412077,
+          0.91935187945024
+        ],
+        "sensitivity": [
+          0.5517065446868402,
+          0.8070344129554655
+        ],
+        "specificity": [
+          0.714217032967033,
+          0.9259485094850949
+        ]
+      },
+      "sleepfm": {
+        "auc_rate": [
+          0.7049002525252525,
+          0.8973773822576103
+        ],
+        "sensitivity": [
+          0.7291666666666666,
+          0.9231481481481482
+        ],
+        "specificity": [
+          0.6,
+          0.86
+        ]
+      }
+    },
+    "draws": 1000,
+    "seed": 42,
+    "skipped_draws": 0
+  },
+  "calibration": {
+    "osf": {
+      "probability_sum": {
+        "a": -17.522697012844723,
+        "b": 0.9970068888094298
+      },
+      "rate": {
+        "a": -1.897994276555649,
+        "b": 1.0253058682724945
+      }
+    },
+    "sleepfm": {
+      "probability_sum": {
+        "a": -15.320388610716352,
+        "b": 0.8959847352703884
+      },
+      "rate": {
+        "a": 1.9918462942875743,
+        "b": 0.8687809295299882
+      }
+    }
+  },
+  "caveat": "Nuits de test déjà explorées ; aucun critère de réussite ; même cohorte que le développement",
+  "code_files": {
+    "scripts/analyse_respiratory_runs.py": "8554919eb6cb9a188a6b87abb8ea793433b4341342edae5fa9da6126bd039ae3",
+    "scripts/compare_respiratory_osf.py": "04cc81f0c8e98550f496496789884506415df5642b9644d273b5fc6525176bcc",
+    "scripts/estimate_respiratory_ahi.py": "08679991cd837afcc1662cac5dfcafbb67b5caa825eeb0a8a6ec51052b461452",
+    "src/data/ahi.py": "231a76c1d875421b424c9bc73083ac0c5737ae88983fa4c32cf7fa0ec45cf168",
+    "src/data/respiratory_event_eval.py": "2ce14cb7e54e2f7a34555ed4dc963c0e5bcfec1a1d44dc52fb84afadaafa98e3",
+    "src/data/respiratory_events.py": "dafa60f5bedba7f4b05b5bbf7384e12c42db931d9e2fc99ab3963d98ef003f6b"
+  },
+  "command": [
+    "scripts/estimate_respiratory_ahi.py",
+    "--out",
+    "results/respiratory_ahi_physionet2018"
+  ],
+  "environment": {
+    "code_commit": "52f5ee5f65fc97aebdc33648ce76ad5aeaa1e270",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "untracked_code": [],
+    "xgboost": null
+  },
+  "events_test": {
+    "osf": {
+      "events": {
+        "resp_centralapnea": 1788,
+        "resp_hypopnea": 5839,
+        "resp_mixedapnea": 323,
+        "resp_obstructiveapnea": 2877
+      },
+      "false_runs": 2310,
+      "false_runs_per_window_hour": 3.10999416595611,
+      "found": {
+        "resp_centralapnea": 1226,
+        "resp_hypopnea": 2994,
+        "resp_mixedapnea": 312,
+        "resp_obstructiveapnea": 2143
+      },
+      "predicted_runs": 5085,
+      "recall": {
+        "resp_centralapnea": 0.685682326621924,
+        "resp_hypopnea": 0.5127590340811783,
+        "resp_mixedapnea": 0.9659442724458205,
+        "resp_obstructiveapnea": 0.7448731317344456
+      },
+      "recall_all": 0.6165142698808534
+    },
+    "sleepfm": {
+      "events": {
+        "resp_centralapnea": 1788,
+        "resp_hypopnea": 5839,
+        "resp_mixedapnea": 323,
+        "resp_obstructiveapnea": 2877
+      },
+      "false_runs": 3294,
+      "false_runs_per_window_hour": 4.434770901584168,
+      "found": {
+        "resp_centralapnea": 965,
+        "resp_hypopnea": 3358,
+        "resp_mixedapnea": 288,
+        "resp_obstructiveapnea": 1860
+      },
+      "predicted_runs": 6061,
+      "recall": {
+        "resp_centralapnea": 0.5397091722595079,
+        "resp_hypopnea": 0.5750984757663984,
+        "resp_mixedapnea": 0.891640866873065,
+        "resp_obstructiveapnea": 0.6465067778936392
+      },
+      "recall_all": 0.5976724854530341
+    }
+  },
+  "kind": "IAH ≥ 15 par nuit, modèles respiratoires figés, exploratoire",
+  "nights": {
+    "excluded_short_sleep": [],
+    "test": 100,
+    "test_positive_15": 54,
+    "test_used": 100,
+    "validation": 40,
+    "validation_used": 40
+  },
+  "probability_control": {
+    "max_abs_difference": 1.6689300537109375e-06,
+    "windows_checked": 239334
+  },
+  "reference_control": "IAH et sommeil identiques à iah_500_sujets_ouverts.csv à 0,01 près",
+  "source_sha256": {
+    "baseline": "a9036860635fad9fec6ab9d1e63be8438838e690f77366d62e5ffdeadeb7b8ee",
+    "comparison": "70270694004871c812d56216198cdac6d100c2ae763c110419b2336111e62131",
+    "plan": "789d91a7f028dbe7fa5c8ad7b99fc466df042804163edb33378ad8d384fb98ef",
+    "reference_csv": "34f37d1d5eff82e260a839b4c526d64d2795239e7f952bc8ce11b3faaa240d23",
+    "validation_archive": "47b444677730ce35689d4286b839a60caf3113715d4ce6e40334c94329970f4a"
+  },
+  "status": "terminé",
+  "test": {
+    "osf": {
+      "auc_rate": 0.8429951690821256,
+      "bland_altman": {
+        "bias": -2.232472003133006,
+        "lower": -26.172166363511124,
+        "upper": 21.707222357245115
+      },
+      "confusion_15": {
+        "false_negative": 17,
+        "false_positive": 8,
+        "true_negative": 38,
+        "true_positive": 37
+      },
+      "mae": 8.62569530045893,
+      "primary": {
+        "sensitivity": 0.6851851851851852,
+        "specificity": 0.8260869565217391
+      },
+      "secondary_probability_sum": {
+        "sensitivity": 0.7407407407407407,
+        "specificity": 0.7608695652173914
+      },
+      "spearman": 0.7190794806561133,
+      "weighted_kappa_linear": 0.5031937544357701
+    },
+    "sleepfm": {
+      "auc_rate": 0.8067632850241546,
+      "bland_altman": {
+        "bias": 0.8050584761573697,
+        "lower": -24.31012026879264,
+        "upper": 25.92023722110738
+      },
+      "confusion_15": {
+        "false_negative": 9,
+        "false_positive": 12,
+        "true_negative": 34,
+        "true_positive": 45
+      },
+      "mae": 8.978690119728308,
+      "primary": {
+        "sensitivity": 0.8333333333333334,
+        "specificity": 0.7391304347826086
+      },
+      "secondary_probability_sum": {
+        "sensitivity": 0.8518518518518519,
+        "specificity": 0.6304347826086957
+      },
+      "spearman": 0.6982058205820582,
+      "weighted_kappa_linear": 0.4328746746002231
+    }
+  },
+  "test_window_hours": 742.7666666666667,
+  "thresholds": {
+    "osf": 0.763603687286377,
+    "sleepfm": 0.693376898765564
+  }
+}

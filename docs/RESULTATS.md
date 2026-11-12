@@ -128,6 +128,20 @@ Diagnostics sur les seules 40 nuits de validation (aucune nouvelle lecture du te
   va de 63,8 à 89,5 % ; le choix du seuil dépend nettement des nuits de calibration
   ([compte rendu](resultats/respiratoire_stabilite_seuils_2026-11-12.md)).
 
+### IAH ≥ 15 par nuit (12 novembre 2026)
+
+Calibration sur les 40 nuits de validation, un seul passage sur les 100 nuits de test
+(54 à IAH ≥ 15), modèles et seuils figés :
+
+| 100 nuits de test | SleepFM | OSF |
+|---|---|---|
+| Sensibilité IAH ≥ 15 | 83,3 % [72,9 ; 92,3] | 68,5 % [55,2 ; 80,7] |
+| Spécificité | 73,9 % [60,0 ; 86,0] | 82,6 % [71,4 ; 92,6] |
+| AUC de l'indice | 0,807 | 0,843 (écart +0,036 [−0,050 ; +0,131]) |
+| Erreur absolue moyenne sur l'IAH | 9,0 /h | 8,6 /h |
+
+Exploratoire ; confirmation prévue sur NSRR. Détail : [compte rendu](resultats/respiratoire_iah_2026-11-12.md).
+
 ## Comparaison exploratoire avec OSF
 
 Mêmes 100 nuits de test, mêmes fenêtres et mêmes sondes ; seule la représentation change

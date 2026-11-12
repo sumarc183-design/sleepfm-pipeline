@@ -44,8 +44,10 @@
   logistique sur embeddings figés et démo d'une nuit. [Compte rendu](resultats/respiratoire_baseline_osf_2026-11-12.md). La cible produit reste à choisir.
 - [x] Comparaison respiratoire exploratoire, mêmes fenêtres et partition 360/40/100 :
   réalisée le 12 novembre ; démo comparative et [compte rendu](resultats/respiratoire_baseline_osf_2026-11-12.md).
-- [ ] Des fenêtres aux événements et à l'IAH (IAH ≥ 15 par nuit) : [plan du 12 novembre](plans/Plan%20%C3%A9v%C3%A9nements%20et%20IAH%20SleepFM%20OSF%2012-11.md),
+- [x] Des fenêtres aux événements et à l'IAH (IAH ≥ 15 par nuit, [résultat](resultats/respiratoire_iah_2026-11-12.md)) : [plan du 12 novembre](plans/Plan%20%C3%A9v%C3%A9nements%20et%20IAH%20SleepFM%20OSF%2012-11.md),
   validé par le tuteur le 12 novembre ; confirmation sur NSRR, pas sur les 494 sujets
 - [x] Choix de la tâche différenciante : apnée, les 3 cibles de l'étude de faisabilité (tuteur, 12 novembre)
+- [ ] Chaîne NSRR prête avant l'accès (lecture MESA/SHHS, annotations XML, IAH), pour appliquer
+  la règle IAH figée dès l'ouverture des données (décision du tuteur, 12 novembre)
 - [ ] Baseline mesurée sur cette tâche
 - [ ] Note de synthèse pour décision sur la phase 2
