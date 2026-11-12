@@ -1,6 +1,6 @@
 # Des fenêtres aux événements et à l'IAH — plan du 12 novembre 2026
 
-Plan écrit **avant tout calcul**, à valider avec le tuteur avant exécution. Ce n'est pas un
+Plan écrit **avant tout calcul**, validé par le tuteur le 12 novembre 2026. Ce n'est pas un
 préenregistrement externe. Il prolonge les analyses respiratoires du 12 novembre
 (`docs/resultats/respiratoire_*`) sans changer leurs modèles ni leurs seuils.
 
@@ -55,12 +55,13 @@ résultat reste exploratoire et ne permet de retenir aucune règle comme validé
 
 Ni NSRR, ni les **494 sujets de confirmation** des stades. Aucun téléchargement, aucun GPU.
 
-## Question au tuteur
+## Décisions du tuteur (12 novembre 2026)
 
-Les 494 sujets n'ont jamais servi pour la tâche respiratoire. Une fois la règle figée par ce
-plan, ils pourraient servir à **un seul passage de confirmation** de l'IAH ≥ 15 (même cohorte,
-nuits jamais vues pour cette tâche), avec un protocole écrit avant. Faut-il les réserver à
-cet usage, ou attendre une autre cohorte (NSRR) ?
+- Plan validé ; exécution sur PhysioNet 2018 comme décrit ci-dessus.
+- Les **494 sujets ne sont pas utilisés** pour la tâche respiratoire. La confirmation se fera
+  sur NSRR (MESA ou SHHS) dès l'accès ; la chaîne est préparée d'ici là pour l'appliquer
+  rapidement, avec une règle figée avant d'ouvrir ces données.
+- Seuil : le seuil F1 initial (« normal »), sans nouvelle sélection.
 
 ## Limites connues
 
