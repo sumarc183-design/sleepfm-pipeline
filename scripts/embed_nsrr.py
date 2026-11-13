@@ -2,8 +2,9 @@
 
 Plan validé le 13 novembre 2026, script écrit avant l'accès aux données (plan de confirmation NSRR).
 Pour chaque sujet de la liste figée : EDF -> époques au format PhysioNet (`nsrr_night`),
-embeddings SleepFM (1536) et/ou OSF (768) sur la même nuit. Un <sujet>.npz par sujet, un
-manifest.json (poids, cohorte, liste, règle d'échelle) et un run_status.json. Relancer reprend
+embeddings SleepFM (1536) et/ou OSF (768) sur la même nuit. Un <sujet>.npz et sa fiche <sujet>.json
+(empreintes NPZ et EDF) par sujet, un manifest.json (contrat complet : poids, cohorte, liste, règle
+et paramètres d'échelle, version et code de préparation) et un run_status.json. Relancer reprend
 où le run s'est arrêté ; une nuit refusée laisse un <sujet>.skipped motivé. Aucun label, aucun
 score : l'IAH se calcule ensuite sur le Mac avec la règle figée.
 
@@ -33,11 +34,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.embed_osf_physionet2018 import embed_night as embed_osf_night  # noqa: E402
 from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
-from src.data.nsrr_channels import physionet_median_scale  # noqa: E402
+from src.data.nsrr_cache import check_cache, record_path, validate_night_arrays  # noqa: E402
+from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE, physionet_median_scale  # noqa: E402
 from src.data.nsrr_signals import nsrr_night  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
-PREPARATION_VERSION = 1
+PREPARATION_VERSION = 2  # 2 : fiche par nuit, contrat complet (audit du 13 novembre)
+ROOT = Path(__file__).resolve().parents[1]
+PREPARATION_CODE = (
+    "scripts/embed_nsrr.py",
+    "scripts/embed_osf_physionet2018.py",
+    "src/data/nsrr_cache.py",
+    "src/data/nsrr_channels.py",
+    "src/data/nsrr_signals.py",
+    "src/data/osf_input.py",
+)
 SLEEPFM_DIM = 1536
 # Règles d'échelle des sangles et du débit pour SleepFM (validée par le tuteur le 13 novembre 2026).
 RESPIRATORY_RULES = {"physionet_median_v1": physionet_median_scale}
@@ -78,6 +89,43 @@ def embed_subject(edf: Path, cohort: str, sleepfm, osf, rule, batch_size: int, d
     return out
 
 
+def preparation_code_sha256() -> dict:
+    """Empreintes du code qui prépare les nuits : une extraction n'est reprise ou évaluée qu'avec ce code."""
+    return {p: file_sha256(ROOT / p) for p in PREPARATION_CODE}
+
+
+def expected_contract(cohort, list_sha, models, sleepfm_sha, osf_sha, rule) -> dict:
+    """Contrat complet d'une extraction (aussi recalculé par l'évaluation)."""
+    return {
+        "cohort": cohort,
+        "subjects_sha256": list_sha,
+        "models": sorted(models),
+        "sleepfm_checkpoint_sha256": sleepfm_sha,
+        "osf_checkpoint_sha256": osf_sha,
+        "respiratory_rule": rule,
+        "respiratory_scale": dict(PHYSIONET_MEDIAN_SCALE) if rule else None,
+        "preparation_version": PREPARATION_VERSION,
+        "preparation_code_sha256": preparation_code_sha256(),
+    }
+
+
+def save_night(folder: Path, subject: str, result: dict, edf: Path) -> None:
+    """Fiche écrite avant le NPZ définitif : un NPZ présent a toujours une fiche qui le décrit."""
+    partial = folder / f"{subject}.tmp.npz"
+    np.savez(partial, **{k: v for k, v in result.items() if k != "info"})
+    stat = partial.stat()
+    record = {
+        "subject": subject,
+        "npz_sha256": file_sha256(partial),
+        "npz_size": stat.st_size,
+        "npz_mtime_ns": stat.st_mtime_ns,
+        "edf_sha256": file_sha256(edf),
+        **result["info"],
+    }
+    write_json_atomic(record_path(folder, subject), record)
+    os.replace(partial, folder / f"{subject}.npz")  # os.replace conserve la date de modification
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cohort", choices=("mesa", "shhs1"), required=True)
@@ -100,15 +148,14 @@ def main() -> None:
         parser.error("OSF : --osf-checkpoint obligatoire")
 
     subjects, list_sha = subject_list(args.subjects, args.cohort)
-    contract = {
-        "cohort": args.cohort,
-        "subjects_sha256": list_sha,
-        "models": sorted(models),
-        "sleepfm_checkpoint_sha256": file_sha256(args.checkpoint) if "sleepfm" in models else None,
-        "osf_checkpoint_sha256": file_sha256(args.osf_checkpoint) if "osf" in models else None,
-        "respiratory_rule": args.respiratory_rule if "sleepfm" in models else None,
-        "preparation_version": PREPARATION_VERSION,
-    }
+    contract = expected_contract(
+        args.cohort,
+        list_sha,
+        models,
+        file_sha256(args.checkpoint) if "sleepfm" in models else None,
+        file_sha256(args.osf_checkpoint) if "osf" in models else None,
+        args.respiratory_rule if "sleepfm" in models else None,
+    )
     args.out.mkdir(parents=True, exist_ok=True)
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists():
@@ -118,6 +165,15 @@ def main() -> None:
         raise SystemExit(f"{args.out} : fichiers sans manifeste, provenance inconnue")
     else:
         write_json_atomic(manifest_path, contract)
+    stray = sorted(p.stem for p in args.out.glob("*.npz") if p.stem not in set(subjects) and ".tmp" not in p.name)
+    if stray:
+        raise SystemExit(f"{args.out} : NPZ hors de la liste figée {stray[:5]}")
+    for subject in subjects:  # reprise : un cache terminé doit être intact (contrôle rapide)
+        if (args.out / f"{subject}.npz").exists():
+            try:
+                check_cache(args.out, subject, sorted(models), full=False)
+            except ValueError as exc:
+                raise SystemExit(f"{exc} : supprimer {subject}.npz et sa fiche pour le refaire") from exc
 
     sleepfm = osf = None
     if "sleepfm" in models:
@@ -132,12 +188,11 @@ def main() -> None:
 
     todo = [s for s in subjects if not (args.out / f"{s}.npz").exists() and not (args.out / f"{s}.skipped").exists()]
     print(f"{len(subjects) - len(todo)} sujet(s) déjà faits, {len(todo)} à traiter sur {args.device}")
-    infos = {}
     for index, subject in enumerate(todo):
+        edf = args.edf_dir / f"{subject}.edf"
         try:
-            result = embed_subject(
-                args.edf_dir / f"{subject}.edf", args.cohort, sleepfm, osf, rule, args.batch_size, args.device
-            )
+            result = embed_subject(edf, args.cohort, sleepfm, osf, rule, args.batch_size, args.device)
+            validate_night_arrays(result, sorted(models), result["info"]["n_epochs"])
         except FileNotFoundError:
             print(f"[{index + 1}/{len(todo)}] {subject} : EDF absent, laissé manquant (repris à la relance)")
             continue
@@ -145,14 +200,9 @@ def main() -> None:
             (args.out / f"{subject}.skipped").write_text(f"{exc}\n")
             print(f"[{index + 1}/{len(todo)}] {subject} rejeté : {exc}")
             continue
-        partial = args.out / f"{subject}.tmp.npz"
-        np.savez(partial, **{k: v for k, v in result.items() if k != "info"})
-        os.replace(partial, args.out / f"{subject}.npz")
-        infos[subject] = result["info"]
+        save_night(args.out, subject, result, edf)
         print(f"[{index + 1}/{len(todo)}] {subject} : {result['info']['n_epochs']} fenêtres")
 
-    status_path = args.out / "run_status.json"
-    previous = json.loads(status_path.read_text()).get("nights", {}) if status_path.exists() else {}
     done = [s for s in subjects if (args.out / f"{s}.npz").exists()]
     skipped = {
         s: (args.out / f"{s}.skipped").read_text().strip() for s in subjects if (args.out / f"{s}.skipped").exists()
@@ -162,10 +212,9 @@ def main() -> None:
         "rejected": skipped,
         "missing": [s for s in subjects if s not in done and s not in skipped],
         "complete": len(done) + len(skipped) == len(subjects),
-        "nights": previous | infos,
         "environment": run_environment(),
     }
-    write_json_atomic(status_path, status)
+    write_json_atomic(args.out / "run_status.json", status)
     print(f"{len(done)} sujet(s) sur {len(subjects)}, {len(skipped)} rejeté(s) ; complet : {status['complete']}")
     if not status["complete"]:
         raise SystemExit(1)

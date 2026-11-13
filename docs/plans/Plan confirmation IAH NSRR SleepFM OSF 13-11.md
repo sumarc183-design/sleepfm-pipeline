@@ -117,3 +117,20 @@ Vérifié le 13 novembre sur le site public NSRR, sans accès aux données :
   `shhs1-dataset-0.21.0.csv` ; l'identifiant numérique est relié au nom de fichier
   (`mesa-sleep-0001` → 1, `shhs1-200001` → 200001).
 - Restent à vérifier sur les premiers fichiers : libellés EDF, libellés d'événements XML.
+
+Contrôles ajoutés après l'audit du 13 novembre (sans changement de règle, de modèle, de seuil ni de critère) :
+- **Précontrôle sans cible ni prédiction** : code et plan commités, règle figée, liste approuvée
+  (empreinte ci-dessus) et couverture exacte (chaque nuit extraite ou rejetée avec motif, aucune
+  nuit étrangère ni en double), contrat d'extraction complet (version, paramètres d'échelle, code de
+  préparation), chaque cache relu et empreinté, concepts XML connus, CSV officiel valide.
+- **Passage unique** : marqueur écrit dans `results/nsrr_runs/` (cohorte, liste, règle) avant la
+  première lecture des cibles ; un autre préfixe ou une relance après échec est refusé.
+- **Exclusions fixées avant le passage** : XML illisible ; annotations au-delà de la fin du signal
+  de plus d'une époque (30 s) ; moins de 1 h de sommeil. La dernière époque incomplète de l'EDF est
+  écartée à la préparation. Un concept respiratoire inconnu arrête le précontrôle (correspondance
+  à décider avant le passage) ; désaturations et artefacts d'oxymétrie sont explicitement non ciblés.
+- **Référence officielle** : `ahi_a0h3` et `ahi_a0h4` lues ensemble (identifiant `mesaid` pour MESA,
+  `nsrrid` pour SHHS), mêmes métriques que la référence principale avec IC bootstrap ; valeurs
+  manquantes comptées, valeurs négatives ou identifiants non entiers refusés.
+- **Question ouverte au tuteur** : conduite si très peu de nuits positives ou négatives sont
+  évaluables (IC bootstrap dégénérés), à fixer avant le passage.

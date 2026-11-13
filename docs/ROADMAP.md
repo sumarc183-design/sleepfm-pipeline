@@ -51,6 +51,8 @@
   la règle IAH figée dès l'ouverture des données (décision du tuteur, 12 novembre) ;
   [plan validé le 13 novembre](plans/Plan%20confirmation%20IAH%20NSRR%20SleepFM%20OSF%2013-11.md),
   testée sur EDF synthétiques seulement
-- [ ] Confirmation NSRR : vérifier les premiers EDF, figer la liste MESA, extraire, évaluer une fois
+- [x] Listes MESA (2 056 nuits) et SHHS-1 (5 793) figées depuis l'index public NSRR (13 novembre)
+- [x] Contrôles de l'audit du 13 novembre : liste et contrat vérifiés, caches empreintés, précontrôle et marqueur de passage unique, concepts XML inconnus bloquants, IAH officiel 3 % et 4 % complet
+- [ ] Confirmation NSRR : vérifier les premiers EDF et XML, extraire, évaluer une fois
 - [ ] Baseline mesurée sur cette tâche
 - [ ] Note de synthèse pour décision sur la phase 2

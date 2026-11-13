@@ -50,3 +50,29 @@ def test_embed_subject_with_validated_rule(edf):
 
     out = embed_subject(edf, "shhs1", FakeSleepFM(), None, RESPIRATORY_RULES["physionet_median_v1"], 2, "cpu")
     assert out["X_sleepfm"].shape == (3, 1536) and "X_osf" not in out
+
+
+def test_saved_night_has_record_and_detects_changes(tmp_path):
+    import numpy as np
+
+    from scripts.embed_nsrr import save_night
+    from src.data.nsrr_cache import check_cache
+
+    edf = tmp_path / "x.edf"
+    edf.write_bytes(b"edf")
+    result = {
+        "X_osf": np.zeros((3, 768), dtype=np.float32),
+        "epoch_idx": np.arange(3),
+        "onset_s": 30.0 * np.arange(3),
+        "info": {"n_epochs": 3},
+    }
+    save_night(tmp_path, "mesa-sleep-0001", result, edf)
+    record = check_cache(tmp_path, "mesa-sleep-0001", ["osf"], full=False)
+    assert record["n_epochs"] == 3 and len(record["edf_sha256"]) == 64
+    assert check_cache(tmp_path, "mesa-sleep-0001", ["osf"])["npz_sha256"] == record["npz_sha256"]
+    np.savez(tmp_path / "mesa-sleep-0001.npz", X_osf=np.ones((3, 768)), epoch_idx=np.arange(3), onset_s=[0, 30, 60])
+    with pytest.raises(ValueError, match="modifié"):
+        check_cache(tmp_path, "mesa-sleep-0001", ["osf"], full=False)
+    (tmp_path / "mesa-sleep-0001.json").unlink()
+    with pytest.raises(ValueError, match="sans fiche"):
+        check_cache(tmp_path, "mesa-sleep-0001", ["osf"], full=False)

@@ -2,8 +2,9 @@
 
 Préparé avant l'accès aux données, d'après le format public « NSRR XML » (`PSGAnnotation` >
 `ScoredEvents` > `ScoredEvent` avec `EventType`, `EventConcept`, `Start`, `Duration`). Les
-libellés exacts restent à vérifier sur les premiers fichiers reçus : un libellé inconnu est
-compté à part (`unknown_concepts`) et jamais converti en silence.
+libellés exacts restent à vérifier sur les premiers fichiers reçus : un stade ou un concept
+respiratoire inconnu est compté à part (`unknown_concepts`) et bloque l'IAH de référence ; il
+n'est jamais converti en silence en absence d'événement. Un XML illisible lève `ValueError`.
 """
 
 from __future__ import annotations
@@ -33,6 +34,9 @@ RESPIRATORY_CONCEPTS = {
     "mixed apnea": "resp_mixedapnea",
     "hypopnea": "resp_hypopnea",
 }
+# Concepts respiratoires attendus mais non ciblés par la règle (désaturations, artefacts d'oxymétrie).
+# Tout autre concept de la famille « Respiratory », ou contenant « apnea », est inconnu.
+NON_TARGET_RESPIRATORY = frozenset(("spo2 desaturation", "spo2 artifact"))
 SLEEP_STAGES = ("N1", "N2", "N3", "R")
 
 
@@ -52,7 +56,10 @@ def _number(event: ET.Element, tag: str) -> float:
 
 def parse_nsrr_xml(source: str | Path | bytes) -> dict:
     """Stades (début, durée, stade) et événements respiratoires (début, fin, type) en secondes."""
-    root = ET.fromstring(source) if isinstance(source, bytes) else ET.parse(source).getroot()
+    try:
+        root = ET.fromstring(source) if isinstance(source, bytes) else ET.parse(source).getroot()
+    except ET.ParseError as exc:
+        raise ValueError(f"XML illisible : {exc}") from exc
     if root.tag != "PSGAnnotation":
         raise ValueError("Racine PSGAnnotation attendue")
     epoch = root.findtext("EpochLength")
@@ -74,6 +81,8 @@ def parse_nsrr_xml(source: str | Path | bytes) -> dict:
             if duration <= 0:
                 raise ValueError("Événement respiratoire de durée nulle")
             events.append((start, start + duration, TARGET_EVENTS.index(RESPIRATORY_CONCEPTS[concept])))
+        elif (family == "respiratory" and concept not in NON_TARGET_RESPIRATORY) or "apnea" in concept:
+            unknown[concept] += 1
         elif concept:
             other[concept] += 1
     stages.sort()
@@ -86,6 +95,7 @@ def parse_nsrr_xml(source: str | Path | bytes) -> dict:
         "events": np.asarray(sorted(events), dtype=float).reshape(-1, 3),
         "unscored_stage_events": unscored,
         "unknown_concepts": dict(unknown),
+        "recording_end_s": max((start + duration for start, duration, _ in stages), default=0.0),
         "other_concepts": dict(other),
     }
 
@@ -93,7 +103,7 @@ def parse_nsrr_xml(source: str | Path | bytes) -> dict:
 def reference_ahi_nsrr(parsed: dict) -> dict:
     """Même règle que l'étude de faisabilité : 4 types d'événements annotés / heures de sommeil."""
     if parsed["unknown_concepts"]:
-        raise ValueError(f"Stades inconnus : {sorted(parsed['unknown_concepts'])}")
+        raise ValueError(f"Concepts inconnus : {sorted(parsed['unknown_concepts'])}")
     sleep_h = sum(duration for _, duration, stage in parsed["stages"] if stage in SLEEP_STAGES) / 3600
     kinds = parsed["events"][:, 2].astype(int)
     counts = {kind: int((kinds == k).sum()) for k, kind in enumerate(TARGET_EVENTS)}

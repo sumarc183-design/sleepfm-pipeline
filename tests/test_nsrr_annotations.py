@@ -74,3 +74,25 @@ def test_invalid_documents_rejected():
     with pytest.raises(ValueError):
         parse_nsrr_xml(document(scored("Stages|Stages", "Wake|0", 0, 60), scored("Stages|Stages", "Wake|0", 30, 30)))
     assert np.asarray(parse_nsrr_xml(document())["events"]).shape == (0, 3)
+
+
+def test_unknown_respiratory_concept_blocks_reference():
+    xml = document(
+        scored("Stages|Stages", "Stage 2 sleep|2", 0, 7200),
+        scored("Respiratory|Respiratory", "Unrecognized apnea|variant", 100, 20),
+        scored("Respiratory|Respiratory", "SpO2 desaturation|SpO2 desaturation", 130, 10),
+    )
+    parsed = parse_nsrr_xml(xml)
+    assert parsed["unknown_concepts"] == {"unrecognized apnea": 1}
+    assert parsed["other_concepts"] == {"spo2 desaturation": 1}  # non ciblé, explicitement autorisé
+    with pytest.raises(ValueError, match="unrecognized apnea"):
+        reference_ahi_nsrr(parsed)
+
+
+def test_truncated_xml_is_value_error():
+    with pytest.raises(ValueError, match="XML illisible"):
+        parse_nsrr_xml(document(scored("Stages|Stages", "Wake|0", 0, 30))[:-20])
+
+
+def test_recording_end_from_stages():
+    assert parse_nsrr_xml(SAMPLE)["recording_end_s"] == pytest.approx(9000.0)

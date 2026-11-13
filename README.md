@@ -56,8 +56,8 @@ capteurs et nuits difficiles : **[résultats détaillés](docs/RESULTATS.md)**.
 | Jalon | Échéance | État |
 |---|---|---|
 | J30, reproduction | 1er décembre 2026 | Atteint le 9 novembre : pipeline, mesures et confirmation sur 494 sujets réservés |
-| J60, comparaison | 31 décembre 2026 | En cours : prédiction brute disponible ; MESA si accès obtenu, comparaison OSF à préparer |
-| J90, différenciation | 30 janvier 2027 | À venir |
+| J60, comparaison | 31 décembre 2026 | En cours : prédiction brute disponible ; comparaison OSF exploratoire mesurée sur PhysioNet 2018 (OSF au-dessus, 4 canaux absents), à confirmer sur NSRR |
+| J90, différenciation | 30 janvier 2027 | En cours : tâche choisie (apnée) ; IAH ≥ 15 mesuré sur PhysioNet 2018 (exploratoire) ; confirmation NSRR préparée, **non exécutée** (accès en attente) |
 
 Détail : [ROADMAP](docs/ROADMAP.md).
 
@@ -65,6 +65,17 @@ Détail : [ROADMAP](docs/ROADMAP.md).
 [démonstration comparative d'une nuit](results/demo_night_comparison.html)
 (HTML à télécharger et ouvrir localement). Commandes dans le [guide](docs/GUIDE.md#baseline-respiratoire-et-démonstration-dune-nuit),
 résultats dans [RESULTATS.md](docs/RESULTATS.md#exploration-apnéeshypopnées-12-novembre-2026).
+
+**Confirmation NSRR de l'IAH (préparée, non exécutée)** : règle figée sur PhysioNet appliquée sans
+réajustement à MESA puis SHHS-1, en un seul passage ([plan validé](docs/plans/Plan%20confirmation%20IAH%20NSRR%20SleepFM%20OSF%2013-11.md)).
+1. Listes de nuits figées depuis l'index public NSRR : `configs/nsrr_mesa_subjects.json` (2 056 nuits),
+   `configs/nsrr_shhs1_subjects.json` (5 793), via `scripts/freeze_nsrr_subjects.py`.
+2. Extraction sur Kaggle : `notebooks/sleepfm_nsrr_embeddings.ipynb` (EDF téléchargés par lots avec le
+   jeton NSRR, `scripts/embed_nsrr.py`, une fiche empreintée par nuit). Prérequis : accès NSRR et accord
+   d'utilisation compatible avec le calcul sur Kaggle.
+3. Évaluation sur le Mac : `scripts/evaluate_nsrr_ahi.py`. Précontrôle sans cible (code et plan commités,
+   liste approuvée, contrat d'extraction, caches, concepts XML, CSV officiel), puis marqueur de passage
+   unique dans `results/nsrr_runs/`. Aucun résultat NSRR n'existe à ce jour.
 
 ## Démarrage rapide
 
