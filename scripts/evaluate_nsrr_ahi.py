@@ -291,7 +291,9 @@ def precheck(args) -> dict:
         raise ValueError("Sortie existante : la confirmation ne se lance qu'une fois")
     if not args.plan.exists():
         raise ValueError(f"Plan absent : {args.plan}")
-    dirty = uncommitted([*CODE, args.plan.relative_to(ROOT) if args.plan.is_relative_to(ROOT) else args.plan])
+    # Un plan hors du dépôt (dossier Journal) n'est pas suivi par git : son empreinte est enregistrée.
+    plan = args.plan.resolve()
+    dirty = uncommitted([*CODE, *([plan.relative_to(ROOT)] if plan.is_relative_to(ROOT) else [])])
     if dirty:
         raise ValueError(f"Code ou plan non commités : {dirty}")
     frozen = load_frozen(args.frozen_ahi, args.baseline, args.comparison, args.expected_sha)
