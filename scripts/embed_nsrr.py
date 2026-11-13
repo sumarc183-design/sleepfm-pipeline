@@ -37,10 +37,12 @@ from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
 from src.data.nsrr_cache import check_cache, record_path, validate_night_arrays  # noqa: E402
 from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE, physionet_median_scale  # noqa: E402
 from src.data.nsrr_signals import nsrr_night  # noqa: E402
+from src.data.ucddb_annotations import edf_start_seconds  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
 PREPARATION_VERSION = 2  # 2 : fiche par nuit, contrat complet (audit du 13 novembre)
 ROOT = Path(__file__).resolve().parents[1]
+EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec"}
 PREPARATION_CODE = (
     "scripts/embed_nsrr.py",
     "scripts/embed_osf_physionet2018.py",
@@ -120,6 +122,7 @@ def save_night(folder: Path, subject: str, result: dict, edf: Path) -> None:
         "npz_size": stat.st_size,
         "npz_mtime_ns": stat.st_mtime_ns,
         "edf_sha256": file_sha256(edf),
+        "edf_start_s": edf_start_seconds(edf),
         **result["info"],
     }
     write_json_atomic(record_path(folder, subject), record)
@@ -128,8 +131,8 @@ def save_night(folder: Path, subject: str, result: dict, edf: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--cohort", choices=("mesa", "shhs1"), required=True)
-    parser.add_argument("--edf-dir", type=Path, required=True, help="<sujet>.edf")
+    parser.add_argument("--cohort", choices=sorted(EDF_SUFFIX), required=True)
+    parser.add_argument("--edf-dir", type=Path, required=True, help="<sujet>.edf (UCDDB : <sujet>.rec)")
     parser.add_argument("--subjects", type=Path, required=True, help="liste figée JSON {cohort, subjects}")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--models", default="sleepfm,osf")
@@ -189,7 +192,7 @@ def main() -> None:
     todo = [s for s in subjects if not (args.out / f"{s}.npz").exists() and not (args.out / f"{s}.skipped").exists()]
     print(f"{len(subjects) - len(todo)} sujet(s) déjà faits, {len(todo)} à traiter sur {args.device}")
     for index, subject in enumerate(todo):
-        edf = args.edf_dir / f"{subject}.edf"
+        edf = args.edf_dir / f"{subject}{EDF_SUFFIX[args.cohort]}"
         try:
             result = embed_subject(edf, args.cohort, sleepfm, osf, rule, args.batch_size, args.device)
             validate_night_arrays(result, sorted(models), result["info"]["n_epochs"])

@@ -14,7 +14,7 @@ from pathlib import Path
 import mne
 import numpy as np
 
-from src.data.nsrr_channels import SLEEPFM_CHANNELS, channel_plan, to_physionet_scale
+from src.data.nsrr_channels import MEDIAN_SCALED, SLEEPFM_CHANNELS, channel_plan, to_physionet_scale
 
 SAMPLE_RATE = 256
 EPOCH_S = 30
@@ -85,7 +85,8 @@ def nsrr_night(path: str | Path, cohort: str, respiratory_scale: RespiratoryScal
     header = read_edf(path, wanted=[])
     plan = channel_plan(header["labels"], cohort, "sleepfm")
     present = {target: index for target, index in plan["indices"].items() if index is not None}
-    if respiratory_scale is None and any(t in present for t in RESPIRATORY_INPUTS):
+    median_scaled = MEDIAN_SCALED[cohort]
+    if respiratory_scale is None and any(t in present for t in median_scaled):
         raise ValueError("Règle d'échelle des sangles et du débit à fournir")
     edf = read_edf(path, wanted=sorted(set(present.values())))
     n_epochs = int(edf["duration_s"] // EPOCH_S)
@@ -96,7 +97,7 @@ def nsrr_night(path: str | Path, cohort: str, respiratory_scale: RespiratoryScal
         signal, unit = edf["signals"][index], edf["units"][index]
         scaled = (
             respiratory_scale(target, signal, unit)
-            if target in RESPIRATORY_INPUTS
+            if target in median_scaled
             else to_physionet_scale(signal, unit, target)
         )
         resampled = to_256(np.asarray(scaled, dtype=np.float64), float(edf["sample_rates"][index]))

@@ -42,6 +42,7 @@ from src.data.ahi import AHI_CUTOFF, MIN_SLEEP_H, positive_rate  # noqa: E402
 from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
 from src.data.nsrr_annotations import parse_nsrr_xml, reference_ahi_nsrr  # noqa: E402
 from src.data.nsrr_cache import EPOCH_S, check_cache  # noqa: E402
+from src.data.ucddb_annotations import parse_ucddb  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,6 +57,7 @@ CODE = tuple(
             "scripts/estimate_respiratory_ahi.py",
             "src/data/ahi.py",
             "src/data/nsrr_annotations.py",
+            "src/data/ucddb_annotations.py",
             *PREPARATION_CODE,
         }
     )
@@ -70,8 +72,12 @@ APPROVED_SUBJECTS = {
         ROOT / "configs/nsrr_shhs1_subjects.json",
         "c06453bd4e3c5ba69b3751739b72ab211991b0d673f0bd3a0d5b262ac9144baf",
     ),
+    # Contrôle externe UCDDB, liste figée le 13 novembre depuis l'index public PhysioNet.
+    "ucddb": (ROOT / "configs/ucddb_subjects.json", "ee768b212108e647f9dbf6b8aedb398fd82385da67e005c93cf3dfaf376a5411"),
 }
 OFFICIAL_ID_COLUMN = {"mesa": "mesaid", "shhs1": "nsrrid"}
+# Contrôle externe UCDDB (plan validé le 13 novembre) : 25 nuits, descriptif seulement, sans verdict.
+DESCRIPTIVE_COHORTS = frozenset({"ucddb"})
 OFFICIAL_COLUMNS = ("ahi_a0h3", "ahi_a0h4")
 # Politique fixée avant le passage : annotations dépassant la fin du signal de plus d'une époque = nuit exclue.
 XML_OVERRUN_TOLERANCE_S = EPOCH_S
@@ -163,14 +169,26 @@ def uncommitted(paths) -> list[str]:
     return [entry[3:] for entry in out.stdout.split("\0") if entry.strip()]
 
 
-def annotation_problems(xml_path: Path) -> str | None:
-    """Motif d'exclusion d'un XML illisible ; erreur si un concept est inconnu (à décider avant)."""
+def annotation_files(cohort: str, folder: Path, pattern: str, subject: str) -> tuple[Path, ...]:
+    if cohort == "ucddb":
+        return folder / f"{subject}_stage.txt", folder / f"{subject}_respevt.txt"
+    return (folder / pattern.format(subject=subject),)
+
+
+def read_annotations(cohort: str, files: tuple[Path, ...], record: dict) -> dict:
+    if cohort == "ucddb":
+        return parse_ucddb(*files, start_s=record["edf_start_s"])
+    return parse_nsrr_xml(files[0])
+
+
+def annotation_problems(cohort: str, files: tuple[Path, ...], record: dict) -> str | None:
+    """Motif d'exclusion d'annotations illisibles ; erreur si un concept est inconnu (à décider avant)."""
     try:
-        parsed = parse_nsrr_xml(xml_path)
+        parsed = read_annotations(cohort, files, record)
     except (OSError, ValueError) as exc:
         return f"annotations : {exc}"
     if parsed["unknown_concepts"]:
-        raise ValueError(f"{xml_path.name} : concepts inconnus {sorted(parsed['unknown_concepts'])}")
+        raise ValueError(f"{files[-1].name} : concepts inconnus {sorted(parsed['unknown_concepts'])}")
     return None
 
 
@@ -209,10 +227,13 @@ def official_reference(path: Path, id_column: str, columns=OFFICIAL_COLUMNS) -> 
     return out
 
 
-def night_row(npz_path: Path, xml_path: Path, frozen: dict, n_epochs: int) -> dict:
-    """Valeurs d'une nuit, ou motif d'exclusion (`excluded`). Le cache a été contrôlé avant."""
+def night_row(npz_path: Path, parsed_or_error, frozen: dict, n_epochs: int) -> dict:
+    """Valeurs d'une nuit, ou motif d'exclusion (`excluded`). Le cache a été contrôlé avant.
+
+    `parsed_or_error` : fonction sans argument qui lit les annotations de la nuit.
+    """
     try:
-        parsed = parse_nsrr_xml(xml_path)
+        parsed = parsed_or_error()
         reference = reference_ahi_nsrr(parsed)
     except (OSError, ValueError) as exc:
         return {"excluded": f"annotations : {exc}"}
@@ -276,16 +297,20 @@ def precheck(args) -> dict:
     frozen = load_frozen(args.frozen_ahi, args.baseline, args.comparison, args.expected_sha)
     subjects_path, approved_sha = args.approved_subjects
     extraction = check_embeddings(args.embeddings, args.cohort, frozen, subjects_path, approved_sha)
-    xml_paths = {s: args.annotations_dir / args.xml_pattern.format(subject=s) for s in extraction["done"]}
-    absent = sorted(s for s, path in xml_paths.items() if not path.exists())
+    xml_paths = {
+        s: annotation_files(args.cohort, args.annotations_dir, args.xml_pattern, s) for s in extraction["done"]
+    }
+    absent = sorted(s for s, paths in xml_paths.items() if not all(p.exists() for p in paths))
     if absent:
         raise ValueError(f"Annotations absentes : {absent[:5]}")
     unreadable = {}
-    for subject, path in xml_paths.items():
-        problem = annotation_problems(path)
+    for subject, paths in xml_paths.items():
+        problem = annotation_problems(args.cohort, paths, extraction["records"][subject])
         if problem:
             unreadable[subject] = problem
     official = None
+    if args.official_csv is not None and args.cohort not in OFFICIAL_ID_COLUMN:
+        raise ValueError(f"{args.cohort} : pas d'IAH officiel prévu")
     if args.official_csv is not None:
         official = official_reference(args.official_csv, OFFICIAL_ID_COLUMN[args.cohort])
         listed = {subject_number(s) for s in extraction["done"]}
@@ -336,7 +361,13 @@ def evaluate(args, checked: dict) -> dict:
         if subject in checked["unreadable"]:
             continue
         record = extraction["records"][subject]
-        row = night_row(args.embeddings / f"{subject}.npz", checked["xml_paths"][subject], frozen, record["n_epochs"])
+        files = checked["xml_paths"][subject]
+        row = night_row(
+            args.embeddings / f"{subject}.npz",
+            lambda files=files, record=record: read_annotations(args.cohort, files, record),
+            frozen,
+            record["n_epochs"],
+        )
         if "excluded" in row:
             excluded[subject] = row["excluded"]
         else:
@@ -374,7 +405,11 @@ def evaluate(args, checked: dict) -> dict:
         "calibration": frozen["calibration"],
         "results": results,
         "bootstrap": uncertainty,
-        "success_criterion": {"lower_bound": SUCCESS_LOWER_BOUND, "models": criterion(uncertainty)},
+        "success_criterion": {
+            "lower_bound": SUCCESS_LOWER_BOUND,
+            "applies": args.cohort not in DESCRIPTIVE_COHORTS,
+            "models": criterion(uncertainty),
+        },
         "environment": run_environment(),
         "command": sys.argv,
     }
@@ -405,14 +440,18 @@ def evaluate(args, checked: dict) -> dict:
         print(
             f"{model} : sensibilité {primary['sensitivity']:.3f} (borne basse {verdict['sensitivity_lower']:.3f}), "
             f"spécificité {primary['specificity']:.3f} (borne basse {verdict['specificity_lower']:.3f}) ; "
-            f"critère {'atteint' if verdict['success'] else 'non atteint'}"
+            + (
+                "descriptif, pas de verdict"
+                if args.cohort in DESCRIPTIVE_COHORTS
+                else f"critère {'atteint' if verdict['success'] else 'non atteint'}"
+            )
         )
     return report
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--cohort", choices=("mesa", "shhs1"), required=True)
+    parser.add_argument("--cohort", choices=sorted(APPROVED_SUBJECTS), required=True)
     parser.add_argument("--embeddings", type=Path, required=True)
     parser.add_argument("--annotations-dir", type=Path, required=True)
     parser.add_argument("--xml-pattern", default="{subject}-nsrr.xml")

@@ -24,8 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.data.cache_contract import write_json_atomic  # noqa: E402
 
 # Noms de la documentation NSRR, à vérifier sur les premiers fichiers. SHHS : visite 1 seulement.
-SUBJECT_PATTERNS = {"mesa": r"mesa-sleep-\d{4}", "shhs1": r"shhs1-\d{6}"}
-XML_SUFFIX = "-nsrr.xml"
+SUBJECT_PATTERNS = {"mesa": r"mesa-sleep-\d{4}", "shhs1": r"shhs1-\d{6}", "ucddb": r"ucddb\d{3}"}
+EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec"}
+ANNOTATION_SUFFIX = {"mesa": "-nsrr.xml", "shhs1": "-nsrr.xml", "ucddb": "_respevt.txt"}
 
 
 def file_names(source: Path) -> list[str]:
@@ -51,15 +52,15 @@ def subjects_in(source: Path, cohort: str, suffix: str) -> tuple[set[str], list[
 
 
 def freeze(cohort: str, edf_dir: Path, annotations_dir: Path) -> dict:
-    edfs, edf_ignored = subjects_in(edf_dir, cohort, ".edf")
-    xmls, xml_ignored = subjects_in(annotations_dir, cohort, XML_SUFFIX)
+    edfs, edf_ignored = subjects_in(edf_dir, cohort, EDF_SUFFIX[cohort])
+    xmls, xml_ignored = subjects_in(annotations_dir, cohort, ANNOTATION_SUFFIX[cohort])
     subjects = sorted(edfs & xmls)
     if not subjects:
         raise SystemExit(f"{cohort} : aucune nuit avec EDF et XML (noms attendus {SUBJECT_PATTERNS[cohort]})")
     return {
         "cohort": cohort,
         "subjects": subjects,
-        "rule": "EDF et annotations XML NSRR présents ; 1 h de sommeil vérifiée à l'évaluation",
+        "rule": "EDF et annotations présents ; 1 h de sommeil vérifiée à l'évaluation",
         "plan": "docs/plans/Plan confirmation IAH NSRR SleepFM OSF 13-11.md",
         "edf_without_xml": sorted(edfs - xmls),
         "xml_without_edf": sorted(xmls - edfs),

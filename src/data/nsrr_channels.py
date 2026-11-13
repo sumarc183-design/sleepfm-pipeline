@@ -50,7 +50,19 @@ SHHS1_LABELS = {
     "THERMISTOR": ("AIRFLOW", "NEW AIR", "new A/F"),
     "SPO2": ("SaO2",),
 }
-COHORT_LABELS = {"mesa": MESA_LABELS, "shhs1": SHHS1_LABELS}
+# UCDDB (PhysioNet, contrôle externe validé le 13 novembre) : libellés lus dans l'en-tête EDF.
+UCDDB_LABELS = {
+    "EEG_C3_M2": ("C3A2",),
+    "EEG_C4_M1": ("C4A1",),
+    "EOG_L": ("Lefteye",),
+    "EMG_CHIN": ("EMG",),
+    "ECG": ("ECG",),
+    "THORAX": ("ribcage",),
+    "ABDOMEN": ("abdo",),
+    "THERMISTOR": ("Flow",),
+    "SPO2": ("SpO2",),
+}
+COHORT_LABELS = {"mesa": MESA_LABELS, "shhs1": SHHS1_LABELS, "ucddb": UCDDB_LABELS}
 
 # Entrée SleepFM -> signal NSRR. Absent = zéros. `AIRFLOW` : capteur PhysioNet non documenté.
 SLEEPFM_SOURCES = {
@@ -63,6 +75,7 @@ SLEEPFM_SOURCES = {
         "ABD": "ABDOMEN", "CHEST": "THORAX", "AIRFLOW": "THERMISTOR", "SaO2": "SPO2", "ECG": "ECG",
     },
 }  # fmt: skip
+SLEEPFM_SOURCES["ucddb"] = SLEEPFM_SOURCES["shhs1"]
 # Entrée OSF -> signal NSRR, limitée aux canaux non nuls sur PhysioNet (PHYSIONET_TO_OSF).
 # `NP` : PhysioNet a fourni AIRFLOW ; on garde le même type de capteur (thermistance).
 OSF_SOURCES = {
@@ -75,7 +88,15 @@ OSF_SOURCES = {
         "EOG_E1_A2": "EOG_L", "EEG_C3_A2": "EEG_C3_M2", "EEG_C4_A1": "EEG_C4_M1",
     },
 }  # fmt: skip
+OSF_SOURCES["ucddb"] = OSF_SOURCES["shhs1"]
 UNCERTAIN = {"sleepfm": ("AIRFLOW",), "osf": ("NP",)}
+# Entrées SleepFM mises à l'échelle par la règle des médianes PhysioNet, par cohorte : les sangles et
+# le débit partout ; en plus, les voies électriques non calibrées d'UCDDB (en-tête 0 à 1, « NV »).
+MEDIAN_SCALED = {
+    "mesa": ("ABD", "CHEST", "AIRFLOW"),
+    "shhs1": ("ABD", "CHEST", "AIRFLOW"),
+    "ucddb": ("ABD", "CHEST", "AIRFLOW", "C3-M2", "C4-M1", "E1-M2", "Chin1-Chin2", "ECG"),
+}
 MODEL_CHANNELS = {"sleepfm": SLEEPFM_CHANNELS, "osf": OSF_CHANNELS}
 MODEL_SOURCES = {"sleepfm": SLEEPFM_SOURCES, "osf": OSF_SOURCES}
 
@@ -140,9 +161,9 @@ def robust_scale(signal: np.ndarray) -> float:
 
 
 def physionet_median_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
-    """Sangles et débit : signal multiplié pour que son échelle robuste égale la médiane PhysioNet."""
+    """Signal multiplié pour que son échelle robuste égale la médiane PhysioNet de la voie."""
     if target not in PHYSIONET_MEDIAN_SCALE:
-        raise ValueError(f"{target} : pas une sangle ni le débit")
+        raise ValueError(f"{target} : pas de médiane PhysioNet établie pour cette voie")
     scale = robust_scale(signal)
     if not scale > 0:
         raise ValueError(f"{target} : échelle robuste nulle, canal refusé")

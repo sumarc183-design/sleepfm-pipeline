@@ -41,7 +41,7 @@ def setup(tmp_path, frozen, monkeypatch):
     subjects_path.write_text(json.dumps({"cohort": "mesa", "subjects": SUBJECTS}))
     list_sha = hashlib.sha256(subjects_path.read_bytes()).hexdigest()
     edf = tmp_path / "fake.edf"
-    edf.write_bytes(b"edf")
+    edf.write_bytes(b" " * 176 + b"22.00.00" + b" " * 72)  # heure de début dans l'en-tête
     rng = np.random.default_rng(0)
     for i, subject in enumerate(SUBJECTS[:-1]):
         result = {
@@ -242,8 +242,9 @@ def test_approved_lists_pass_metadata_checks():
 
     for cohort, (path, sha) in ev.APPROVED_SUBJECTS.items():
         subjects, digest = subject_list(path, cohort)
-        assert digest == sha and len(subjects) == {"mesa": 2056, "shhs1": 5793}[cohort]
-        assert all(ev.subject_number(s) > 0 for s in subjects)
+        assert digest == sha and len(subjects) == {"mesa": 2056, "shhs1": 5793, "ucddb": 25}[cohort]
+        if cohort in ev.OFFICIAL_ID_COLUMN:
+            assert all(ev.subject_number(s) > 0 for s in subjects)
 
 
 def test_criterion():
@@ -261,3 +262,31 @@ def test_subject_number_matches_nsrr_ids():
     assert ev.subject_number("mesa-sleep-0001") == 1 and ev.subject_number("shhs1-200001") == 200001
     with pytest.raises(ValueError):
         ev.subject_number("shhs2-200001")
+
+
+@needs_results
+def test_ucddb_descriptive_run(setup, monkeypatch):
+    """UCDDB : annotations texte recalées sur l'heure de début de l'EDF, pas de verdict."""
+    emb, ann = setup.embeddings, setup.annotations_dir
+    subjects = [f"ucddb{i:03d}" for i in range(13)]
+    for old, new in zip(SUBJECTS[:-1], subjects[:-1], strict=True):
+        for ext in (".npz", ".json"):
+            (emb / f"{old}{ext}").rename(emb / f"{new}{ext}")
+        record = json.loads((emb / f"{new}.json").read_text())
+        (emb / f"{new}.json").write_text(json.dumps(record | {"subject": new}))
+    (emb / "mesa-sleep-0012.skipped").rename(emb / "ucddb012.skipped")
+    for i, subject in enumerate(subjects[:-1]):
+        (ann / f"{subject}_stage.txt").write_text("\n".join(["0"] * 20 + ["3"] * 240) + "\n")
+        events = "".join(f"22:{12 + i // 2:02d}:{(i % 2) * 30:02d}  HYP-O   20  90  3\n" for i in range(5 + 6 * i))
+        (ann / f"{subject}_respevt.txt").write_text(" Time Type\n" + events)
+    subjects_path = setup.approved_subjects[0]
+    subjects_path.write_text(json.dumps({"cohort": "ucddb", "subjects": subjects}))
+    list_sha = hashlib.sha256(subjects_path.read_bytes()).hexdigest()
+    manifest = json.loads((emb / "manifest.json").read_text()) | {"cohort": "ucddb", "subjects_sha256": list_sha}
+    (emb / "manifest.json").write_text(json.dumps(manifest))
+    status = {"done": subjects[:-1], "rejected": {"ucddb012": "EDF tronqué"}, "missing": [], "complete": True}
+    (emb / "run_status.json").write_text(json.dumps(status))
+    setup.cohort, setup.official_csv, setup.approved_subjects = "ucddb", None, (subjects_path, list_sha)
+    report = ev.run(setup)
+    assert report["success_criterion"]["applies"] is False
+    assert report["nights"]["evaluated"] == 12 and report["results"]["sleepfm"]["confusion_15"]

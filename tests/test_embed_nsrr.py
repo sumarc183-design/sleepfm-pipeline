@@ -59,7 +59,7 @@ def test_saved_night_has_record_and_detects_changes(tmp_path):
     from src.data.nsrr_cache import check_cache
 
     edf = tmp_path / "x.edf"
-    edf.write_bytes(b"edf")
+    edf.write_bytes(b" " * 176 + b"22.00.00" + b" " * 72)  # heure de début dans l'en-tête
     result = {
         "X_osf": np.zeros((3, 768), dtype=np.float32),
         "epoch_idx": np.arange(3),
