@@ -6,7 +6,8 @@ fichier publics :
   2 à 5 stades 1 à 4 (R&K, 3 et 4 regroupés en N3), 6 artefact et 7 indéterminé (non notés).
 - `<sujet>_respevt.txt` : événements horodatés en heure d'horloge, recalés sur l'heure de début
   de l'EDF. `APNEA-O/C/M` et `HYP-O/C/M` (toutes les hypopnées comptent comme hypopnées) ; la
-  colonne PB/CS (respiration périodique) n'est pas comptée. Un type inconnu est signalé
+  colonne PB/CS (respiration périodique) n'est pas comptée, ni les types `POSSIBLE` et `PB EVENT`
+  trouvés dans les fichiers ; le code de stade 8, non documenté, est traité comme non noté. Un type inconnu est signalé
   (`unknown_concepts`) et bloque l'IAH de référence, comme pour NSRR.
 """
 
@@ -22,7 +23,9 @@ from src.data.respiratory_events import TARGET_EVENTS
 
 EPOCH_S = 30.0
 STAGE_CODES = {0: "W", 1: "R", 2: "N1", 3: "N2", 4: "N3", 5: "N3"}
-UNSCORED_CODES = frozenset((6, 7))
+# 8 : code présent dans 2 nuits, absent de la documentation ; traité comme non noté (décision du
+# 13 novembre, prise sur les libellés seuls, avant tout résultat).
+UNSCORED_CODES = frozenset((6, 7, 8))
 EVENT_TYPES = {
     "APNEA-O": "resp_obstructiveapnea",
     "APNEA-C": "resp_centralapnea",
@@ -31,7 +34,9 @@ EVENT_TYPES = {
     "HYP-C": "resp_hypopnea",
     "HYP-M": "resp_hypopnea",
 }
-EVENT_LINE = re.compile(r"^\s*(\d{2}):(\d{2}):(\d{2})\s+(\S+)\s+(?:(PB|CS)\s+)?(\d+(?:\.\d+)?)\b")
+# Types non ciblés, explicitement écartés (13 novembre) : événement incertain, respiration périodique.
+NON_TARGET_TYPES = frozenset(("POSSIBLE", "PB EVENT"))
+EVENT_LINE = re.compile(r"^\s*(\d{2}):(\d{2}):(\d{2})\s+(\S+(?: EVENT)?)\s+(?:(PB|CS)\s+)?(\d+(?:\.\d+)?)\b")
 
 
 def edf_start_seconds(edf_path: str | Path) -> int:
@@ -61,7 +66,7 @@ def parse_ucddb(stage_path: str | Path, respevt_path: str | Path, start_s: int) 
             unscored += 1
         else:
             unknown[f"stage {code}"] += 1
-    events, periodic = [], 0
+    events, periodic, other = [], 0, Counter()
     for line in Path(respevt_path).read_text(errors="replace").splitlines():
         if not re.match(r"^\s*\d{2}:\d{2}:\d{2}", line):
             continue
@@ -70,6 +75,9 @@ def parse_ucddb(stage_path: str | Path, respevt_path: str | Path, start_s: int) 
             raise ValueError(f"Ligne d'événement illisible : {line.strip()!r}")
         h, m, s, kind, flag, duration = match.groups()
         periodic += flag is not None
+        if kind in NON_TARGET_TYPES:
+            other[kind] += 1
+            continue
         if kind not in EVENT_TYPES:
             unknown[kind] += 1
             continue
@@ -85,5 +93,5 @@ def parse_ucddb(stage_path: str | Path, respevt_path: str | Path, start_s: int) 
         "unscored_stage_events": unscored,
         "unknown_concepts": dict(unknown),
         "recording_end_s": len(codes) * EPOCH_S,
-        "other_concepts": {"periodic_breathing_flag": periodic} if periodic else {},
+        "other_concepts": dict(other) | ({"periodic_breathing_flag": periodic} if periodic else {}),
     }

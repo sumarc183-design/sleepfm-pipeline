@@ -58,3 +58,15 @@ def test_edf_start_and_channel_plan(tmp_path):
     assert plan["indices"]["C3-M2"] == 3 and plan["indices"]["AIRFLOW"] == 8
     assert plan["zero_filled"] == ["F3-M2", "F4-M1", "O1-M2", "O2-M1"]
     assert channel_plan(UCDDB_LABELS, "ucddb", "osf")["lost_vs_physionet"] == []
+
+
+def test_non_target_types_and_stage_8(tmp_path):
+    events = [
+        "00:18:20  POSSIBLE           6       90.8    4       -     -              \n",
+        "02:52:38  PB EVENT  PB      14                       -     -              \n",
+    ]
+    stage, resp = write(tmp_path, [3] * 200 + [8], events)
+    parsed = parse_ucddb(stage, resp, start_s=0)
+    assert parsed["unknown_concepts"] == {} and parsed["events"].shape == (0, 3)
+    assert parsed["other_concepts"] == {"POSSIBLE": 1, "PB EVENT": 1, "periodic_breathing_flag": 1}
+    assert parsed["unscored_stage_events"] == 1
