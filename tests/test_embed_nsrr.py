@@ -43,3 +43,10 @@ def test_subject_list(tmp_path):
     path.write_text(json.dumps({"cohort": "mesa", "subjects": ["a", "a"]}))
     with pytest.raises(SystemExit):
         subject_list(path, "mesa")
+
+
+def test_embed_subject_with_validated_rule(edf):
+    from scripts.embed_nsrr import RESPIRATORY_RULES
+
+    out = embed_subject(edf, "shhs1", FakeSleepFM(), None, RESPIRATORY_RULES["physionet_median_v1"], 2, "cpu")
+    assert out["X_sleepfm"].shape == (3, 1536) and "X_osf" not in out

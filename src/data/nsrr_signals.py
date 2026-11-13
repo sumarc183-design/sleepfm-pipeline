@@ -78,8 +78,9 @@ def nsrr_night(path: str | Path, cohort: str, respiratory_scale: RespiratoryScal
     """Époques de 30 s depuis le début de l'enregistrement (fin incomplète retirée).
 
     `respiratory_scale(cible, signal_physique, unité)` met les sangles et le débit à l'échelle
-    PhysioNet : règle à décider, donc obligatoire dès qu'un de ces canaux est présent. Pour OSF
-    seul, une fonction identité suffit (z-score par nuit) ; la sortie ne sert alors pas à SleepFM.
+    PhysioNet (`physionet_median_scale`, validée le 13 novembre) : obligatoire dès qu'un de ces
+    canaux est présent. Pour OSF seul, une fonction identité suffit (z-score par nuit) ; la sortie
+    ne sert alors pas à SleepFM.
     """
     header = read_edf(path, wanted=[])
     plan = channel_plan(header["labels"], cohort, "sleepfm")

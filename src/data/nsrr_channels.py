@@ -12,7 +12,7 @@ sur NSRR est mis à zéro et signalé (dégradation attendue, mesurée par la co
 Échelle : SleepFM reçoit les valeurs brutes du .mat PhysioNet. D'après les en-têtes (.hea),
 elles valent 1 unité par µV pour l'EEG, l'EOG, l'EMG, l'ECG, les sangles et le débit, et
 655,35 × % − 32768 pour la SaO2. Les sangles et le débit n'ont pas d'unité physique comparable
-d'un appareil à l'autre : leur mise à l'échelle reste une décision ouverte.
+d'un appareil à l'autre : règle `physionet_median_scale` (validée le 13 novembre, voir plus bas).
 """
 
 from __future__ import annotations
@@ -122,7 +122,28 @@ def to_physionet_scale(signal: np.ndarray, unit: str, target: str) -> np.ndarray
             raise ValueError(f"SaO2 en % attendue, reçu {unit!r}")
         return SAO2_GAIN * np.asarray(signal, dtype=np.float64) + SAO2_BASELINE
     if target in ("ABD", "CHEST", "AIRFLOW"):
-        raise ValueError(f"{target} : échelle non comparable entre appareils, règle à décider")
+        raise ValueError(f"{target} : échelle non comparable entre appareils, utiliser physionet_median_scale")
     if unit_key not in VOLTAGE_TO_UV:
         raise ValueError(f"{target} : unité de tension attendue, reçu {unit!r}")
     return VOLTAGE_TO_UV[unit_key] * np.asarray(signal, dtype=np.float64)
+
+
+# Règle validée par le tuteur le 13 novembre 2026 : échelle robuste (1,4826 × écart absolu médian)
+# de chaque nuit NSRR ramenée à la médiane des 360 nuits d'apprentissage PhysioNet
+# (results/respiratory_amplitude_physionet2018.json, docs/resultats/respiratoire_amplitude_sangles_2026-11-13.md).
+PHYSIONET_MEDIAN_SCALE = {"ABD": 172.72289999999998, "CHEST": 83.0256, "AIRFLOW": 13.343399999999999}
+
+
+def robust_scale(signal: np.ndarray) -> float:
+    x = np.asarray(signal, dtype=np.float64)
+    return float(1.4826 * np.median(np.abs(x - np.median(x))))
+
+
+def physionet_median_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
+    """Sangles et débit : signal multiplié pour que son échelle robuste égale la médiane PhysioNet."""
+    if target not in PHYSIONET_MEDIAN_SCALE:
+        raise ValueError(f"{target} : pas une sangle ni le débit")
+    scale = robust_scale(signal)
+    if not scale > 0:
+        raise ValueError(f"{target} : échelle robuste nulle, canal refusé")
+    return np.asarray(signal, dtype=np.float64) * (PHYSIONET_MEDIAN_SCALE[target] / scale)

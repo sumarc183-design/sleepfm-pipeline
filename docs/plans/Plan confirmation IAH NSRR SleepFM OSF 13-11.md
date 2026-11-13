@@ -69,14 +69,14 @@ réentraînement, aucun nouveau seuil, aucune recalibration sur NSRR.
    et aucune pour OSF. On peut donc s'attendre à une perte plus forte sur MESA, surtout pour SleepFM.
 2. **Échelle** : SleepFM reçoit les valeurs brutes du .mat PhysioNet, sans normalisation.
    D'après les en-têtes, elles valent 1 unité par µV pour l'EEG, l'EOG, l'EMG et l'ECG, et
-   655,35 × % − 32768 pour la SaO2. Les EDF NSRR seront remis à cette échelle. **Décision
-   ouverte** : les sangles et le débit n'ont pas d'unité comparable d'un appareil à l'autre.
-   Proposition : aligner leur amplitude typique par nuit sur celle des nuits d'entraînement
-   PhysioNet (règle figée avant l'accès) : échelle robuste ramenée à la médiane des 360 nuits
-   d'apprentissage, 173 (ABD), 83 (CHEST), 13 (AIRFLOW)
+   655,35 × % − 32768 pour la SaO2. Les EDF NSRR seront remis à cette échelle. Les sangles et
+   le débit n'ont pas d'unité comparable d'un appareil à l'autre. **Règle validée par le tuteur
+   (13 novembre)** : l'échelle robuste de chaque nuit est ramenée à la médiane des 360 nuits
+   d'apprentissage PhysioNet, 173 (ABD), 83 (CHEST), 13 (AIRFLOW)
    ([mesure du 13 novembre](../resultats/respiratoire_amplitude_sangles_2026-11-13.md) ; SleepFM
-   a déjà vu des écarts d'échelle d'un facteur 12 à 800 entre nuits). OSF n'est pas concerné, car il normalise déjà
-   chaque canal sur la nuit.
+   a déjà vu des écarts d'échelle d'un facteur 12 à 800 entre nuits). Code :
+   `physionet_median_scale` (`--respiratory-rule physionet_median_v1`) ; un canal d'échelle nulle
+   est refusé. OSF n'est pas concerné, car il normalise déjà chaque canal sur la nuit.
 3. **Fréquences** : rééchantillonnage vers 256 Hz (SleepFM) et 64 Hz (OSF) avec le même code
    que PhysioNet. La SpO2 NSRR est à 1 Hz et les sangles SHHS à 10 Hz, alors que PhysioNet
    enregistre à 200 Hz : le contenu fréquentiel diffère, ce qui reste une limite.

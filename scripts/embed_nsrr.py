@@ -7,11 +7,13 @@ manifest.json (poids, cohorte, liste, règle d'échelle) et un run_status.json. 
 où le run s'est arrêté ; une nuit refusée laisse un <sujet>.skipped motivé. Aucun label, aucun
 score : l'IAH se calcule ensuite sur le Mac avec la règle figée.
 
-SleepFM exige une règle d'échelle des sangles et du débit (`RESPIRATORY_RULES`), encore à
-décider : tant qu'elle manque, seul OSF peut tourner (z-score par nuit, insensible à l'échelle).
+SleepFM exige une règle d'échelle des sangles et du débit (`--respiratory-rule`) :
+`physionet_median_v1`, validée par le tuteur le 13 novembre (médianes PhysioNet). OSF n'en a pas
+besoin (z-score par nuit, insensible à l'échelle).
 
     python scripts/embed_nsrr.py --cohort mesa --edf-dir /kaggle/input/mesa-edf \\
-        --subjects configs/nsrr_mesa_subjects.json --out embeddings/nsrr_mesa --models osf \\
+        --subjects configs/nsrr_mesa_subjects.json --out embeddings/nsrr_mesa \\
+        --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt --respiratory-rule physionet_median_v1 \\
         --osf-checkpoint third_party/osf/osf_backbone.pth
 """
 
@@ -31,13 +33,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.embed_osf_physionet2018 import embed_night as embed_osf_night  # noqa: E402
 from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
+from src.data.nsrr_channels import physionet_median_scale  # noqa: E402
 from src.data.nsrr_signals import nsrr_night  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
 PREPARATION_VERSION = 1
 SLEEPFM_DIM = 1536
-# Règles d'échelle des sangles et du débit pour SleepFM : vide tant que le tuteur n'a pas tranché.
-RESPIRATORY_RULES: dict = {}
+# Règles d'échelle des sangles et du débit pour SleepFM (validée par le tuteur le 13 novembre 2026).
+RESPIRATORY_RULES = {"physionet_median_v1": physionet_median_scale}
 
 
 def identity_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
@@ -92,7 +95,7 @@ def main() -> None:
     if not models or models - {"sleepfm", "osf"}:
         parser.error("--models : sleepfm, osf ou les deux")
     if "sleepfm" in models and (args.checkpoint is None or args.respiratory_rule not in RESPIRATORY_RULES):
-        parser.error("SleepFM : --checkpoint et une --respiratory-rule enregistrée (règle encore à décider)")
+        parser.error("SleepFM : --checkpoint et --respiratory-rule physionet_median_v1 obligatoires")
     if "osf" in models and args.osf_checkpoint is None:
         parser.error("OSF : --osf-checkpoint obligatoire")
 

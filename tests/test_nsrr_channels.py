@@ -46,3 +46,28 @@ def test_physionet_scale():
         to_physionet_scale(np.array([1.0]), "", "ABD")
     with pytest.raises(ValueError):
         to_physionet_scale(np.array([1.0]), "uV", "SaO2")
+
+
+def test_physionet_median_scale_matches_archived_result():
+    import json
+    from pathlib import Path
+
+    from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE
+
+    path = Path(__file__).resolve().parents[1] / "results/respiratory_amplitude_physionet2018.json"
+    summary = json.loads(path.read_text())["summary"]
+    for target, value in PHYSIONET_MEDIAN_SCALE.items():
+        assert summary[target]["robust_scale"]["median"] == value
+
+
+def test_physionet_median_scale_rule():
+    from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE, physionet_median_scale, robust_scale
+
+    signal = np.sin(np.linspace(0, 60, 3000)) * 0.003
+    scaled = physionet_median_scale("CHEST", signal, "")
+    assert robust_scale(scaled) == pytest.approx(PHYSIONET_MEDIAN_SCALE["CHEST"])
+    assert np.corrcoef(scaled, signal)[0, 1] == pytest.approx(1.0)
+    with pytest.raises(ValueError):
+        physionet_median_scale("ABD", np.zeros(100), "")
+    with pytest.raises(ValueError):
+        physionet_median_scale("ECG", signal, "mV")
