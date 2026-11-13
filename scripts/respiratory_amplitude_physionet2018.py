@@ -46,18 +46,18 @@ def night_stats(signal: np.ndarray) -> dict:
     }
 
 
-def subject_stats(subject_dir: Path) -> dict:
+def subject_stats(subject_dir: Path, channels=CHANNELS) -> dict:
     subject = subject_dir.name
     names = list(import_signal_names(str(subject_dir / f"{subject}.hea"))[0])
     values = loadmat(subject_dir / f"{subject}.mat")["val"]
     if values.shape[0] != len(names):
         raise ValueError(f"{subject} : {values.shape[0]} signaux pour {len(names)} noms")
-    return {channel: night_stats(values[names.index(channel)]) for channel in CHANNELS}
+    return {channel: night_stats(values[names.index(channel)]) for channel in channels}
 
 
-def summary(nights: dict) -> dict:
+def summary(nights: dict, channels=CHANNELS) -> dict:
     out = {}
-    for channel in CHANNELS:
+    for channel in channels:
         scale = np.array([n[channel]["robust_scale"] for n in nights.values()])
         median = np.array([n[channel]["median"] for n in nights.values()])
         p5, q1, q2, q3, p95 = np.percentile(scale, [5, 25, 50, 75, 95])
@@ -75,7 +75,10 @@ def main() -> None:
     parser.add_argument("--baseline", type=Path, default=ROOT / "results/respiratory_baseline_physionet2018.json")
     parser.add_argument("--out", type=Path, default=ROOT / "results/respiratory_amplitude_physionet2018.json")
     parser.add_argument("--limit", type=int, default=None, help="essai court")
+    parser.add_argument("--channels", default=",".join(CHANNELS), help="voies, séparées par des virgules")
+    parser.add_argument("--plan", type=Path, default=PLAN, help="plan fixé avant calcul (empreinte enregistrée)")
     args = parser.parse_args()
+    channels = tuple(args.channels.split(","))
     subjects = sorted(json.loads(args.baseline.read_text())["partitions"]["fit"])[: args.limit]
     partial_path = args.out.with_suffix(".partial.json")
     nights = json.loads(partial_path.read_text()) if partial_path.exists() else {}
@@ -97,7 +100,7 @@ def main() -> None:
             tmp = upcoming.result()
             upcoming = pool.submit(fetch, todo[index + 1]) if index + 1 < len(todo) else None
             try:
-                nights[subject] = subject_stats(Path(tmp) / subject)
+                nights[subject] = subject_stats(Path(tmp) / subject, channels)
             finally:
                 shutil.rmtree(tmp, ignore_errors=True)
             write_json_atomic(partial_path, nights)
@@ -107,17 +110,19 @@ def main() -> None:
     write_json_atomic(
         args.out,
         {
-            "plan_sha256": file_sha256(PLAN),
+            "plan_sha256": file_sha256(args.plan),
+            "plan": args.plan.name,
+            "channels": list(channels),
             "baseline_sha256": file_sha256(args.baseline),
             "subjects_sha256": hashlib.sha256(json.dumps(subjects).encode()).hexdigest(),
             "n_nights": len(nights),
-            "summary": summary({s: nights[s] for s in subjects}),
+            "summary": summary({s: nights[s] for s in subjects}, channels),
             "nights": {s: nights[s] for s in subjects},
             "environment": run_environment(),
         },
     )
     partial_path.unlink(missing_ok=True)
-    print(json.dumps(summary({s: nights[s] for s in subjects}), indent=1))
+    print(json.dumps(summary({s: nights[s] for s in subjects}, channels), indent=1))
 
 
 if __name__ == "__main__":
