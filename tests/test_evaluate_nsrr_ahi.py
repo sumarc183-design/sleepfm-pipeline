@@ -67,7 +67,9 @@ def test_run_end_to_end(tmp_path, frozen):
         json.dumps({"done": subjects, "rejected": {"mesa-sleep-9999": "EDF tronqué"}, "missing": [], "complete": True})
     )
     official = tmp_path / "official.csv"
-    official.write_text("nsrrid,ahi_a0h3\n" + "\n".join(f"{s},{3 * i}" for i, s in enumerate(subjects)) + "\n")
+    official.write_text(
+        "nsrrid,ahi_a0h3\n" + "\n".join(f"{int(s.split('-')[-1])},{3 * i}" for i, s in enumerate(subjects)) + "\n"
+    )
     args = Namespace(
         cohort="mesa",
         embeddings=emb,
@@ -111,3 +113,11 @@ def test_criterion():
     }
     verdict = criterion(ci)
     assert verdict["sleepfm"]["success"] and not verdict["osf"]["success"]
+
+
+def test_subject_number_matches_nsrr_ids():
+    from scripts.evaluate_nsrr_ahi import subject_number
+
+    assert subject_number("mesa-sleep-0001") == 1 and subject_number("shhs1-200001") == 200001
+    with pytest.raises(ValueError):
+        subject_number("shhs2-200001")

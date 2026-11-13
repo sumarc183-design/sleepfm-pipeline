@@ -105,3 +105,15 @@ Bland-Altman au-delà de ±20 /h sur PhysioNet). Changement de capteurs et de po
    avec moins de 1 h de sommeil sont publiées avec leur motif. Il écrit ensuite les résultats,
    le verdict du critère pour chaque modèle et une archive du code. Une sortie existante n'est
    jamais écrasée.
+
+Vérifié le 13 novembre sur le site public NSRR, sans accès aux données :
+- Liste figée depuis l'index public des fichiers (noms seulement) : MESA 2 056 nuits
+  (`configs/nsrr_mesa_subjects.json`, SHA-256 `aef9d758…1fe7`, 402 Go d'EDF), SHHS-1 5 793 nuits
+  (`configs/nsrr_shhs1_subjects.json`, SHA-256 `c06453bd…4baf`, 228 Go). Chaque EDF a son XML.
+- Chemins : `mesa/polysomnography/edfs/`, `…/annotations-events-nsrr/` ; SHHS-1 dans les
+  sous-dossiers `shhs1/`.
+- Référence secondaire : `ahi_a0h3` et `ahi_a0h4` existent dans les deux cohortes (hypopnées avec
+  baisse du débit > 30 % et désaturation ≥ 3 % ou ≥ 4 %). CSV : `mesa-sleep-dataset-0.8.0.csv`,
+  `shhs1-dataset-0.21.0.csv` ; l'identifiant numérique est relié au nom de fichier
+  (`mesa-sleep-0001` → 1, `shhs1-200001` → 200001).
+- Restent à vérifier sur les premiers fichiers : libellés EDF, libellés d'événements XML.

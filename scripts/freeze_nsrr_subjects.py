@@ -73,10 +73,11 @@ def main() -> None:
     parser.add_argument("--edf-dir", type=Path, required=True, help="dossier des EDF ou index texte de leurs noms")
     parser.add_argument("--annotations-dir", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--source", default="", help="origine des noms (dossier local, index public NSRR daté)")
     args = parser.parse_args()
     if args.out.exists():
         raise SystemExit(f"{args.out} existe déjà : une liste figée ne se réécrit pas")
-    payload = freeze(args.cohort, args.edf_dir, args.annotations_dir)
+    payload = freeze(args.cohort, args.edf_dir, args.annotations_dir) | {"source": args.source}
     write_json_atomic(args.out, payload)
     print(
         f"{len(payload['subjects'])} nuit(s) retenue(s) ; EDF sans XML : {len(payload['edf_without_xml'])} ; "

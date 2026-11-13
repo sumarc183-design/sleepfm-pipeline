@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -99,7 +100,15 @@ def check_embeddings(folder: Path, cohort: str, frozen: dict) -> tuple[dict, dic
     return manifest, status
 
 
-def official_reference(path: Path, id_column: str, value_column: str) -> dict:
+def subject_number(subject: str) -> int:
+    """`mesa-sleep-0001` -> 1, `shhs1-200001` -> 200001 : identifiant des CSV NSRR (mesaid, nsrrid)."""
+    match = re.fullmatch(r"(?:mesa-sleep|shhs1)-(\d+)", subject)
+    if match is None:
+        raise ValueError(f"Sujet NSRR inattendu : {subject}")
+    return int(match.group(1))
+
+
+def official_reference(path: Path, id_column: str, value_column: str) -> dict[int, float]:
     with path.open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     if not rows or id_column not in rows[0] or value_column not in rows[0]:
@@ -108,7 +117,10 @@ def official_reference(path: Path, id_column: str, value_column: str) -> dict:
     for row in rows:
         value = row[value_column].strip()
         if value:
-            out[row[id_column].strip()] = float(value)
+            key = int(float(row[id_column]))
+            if key in out:
+                raise ValueError(f"{path} : identifiant {key} en double")
+            out[key] = float(value)
     return out
 
 
@@ -213,7 +225,9 @@ def run(args) -> dict:
         night[f"estimated_ahi_{model}"] = estimates[model]
     if args.official_csv is not None:
         values = official_reference(args.official_csv, args.official_id_column, args.official_column)
-        night["official_ahi"] = np.array([values.get(s, np.nan) for s in subjects], dtype=float)
+        night["official_ahi"] = np.array([values.get(subject_number(s), np.nan) for s in subjects], dtype=float)
+        if not np.isfinite(night["official_ahi"]).any():
+            raise SystemExit(f"{args.official_csv} : aucun sujet évalué trouvé dans {args.official_id_column}")
         report["official_reference"] = {
             "column": args.official_column,
             "csv_sha256": file_sha256(args.official_csv),
@@ -255,7 +269,9 @@ def main() -> None:
     parser.add_argument("--plan", type=Path, default=PLAN)
     parser.add_argument("--official-csv", type=Path, default=None, help="variables NSRR (IAH officiel)")
     parser.add_argument("--official-id-column", default="nsrrid")
-    parser.add_argument("--official-column", default=None, help="ex. ahi_a0h3 (nom à vérifier)")
+    parser.add_argument(
+        "--official-column", default=None, help="ahi_a0h3 ou ahi_a0h4 (vérifiés sur le site NSRR le 13 nov.)"
+    )
     args = parser.parse_args()
     args.expected_sha = FROZEN_AHI_SHA256
     if args.official_csv is not None and args.official_column is None:
