@@ -54,8 +54,10 @@ def test_physionet_median_scale_matches_archived_result():
 
     from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE
 
-    path = Path(__file__).resolve().parents[1] / "results/respiratory_amplitude_physionet2018.json"
-    summary = json.loads(path.read_text())["summary"]
+    root = Path(__file__).resolve().parents[1] / "results"
+    summary = json.loads((root / "respiratory_amplitude_physionet2018.json").read_text())["summary"]
+    summary |= json.loads((root / "eeg_amplitude_physionet2018.json").read_text())["summary"]
+    assert len(PHYSIONET_MEDIAN_SCALE) == 8
     for target, value in PHYSIONET_MEDIAN_SCALE.items():
         assert summary[target]["robust_scale"]["median"] == value
 
@@ -70,4 +72,4 @@ def test_physionet_median_scale_rule():
     with pytest.raises(ValueError):
         physionet_median_scale("ABD", np.zeros(100), "")
     with pytest.raises(ValueError):
-        physionet_median_scale("ECG", signal, "mV")
+        physionet_median_scale("SaO2", signal, "%")

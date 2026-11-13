@@ -153,6 +153,9 @@ def to_physionet_scale(signal: np.ndarray, unit: str, target: str) -> np.ndarray
 # de chaque nuit NSRR ramenée à la médiane des 360 nuits d'apprentissage PhysioNet
 # (results/respiratory_amplitude_physionet2018.json, docs/resultats/respiratoire_amplitude_sangles_2026-11-13.md).
 PHYSIONET_MEDIAN_SCALE = {"ABD": 172.72289999999998, "CHEST": 83.0256, "AIRFLOW": 13.343399999999999}
+# Voies électriques non calibrées (UCDDB, contrôle externe validé le 13 novembre) : médianes des
+# 360 mêmes nuits (results/eeg_amplitude_physionet2018.json, plan « amplitude EEG EOG EMG ECG »).
+PHYSIONET_MEDIAN_SCALE |= {'C3-M2': 11.8608, 'C4-M1': 11.8608, 'E1-M2': 11.8608, 'Chin1-Chin2': 2.9652, 'ECG': 80.0604}
 
 
 def robust_scale(signal: np.ndarray) -> float:
