@@ -1,0 +1,227 @@
+{
+  "artifacts": {
+    "code.zip": {
+      "file": "ucddb_ahi.code.zip",
+      "sha256": "1ff9d91b52cd23e940c4cd6ed1e54197f06188d8975c749119f2277f2e3d4d76"
+    },
+    "nights.npz": {
+      "file": "ucddb_ahi.nights.npz",
+      "sha256": "02a0a502446d57909b29614a379b9ed0329d4bbacf79d3dc8f7662f68a1eed70"
+    }
+  },
+  "bootstrap": {
+    "auc_difference_osf_minus_sleepfm_ci95": [
+      0.2142857142857143,
+      0.5
+    ],
+    "ci95": {
+      "osf": {
+        "auc_rate": [
+          0.7142857142857143,
+          1.0
+        ],
+        "sensitivity": [
+          0.23076923076923078,
+          0.7647058823529411
+        ],
+        "specificity": [
+          1.0,
+          1.0
+        ]
+      },
+      "sleepfm": {
+        "auc_rate": [
+          0.5,
+          0.5
+        ],
+        "sensitivity": [
+          0.0,
+          0.0
+        ],
+        "specificity": [
+          1.0,
+          1.0
+        ]
+      }
+    },
+    "draws": 1000,
+    "seed": 42,
+    "skipped_draws": 0
+  },
+  "calibration": {
+    "osf": {
+      "probability_sum": {
+        "a": -17.522697012844723,
+        "b": 0.9970068888094298
+      },
+      "rate": {
+        "a": -1.897994276555649,
+        "b": 1.0253058682724945
+      }
+    },
+    "sleepfm": {
+      "probability_sum": {
+        "a": -15.320388610716352,
+        "b": 0.8959847352703884
+      },
+      "rate": {
+        "a": 1.9918462942875743,
+        "b": 0.8687809295299882
+      }
+    }
+  },
+  "code_files": {
+    "scripts/embed_nsrr.py": "661852c5a4194cec785b0183da45d38d2770289f360c8c518989fd88c3b076b1",
+    "scripts/embed_osf_physionet2018.py": "81cf04428987fc103937d50a37eba4b30c83e15b186b2f7d3d7eb6cee651b3d3",
+    "scripts/estimate_respiratory_ahi.py": "08679991cd837afcc1662cac5dfcafbb67b5caa825eeb0a8a6ec51052b461452",
+    "scripts/evaluate_nsrr_ahi.py": "4a618bc4b570a18622ff55bc968343ddc4b2e7770c4ef01b38f38a4c0fd90ead",
+    "src/data/ahi.py": "231a76c1d875421b424c9bc73083ac0c5737ae88983fa4c32cf7fa0ec45cf168",
+    "src/data/nsrr_annotations.py": "5cd7b7e7a53d2b27fdec71601842624714f84c7af2600eca9b44a5595bc808ef",
+    "src/data/nsrr_cache.py": "cce4e9fb084c687a123dd4439243266836afece59fafcede62c042fb3748aaaf",
+    "src/data/nsrr_channels.py": "5f4e52100e42383d386754f774e534172a9c5286f178a8fe11533b414ae0b099",
+    "src/data/nsrr_signals.py": "aae4318924912b0569c17136784709096f663811afa31da2e350ba98569c8ba6",
+    "src/data/osf_input.py": "58215dfb8e0ef2d097db1ac1e8807d04aa9320827687c7aeefc07e50461de7e3",
+    "src/data/ucddb_annotations.py": "cb32360ade864f7e5b8f6cc7870742ba1cce6e8e641c44e41e5b8b87890ff441"
+  },
+  "cohort": "ucddb",
+  "command": [
+    "scripts/evaluate_nsrr_ahi.py",
+    "--cohort",
+    "ucddb",
+    "--embeddings",
+    "embeddings/ucddb",
+    "--annotations-dir",
+    "data/raw/ucddb",
+    "--out",
+    "results/ucddb_ahi",
+    "--plan",
+    "../Journal/Plan contrôle externe IAH UCDDB PSG-Audio 13-11.md"
+  ],
+  "environment": {
+    "code_commit": "7170f74a452755cb36b5490f9f43ad3dff5f588d",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "untracked_code": [],
+    "xgboost": null
+  },
+  "kind": "nsrr_ahi_confirmation",
+  "nights": {
+    "evaluated": 25,
+    "excluded": {},
+    "listed": 25,
+    "positive_15": 14
+  },
+  "policy": {
+    "min_sleep_h": 1.0,
+    "xml_overrun_tolerance_s": 30.0
+  },
+  "results": {
+    "osf": {
+      "auc_rate": 0.8831168831168831,
+      "bland_altman": {
+        "bias": -10.69024486479635,
+        "lower": -31.742778843810846,
+        "upper": 10.362289114218148
+      },
+      "confusion_15": {
+        "false_negative": 7,
+        "false_positive": 0,
+        "true_negative": 11,
+        "true_positive": 7
+      },
+      "mae": 11.198075645008348,
+      "primary": {
+        "sensitivity": 0.5,
+        "specificity": 1.0
+      },
+      "secondary_probability_sum": {
+        "sensitivity": 0.5714285714285714,
+        "specificity": 0.9090909090909091
+      },
+      "spearman": 0.7705929920016362,
+      "weighted_kappa_linear": 0.42922374429223753
+    },
+    "sleepfm": {
+      "auc_rate": 0.5,
+      "bland_altman": {
+        "bias": -22.564230851714363,
+        "lower": -63.64524521755922,
+        "upper": 18.516783514130495
+      },
+      "confusion_15": {
+        "false_negative": 14,
+        "false_positive": 0,
+        "true_negative": 11,
+        "true_positive": 0
+      },
+      "mae": 22.564230851714363,
+      "primary": {
+        "sensitivity": 0.0,
+        "specificity": 1.0
+      },
+      "secondary_probability_sum": {
+        "sensitivity": 0.0,
+        "specificity": 1.0
+      },
+      "spearman": NaN,
+      "weighted_kappa_linear": 0.0
+    }
+  },
+  "source_sha256": {
+    "caches": {
+      "ucddb002": "5269578889ee5ca7fd15a5f803efa4c77fccd231f6125aae9c0a9ccf12890052",
+      "ucddb003": "a2bee2babd2e99db4ff5fa15417d97a3ac981cafa6cbc6539aae964f46f1896a",
+      "ucddb005": "89a02ac4b14424aebe8e6ea31b3361a7522d369ca2a78ecd10ea857d50233b97",
+      "ucddb006": "e08d011e5e048590106d6afc3cb6b5d344228aa2bca5e63f60e9e159ed8c067f",
+      "ucddb007": "01def3bab055795758060b20485f1585910ebfbc55cd103019447f20f02528fa",
+      "ucddb008": "1db1f6228c7c6bd34b31d7f31386227646869761cf77ace98c2cde9a010b4ff1",
+      "ucddb009": "2d8db37c2ac43ea1e7e676b072c86f2a32bbe1f127880340bcf860e822ee5bea",
+      "ucddb010": "c99ba3f54fe598595f9ccf75ef9477016a72a474eb64ea4bfa0bb34993681219",
+      "ucddb011": "fb143882b2283f78896378d4c71931df0ee66eae87b2d84ef50981c66ae4a5f5",
+      "ucddb012": "312cfb20134e8cf7d49c231a4c4ea84c1497eda5aed8118c74241a9bb582bd6c",
+      "ucddb013": "d015009287a108a16287556a8e108abade6e299173d0ef8dbb7fba72c13d33a1",
+      "ucddb014": "01eedc7e3944d7b18fe3e70b557bf2069cc90344f66fbe3e8c66566d5915f335",
+      "ucddb015": "44277f071fe0115cf452211b2be776b9354210be3ed6d40ac42999ffea83d093",
+      "ucddb017": "8ed7f263091c5c71c312443299bd4a349dd2e9e4cbd251538af864f50e441650",
+      "ucddb018": "73a9de0b6551cf2fb19a619396967b9666190fb6e097f8661bb50d195531c9d0",
+      "ucddb019": "1d5a02559710a605cac58aad2c529f6534dc1273f9518029a2af1638c4e9400f",
+      "ucddb020": "3ba5b21833b30840e4226d42cd0b453ddda35aa21003a00e589d33202477e8b7",
+      "ucddb021": "2d8376f493970e56eb2da601e3c8afce0692d27afb0fcec4bab7449d088fb4a9",
+      "ucddb022": "e59e101cee9312f545ec7c0540bc4bde1fbad67f05275255823fece349f0c893",
+      "ucddb023": "16c875a7613abc12edada8edb3197106319ebb55a615ff8726569361d7058eef",
+      "ucddb024": "a340978e877a250b62f4b8e25a28cd7487f9ac203f5c1e37c61ce40fc30d726d",
+      "ucddb025": "2715d6e45aad1e802466c32f0b899851295cf4f0ccc70f9561f0791df4eddfec",
+      "ucddb026": "01267961510c01e57755fd9d42254de2d391cf239200ac302de62b20043f58bd",
+      "ucddb027": "c0df89074f721ebcf62ed9a625d7c314371625f6c907b5286be0353011c04fa5",
+      "ucddb028": "ab9be46826e43b9665002dced83989118821f29d6dc0fee8c93f267c518e4520"
+    },
+    "embeddings_manifest": "3216802838a01aae5919cf8048b40abac99f9cd872c6207f295c010b87eebd67",
+    "frozen_ahi": "eda69eb95c167a1df729b4c728e744ef0275a4ec725b7ace2727f40954bd2990",
+    "plan": "75832c97e7f82d12b5c7cd8608efdbd3b545c0619936c2870a7fea3beb4519f1",
+    "subjects": "ee768b212108e647f9dbf6b8aedb398fd82385da67e005c93cf3dfaf376a5411"
+  },
+  "success_criterion": {
+    "applies": false,
+    "lower_bound": 0.6,
+    "models": {
+      "osf": {
+        "sensitivity_lower": 0.23076923076923078,
+        "specificity_lower": 1.0,
+        "success": false
+      },
+      "sleepfm": {
+        "sensitivity_lower": 0.0,
+        "specificity_lower": 1.0,
+        "success": false
+      }
+    }
+  },
+  "thresholds": {
+    "osf": 0.763603687286377,
+    "sleepfm": 0.693376898765564
+  }
+}
