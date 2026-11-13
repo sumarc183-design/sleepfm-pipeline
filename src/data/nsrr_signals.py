@@ -1,4 +1,4 @@
-"""Nuit NSRR (EDF) -> époques au format PhysioNet 2018 vu par SleepFM (ébauche du 13 novembre).
+"""Nuit NSRR (EDF) -> époques au format PhysioNet 2018 vu par SleepFM (plan validé le 13 novembre).
 
 Sortie : (n, 13, 7680) float32, ordre `ALL_CHANNELS`, 256 Hz, échelle des valeurs brutes PhysioNet
 (`to_physionet_scale`). Elle sert telle quelle à SleepFM et passe par `night_to_osf` pour OSF

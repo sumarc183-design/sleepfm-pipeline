@@ -47,7 +47,10 @@
 - [x] Des fenêtres aux événements et à l'IAH (IAH ≥ 15 par nuit, [résultat](resultats/respiratoire_iah_2026-11-12.md)) : [plan du 12 novembre](plans/Plan%20%C3%A9v%C3%A9nements%20et%20IAH%20SleepFM%20OSF%2012-11.md),
   validé par le tuteur le 12 novembre ; confirmation sur NSRR, pas sur les 494 sujets
 - [x] Choix de la tâche différenciante : apnée, les 3 cibles de l'étude de faisabilité (tuteur, 12 novembre)
-- [ ] Chaîne NSRR prête avant l'accès (lecture MESA/SHHS, annotations XML, IAH), pour appliquer
-  la règle IAH figée dès l'ouverture des données (décision du tuteur, 12 novembre)
+- [x] Chaîne NSRR prête avant l'accès (lecture MESA/SHHS, annotations XML, IAH), pour appliquer
+  la règle IAH figée dès l'ouverture des données (décision du tuteur, 12 novembre) ;
+  [plan validé le 13 novembre](plans/Plan%20confirmation%20IAH%20NSRR%20SleepFM%20OSF%2013-11.md),
+  testée sur EDF synthétiques seulement
+- [ ] Confirmation NSRR : vérifier les premiers EDF, figer la liste MESA, extraire, évaluer une fois
 - [ ] Baseline mesurée sur cette tâche
 - [ ] Note de synthèse pour décision sur la phase 2

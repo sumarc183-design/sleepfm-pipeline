@@ -1,6 +1,6 @@
 """Embeddings SleepFM et OSF des nuits NSRR (MESA, SHHS-1), pour la confirmation de l'IAH.
 
-Ébauche du 13 novembre 2026, écrite avant l'accès aux données (plan de confirmation NSRR).
+Plan validé le 13 novembre 2026, script écrit avant l'accès aux données (plan de confirmation NSRR).
 Pour chaque sujet de la liste figée : EDF -> époques au format PhysioNet (`nsrr_night`),
 embeddings SleepFM (1536) et/ou OSF (768) sur la même nuit. Un <sujet>.npz par sujet, un
 manifest.json (poids, cohorte, liste, règle d'échelle) et un run_status.json. Relancer reprend

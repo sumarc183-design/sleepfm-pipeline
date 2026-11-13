@@ -1,10 +1,10 @@
-"""Correspondance des canaux MESA / SHHS-1 vers les entrées SleepFM et OSF (ébauche du 13 novembre).
+"""Correspondance des canaux MESA / SHHS-1 vers les entrées SleepFM et OSF (plan validé le 13 novembre).
 
 Préparé avant l'accès aux données. Les libellés EDF viennent de la documentation publique NSRR
 et restent **à vérifier sur les premiers fichiers** : un libellé attendu introuvable, ou trouvé
 deux fois, arrête la préparation au lieu d'être deviné.
 
-Règle (à valider) : la règle IAH est figée, donc l'entrée doit ressembler le plus possible à
+Règle (validée le 13 novembre) : la règle IAH est figée, donc l'entrée doit ressembler le plus possible à
 celle vue sur PhysioNet 2018. Un canal mis à zéro sur PhysioNet reste à zéro sur NSRR même
 s'il existe (jambes, ronflement, EOG droit pour OSF). Un canal présent sur PhysioNet mais absent
 sur NSRR est mis à zéro et signalé (dégradation attendue, mesurée par la confirmation).

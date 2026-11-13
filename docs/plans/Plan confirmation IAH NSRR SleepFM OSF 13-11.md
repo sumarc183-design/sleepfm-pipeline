@@ -1,6 +1,7 @@
-# Confirmation de l'IAH ≥ 15 sur NSRR — ébauche du 13 novembre 2026
+# Confirmation de l'IAH ≥ 15 sur NSRR — plan du 13 novembre 2026
 
-**Ébauche, à valider avec le tuteur.** Elle est écrite avant tout accès aux données NSRR
+**Validé par le tuteur le 13 novembre 2026** (table des canaux, échelle, critère de réussite).
+Écrit avant tout accès aux données NSRR
 (demande n° 30917 en attente) pour que la confirmation puisse être lancée dès l'ouverture.
 Décision du tuteur (12 novembre) : la confirmation se fait sur NSRR, pas sur les 494 sujets.
 
@@ -22,7 +23,7 @@ réentraînement, aucun nouveau seuil, aucune recalibration sur NSRR.
 ## Données
 
 - **Cohorte** : MESA d'abord (cohorte indépendante, adultes), SHHS ensuite si accordée.
-  À trancher : une seule visite par participant (SHHS-1 seulement).
+  Une seule visite par participant (SHHS-1 seulement).
 - **Sélection** : toutes les nuits avec annotations XML NSRR et au moins 1 h de sommeil.
   Liste figée et empreintée **avant** toute prédiction ; nuits écartées publiées avec leur motif.
 - **Annotations** : `src/data/nsrr_annotations.py` (stades R&K regroupés en AASM, 4 types
@@ -43,13 +44,14 @@ réentraînement, aucun nouveau seuil, aucune recalibration sur NSRR.
 - **Secondaires** : AUC de `x` et écart apparié OSF − SleepFM ; erreur absolue moyenne,
   Spearman, Bland-Altman, κ pondéré linéaire sur 4 classes ; mêmes calculs avec la référence
   officielle NSRR.
-- **Critère de réussite** : à fixer avec le tuteur avant l'accès. Proposition : la borne
-  basse de l'IC de la sensibilité et celle de la spécificité au-dessus de 60 %.
+- **Critère de réussite** (validé le 13 novembre) : pour chaque modèle séparément, la borne
+  basse de l'IC 95 % de la sensibilité et celle de la spécificité au-dessus de 60 %, avec la
+  référence principale.
 
-## Points ouverts avant l'accès
+## Préparation (validée le 13 novembre)
 
-1. **Canaux** (ébauche dans `src/data/nsrr_channels.py`, libellés EDF à vérifier). Règle
-   proposée : reproduire l'entrée PhysioNet. Un canal nul sur PhysioNet reste nul même s'il
+1. **Canaux** (`src/data/nsrr_channels.py`, libellés EDF à vérifier sur les premiers fichiers).
+   Règle validée : reproduire l'entrée PhysioNet. Un canal nul sur PhysioNet reste nul même s'il
    existe ; un canal absent de NSRR est mis à zéro et signalé.
 
    | Entrée | PhysioNet 2018 | MESA | SHHS-1 |
