@@ -93,8 +93,12 @@ Bland-Altman au-delà de ±20 /h sur PhysioNet). Changement de capteurs et de po
 
 ## Exécution (précisions du 13 novembre, sans changement de décision)
 
+0. `scripts/freeze_nsrr_subjects.py` : liste des nuits ayant un EDF et un XML NSRR, à partir des
+   noms de fichiers seulement (dossier ou index du site NSRR), commitée avant toute extraction.
+   Les fichiers sans partenaire sont publiés dans la liste.
 1. `scripts/embed_nsrr.py` : embeddings SleepFM et OSF des nuits de la liste figée
-   (`--respiratory-rule physionet_median_v1`), sur Kaggle.
+   (`--respiratory-rule physionet_median_v1`), sur Kaggle (`notebooks/sleepfm_nsrr_embeddings.ipynb` :
+   EDF téléchargés par lots puis supprimés, faute de place pour toute la cohorte).
 2. `scripts/evaluate_nsrr_ahi.py` : un seul passage. Le script vérifie l'empreinte de la règle
    figée, les modèles, les seuils et les poids des encodeurs (ceux de PhysioNet), et refuse une
    extraction incomplète. Les nuits refusées à l'extraction, à la lecture des annotations ou
