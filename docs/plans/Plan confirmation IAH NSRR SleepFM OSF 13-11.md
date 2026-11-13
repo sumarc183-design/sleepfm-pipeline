@@ -90,3 +90,14 @@ réentraînement, aucun nouveau seuil, aucune recalibration sur NSRR.
 
 Règle développée sur 140 nuits d'une seule cohorte ; IAH estimé imprécis (limites de
 Bland-Altman au-delà de ±20 /h sur PhysioNet). Changement de capteurs et de population.
+
+## Exécution (précisions du 13 novembre, sans changement de décision)
+
+1. `scripts/embed_nsrr.py` : embeddings SleepFM et OSF des nuits de la liste figée
+   (`--respiratory-rule physionet_median_v1`), sur Kaggle.
+2. `scripts/evaluate_nsrr_ahi.py` : un seul passage. Le script vérifie l'empreinte de la règle
+   figée, les modèles, les seuils et les poids des encodeurs (ceux de PhysioNet), et refuse une
+   extraction incomplète. Les nuits refusées à l'extraction, à la lecture des annotations ou
+   avec moins de 1 h de sommeil sont publiées avec leur motif. Il écrit ensuite les résultats,
+   le verdict du critère pour chaque modèle et une archive du code. Une sortie existante n'est
+   jamais écrasée.
