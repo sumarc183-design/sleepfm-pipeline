@@ -13,7 +13,13 @@ bash scripts/setup_sleepfm.sh         # clone le code officiel SleepFM dans thir
 ```
 
 Python 3.10 ou plus. `requirements.txt` borne chaque dépendance à la version
-majeure validée (Mac Intel et Colab).
+majeure validée (Mac Intel, Colab et Windows 11).
+
+Sous Windows (Git Bash), activer avec `source .venv/Scripts/activate` ;
+`pre-commit` n'est pas dans `requirements-dev.txt` (`pip install pre-commit`).
+Sans GPU NVIDIA, torch s'installe en version CPU : les longs calculs restent
+sur Kaggle/Colab. Les poids OSF (`third_party/osf/osf_backbone.pth`) se
+téléchargent à part, voir [OSF_COMPARISON.md](OSF_COMPARISON.md).
 
 ## Lancer la baseline
 
