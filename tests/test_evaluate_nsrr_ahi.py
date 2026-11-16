@@ -290,3 +290,40 @@ def test_ucddb_descriptive_run(setup, monkeypatch):
     report = ev.run(setup)
     assert report["success_criterion"]["applies"] is False
     assert report["nights"]["evaluated"] == 12 and report["results"]["sleepfm"]["confusion_15"]
+
+
+def test_preparation_contract_covers_executed_code():
+    from scripts.embed_nsrr import PREPARATION_CODE
+
+    for path in ("src/models/embeddings.py", "src/models/effnet.py", "src/models/osf_vit1d.py",
+                 "src/data/osf_physionet2018.py"):  # fmt: skip
+        assert path in PREPARATION_CODE and path in ev.CODE
+
+
+@needs_results
+def test_event_outside_signal_excludes_night(setup):
+    late = scored("Respiratory|Respiratory", "Hypopnea|Hypopnea", 100000, 20)
+    (setup.annotations_dir / "mesa-sleep-0006-nsrr.xml").write_bytes(night_xml(5, extra=late))
+    report = ev.run(setup)
+    assert "hors du signal" in report["nights"]["excluded"]["mesa-sleep-0006"]
+    assert set(report["model_status"]["models"]) == {"sleepfm", "osf"}
+    assert len(report["source_sha256"]["annotations"]) == 12
+    json.loads(Path(f"{setup.out}.json").read_text(), parse_constant=lambda c: pytest.fail(c))
+
+
+def test_annotation_change_after_precheck_is_detected(tmp_path):
+    xml = tmp_path / "a-nsrr.xml"
+    xml.write_bytes(night_xml(3))
+    sha = {xml.name: hashlib.sha256(xml.read_bytes()).hexdigest()}
+    assert ev.read_stable("mesa", (xml,), {}, sha)["events"].shape == (3, 3)
+    xml.write_bytes(night_xml(4))
+    with pytest.raises(RuntimeError, match="modifiées"):
+        ev.read_stable("mesa", (xml,), {}, sha)
+
+
+def test_constant_index_is_not_interpretable():
+    night = {"rate_sleepfm": np.zeros(5), "rate_osf": np.arange(5.0)}
+    records = {f"s{i}": {"channel_qc": {"C3-M2": {"flags": ["ligne_de_base_decalee"]}}} for i in range(5)}
+    status = ev.model_status(night, records, sorted(records))["models"]
+    assert not status["sleepfm"]["interpretable"] and len(status["sleepfm"]["reasons"]) == 2
+    assert status["osf"]["interpretable"]

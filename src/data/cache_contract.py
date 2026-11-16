@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import shutil
 from pathlib import Path
@@ -36,10 +37,22 @@ def contract_differences(a: dict, b: dict) -> list[str]:
     return [key for key in CONTRACT_KEYS if a.get(key) != b.get(key)]
 
 
+def finite_json(value):
+    """NaN et infinis remplacés par null (non calculable) : JSON strict (audit du 15 novembre, F5)."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {key: finite_json(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [finite_json(item) for item in value]
+    return value
+
+
 def write_json_atomic(path: Path, value) -> None:
-    """Écrit un JSON sous un nom temporaire puis le renomme : jamais de fichier tronqué."""
+    """Écrit un JSON strict sous un nom temporaire puis le renomme : jamais de fichier tronqué."""
     temporary = path.with_name(f".{path.name}.tmp")
-    temporary.write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+    text = json.dumps(finite_json(value), indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
+    temporary.write_text(text + "\n")
     os.replace(temporary, path)
 
 

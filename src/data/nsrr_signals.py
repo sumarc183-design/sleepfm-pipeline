@@ -14,7 +14,14 @@ from pathlib import Path
 import mne
 import numpy as np
 
-from src.data.nsrr_channels import MEDIAN_SCALED, SLEEPFM_CHANNELS, channel_plan, to_physionet_scale
+from src.data.nsrr_channels import (
+    MEDIAN_SCALED,
+    PHYSIONET_MEDIAN_SCALE,
+    SLEEPFM_CHANNELS,
+    channel_plan,
+    robust_scale,
+    to_physionet_scale,
+)
 
 SAMPLE_RATE = 256
 EPOCH_S = 30
@@ -74,6 +81,31 @@ def to_256(signal: np.ndarray, rate: float) -> np.ndarray:
     return mne.filter.resample(signal, up=SAMPLE_RATE, down=int(rate), npad="auto", verbose=False)
 
 
+# Contrôle de préparation indépendant des labels (audit du 15 novembre, F1) : signalé, jamais corrigé.
+QC_OFFSET_RATIO = 3.0  # |médiane| > 3 × échelle robuste : ligne de base décalée
+QC_SCALE_RANGE = (0.2, 5.0)  # échelle robuste hors de [0,2 ; 5] × médiane PhysioNet
+
+
+def channel_qc(night: np.ndarray, present: dict) -> dict:
+    """Par voie présente (hors SaO2) : médiane, échelle robuste et anomalies signalées."""
+    out = {}
+    for target in present:
+        if target == "SaO2":
+            continue
+        x = night[SLEEPFM_CHANNELS.index(target)]
+        median, scale = float(np.median(x)), robust_scale(x)
+        flags = []
+        if scale == 0:
+            flags.append("plate")
+        elif abs(median) > QC_OFFSET_RATIO * scale:
+            flags.append("ligne_de_base_decalee")
+        reference = PHYSIONET_MEDIAN_SCALE.get(target)
+        if reference and scale and not QC_SCALE_RANGE[0] <= scale / reference <= QC_SCALE_RANGE[1]:
+            flags.append("echelle_hors_physionet")
+        out[target] = {"median": median, "robust_scale": scale, "flags": flags}
+    return out
+
+
 def nsrr_night(path: str | Path, cohort: str, respiratory_scale: RespiratoryScale | None) -> tuple[np.ndarray, dict]:
     """Époques de 30 s depuis le début de l'enregistrement (fin incomplète retirée).
 
@@ -108,6 +140,7 @@ def nsrr_night(path: str | Path, cohort: str, respiratory_scale: RespiratoryScal
         raise ValueError("Valeurs non finies après préparation")
     epochs = night.reshape(len(SLEEPFM_CHANNELS), n_epochs, EPOCH_SAMPLES).transpose(1, 0, 2)
     info = {
+        "channel_qc": channel_qc(night, present),
         "cohort": cohort,
         "n_epochs": n_epochs,
         "source_labels": {t: edf["labels"][i] for t, i in present.items()},

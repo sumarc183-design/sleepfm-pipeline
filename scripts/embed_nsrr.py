@@ -45,9 +45,12 @@ from src.data.nsrr_signals import nsrr_night  # noqa: E402
 from src.data.ucddb_annotations import edf_start_seconds  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
-PREPARATION_VERSION = 3  # 2 : fiche par nuit, contrat complet (audit du 13 nov.) ; 3 : règle v2 (16 nov.)
+# 2 : fiche par nuit, contrat complet (audit du 13 nov.) ; 3 : règle v2 (16 nov.) ;
+# 4 : contrôle de préparation par voie dans la fiche, code exécuté complet (audit du 15 nov.)
+PREPARATION_VERSION = 4
 ROOT = Path(__file__).resolve().parents[1]
 EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec"}
+# Tout le code exécuté de l'EDF aux embeddings (audit du 15 novembre, F2 : encodeurs et préparation OSF).
 PREPARATION_CODE = (
     "scripts/embed_nsrr.py",
     "scripts/embed_osf_physionet2018.py",
@@ -55,6 +58,11 @@ PREPARATION_CODE = (
     "src/data/nsrr_channels.py",
     "src/data/nsrr_signals.py",
     "src/data/osf_input.py",
+    "src/data/osf_physionet2018.py",
+    "src/data/ucddb_annotations.py",
+    "src/models/effnet.py",
+    "src/models/embeddings.py",
+    "src/models/osf_vit1d.py",
 )
 SLEEPFM_DIM = 1536
 # Règles d'échelle des sangles et du débit pour SleepFM (validée par le tuteur le 13 novembre 2026).

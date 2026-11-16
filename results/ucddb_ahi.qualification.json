@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-16",
+  "kind": "result_qualification",
+  "osf": {
+    "interpretable": true,
+    "scope": "contrôle externe descriptif sur 25 nuits, sans verdict ni validation clinique"
+  },
+  "report": "ucddb_ahi.json",
+  "report_sha256": "6db1cde7cfdd08705d72c84ded925e6f0d2862cbba37990739f048f05751c6fd",
+  "sleepfm": {
+    "interpretable": false,
+    "reason": "défaut de préparation : voies non calibrées mises à l'échelle sans recentrage (règle v1), lignes de base loin de zéro ; indice constant sur les 25 nuits"
+  },
+  "source": "audit du 15 novembre (F1, F5) ; Journal/Compte rendu contrôle externe UCDDB 13-11.md"
+}

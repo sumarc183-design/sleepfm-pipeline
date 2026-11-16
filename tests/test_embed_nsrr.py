@@ -76,3 +76,48 @@ def test_saved_night_has_record_and_detects_changes(tmp_path):
     (tmp_path / "mesa-sleep-0001.json").unlink()
     with pytest.raises(ValueError, match="sans fiche"):
         check_cache(tmp_path, "mesa-sleep-0001", ["osf"], full=False)
+
+
+def test_renamed_pair_and_shifted_grid_refused(tmp_path):
+    import numpy as np
+
+    from scripts.embed_nsrr import save_night
+    from src.data.nsrr_cache import check_cache, validate_night_arrays
+
+    edf = tmp_path / "x.edf"
+    edf.write_bytes(b" " * 176 + b"22.00.00" + b" " * 72)
+    result = {
+        "X_osf": np.zeros((3, 768)),
+        "epoch_idx": np.arange(3),
+        "onset_s": 30.0 * np.arange(3),
+        "info": {"n_epochs": 3},
+    }
+    save_night(tmp_path, "mesa-sleep-0001", result, edf)
+    for ext in (".npz", ".json"):
+        (tmp_path / f"mesa-sleep-0001{ext}").rename(tmp_path / f"mesa-sleep-0002{ext}")
+    with pytest.raises(ValueError, match="autre sujet"):
+        check_cache(tmp_path, "mesa-sleep-0002", ["osf"])
+    shifted = dict(result, onset_s=30.0 * np.arange(3) + np.array([0, 0.25, 0]))
+    with pytest.raises(ValueError, match="30 s"):
+        validate_night_arrays(shifted, ["osf"])
+
+
+def test_json_written_strictly(tmp_path):
+    import json
+
+    from src.data.cache_contract import write_json_atomic
+
+    write_json_atomic(tmp_path / "x.json", {"a": float("nan"), "b": [float("inf"), 1.0]})
+    assert json.loads((tmp_path / "x.json").read_text()) == {"a": None, "b": [None, 1.0]}
+
+
+def test_channel_qc_flags_offset():
+    import numpy as np
+
+    from src.data.nsrr_signals import channel_qc
+
+    night = np.zeros((13, 3000))
+    night[2] = 46 + 12 * np.sin(np.arange(3000))  # C3-M2 décalé
+    night[3] = 12 * np.sin(np.arange(3000))
+    qc = channel_qc(night, {"C3-M2": 0, "C4-M1": 1})
+    assert qc["C3-M2"]["flags"] == ["ligne_de_base_decalee"] and qc["C4-M1"]["flags"] == []

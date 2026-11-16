@@ -28,7 +28,7 @@ def validate_night_arrays(data, models, n_epochs: int | None = None) -> int:
         raise ValueError("indices de fenêtres absents ou non entiers")
     if not np.array_equal(index, np.arange(n)):
         raise ValueError("indices de fenêtres hors de la grille 0..n-1")
-    if onset.shape != (n,) or not np.allclose(onset, EPOCH_S * index):
+    if onset.shape != (n,) or not np.allclose(onset, EPOCH_S * index, rtol=0.0, atol=1e-6):
         raise ValueError("débuts de fenêtres différents de 30 s × indice")
     for model in models:
         matrix = np.asarray(data[f"X_{model}"])
@@ -49,7 +49,10 @@ def read_record(folder: Path, subject: str) -> dict:
     path = record_path(folder, subject)
     if not path.exists():
         raise ValueError(f"{subject} : NPZ sans fiche, provenance inconnue")
-    return json.loads(path.read_text())
+    record = json.loads(path.read_text())
+    if record.get("subject") != subject:  # paire renommée ou échangée (audit du 15 novembre, F4)
+        raise ValueError(f"{subject} : fiche d'un autre sujet ({record.get('subject')!r})")
+    return record
 
 
 def npz_unchanged(folder: Path, subject: str, record: dict) -> bool:

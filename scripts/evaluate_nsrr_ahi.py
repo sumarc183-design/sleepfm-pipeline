@@ -10,10 +10,11 @@ Référence secondaire facultative : IAH officiel NSRR à 3 % et 4 % (`--officia
 Critère de réussite, pour chaque modèle : bornes basses des IC 95 % de la sensibilité et de la
 spécificité au-dessus de 60 %.
 
-Précontrôle sans cible ni prédiction (audit du 13 novembre) : code et plan commités, règle figée,
-liste approuvée et couverture exacte, contrat d'extraction complet, chaque cache relu et empreinté,
-concepts XML connus, CSV officiel valide. Ensuite seulement, un marqueur de passage propre à la
-cohorte, à la liste et à la règle est écrit : la confirmation ne peut pas être relancée, même sous
+Précontrôle avant toute prédiction et tout calcul de performance (audit du 13 novembre) : code et
+plan commités, règle figée, liste approuvée et couverture exacte, contrat d'extraction complet,
+chaque cache relu et empreinté, annotations lues pour leur format seulement (concepts connus) et
+empreintées, CSV officiel valide. Ensuite seulement, un marqueur de passage propre à la cohorte, à
+la liste et à la règle est écrit : la confirmation ne peut pas être relancée, même sous
 un autre préfixe ou après un échec (états commencé, terminé, échoué conservés).
 
     python scripts/evaluate_nsrr_ahi.py --cohort mesa --embeddings embeddings/nsrr_mesa \\
@@ -181,6 +182,37 @@ def read_annotations(cohort: str, files: tuple[Path, ...], record: dict) -> dict
     return parse_nsrr_xml(files[0])
 
 
+def read_stable(cohort: str, files: tuple[Path, ...], record: dict, sha: dict) -> dict:
+    """Annotations relues seulement si elles n'ont pas changé depuis le précontrôle (audit du 15 nov., F6)."""
+    if {p.name: file_sha256(p) for p in files} != sha:
+        raise RuntimeError(f"{files[0].name} : annotations modifiées depuis le précontrôle")
+    return read_annotations(cohort, files, record)
+
+
+def model_status(night: dict, records: dict, subjects: list[str]) -> dict:
+    """Interprétabilité par modèle, fixée avant le passage (audit du 15 novembre, F1 et F5).
+
+    Indice constant sur toutes les nuits : non interprétable. SleepFM seulement : une voie signalée
+    (ligne de base décalée ou plate) dans plus de la moitié des nuits rend la préparation suspecte.
+    OSF centre et réduit chaque nuit, il n'est pas concerné par ce second contrôle.
+    """
+    flagged = {}
+    for subject in subjects:
+        for target, qc in records[subject].get("channel_qc", {}).items():
+            if {"ligne_de_base_decalee", "plate"} & set(qc["flags"]):
+                flagged[target] = flagged.get(target, 0) + 1
+    suspect = sorted(t for t, n in flagged.items() if n > len(subjects) / 2)
+    out = {}
+    for model in MODELS:
+        reasons = []
+        if np.ptp(night[f"rate_{model}"]) == 0:
+            reasons.append("indice constant sur toutes les nuits")
+        if model == "sleepfm" and suspect:
+            reasons.append(f"préparation signalée sur {suspect}")
+        out[model] = {"interpretable": not reasons, "reasons": reasons}
+    return {"models": out, "channels_flagged_nights": flagged}
+
+
 def annotation_problems(cohort: str, files: tuple[Path, ...], record: dict) -> str | None:
     """Motif d'exclusion d'annotations illisibles ; erreur si un concept est inconnu (à décider avant)."""
     try:
@@ -237,9 +269,13 @@ def night_row(npz_path: Path, parsed_or_error, frozen: dict, n_epochs: int) -> d
         reference = reference_ahi_nsrr(parsed)
     except (OSError, ValueError) as exc:
         return {"excluded": f"annotations : {exc}"}
-    if parsed["recording_end_s"] > n_epochs * EPOCH_S + XML_OVERRUN_TOLERANCE_S:
-        end, signal = parsed["recording_end_s"], n_epochs * EPOCH_S
-        return {"excluded": f"annotations jusqu'à {end:.0f} s pour {signal:.0f} s de signal"}
+    signal = n_epochs * EPOCH_S
+    if parsed["recording_end_s"] > signal + XML_OVERRUN_TOLERANCE_S:
+        return {"excluded": f"annotations jusqu'à {parsed['recording_end_s']:.0f} s pour {signal:.0f} s de signal"}
+    events = parsed["events"]
+    # Chaque événement doit tenir dans le signal, même tolérance (audit du 15 novembre, F3).
+    if len(events) and (events[:, 0].min() < 0 or events[:, 1].max() > signal + XML_OVERRUN_TOLERANCE_S):
+        return {"excluded": f"événement respiratoire hors du signal ({signal:.0f} s)"}
     if reference["sleep_h"] < MIN_SLEEP_H:
         return {"excluded": f"sommeil {reference['sleep_h']:.2f} h < {MIN_SLEEP_H:g} h"}
     with np.load(npz_path) as data:
@@ -305,6 +341,7 @@ def precheck(args) -> dict:
     absent = sorted(s for s, paths in xml_paths.items() if not all(p.exists() for p in paths))
     if absent:
         raise ValueError(f"Annotations absentes : {absent[:5]}")
+    annotation_sha = {s: {p.name: file_sha256(p) for p in paths} for s, paths in xml_paths.items()}
     unreadable = {}
     for subject, paths in xml_paths.items():
         problem = annotation_problems(args.cohort, paths, extraction["records"][subject])
@@ -328,6 +365,7 @@ def precheck(args) -> dict:
         "frozen": frozen,
         "extraction": extraction,
         "xml_paths": xml_paths,
+        "annotation_sha": annotation_sha,
         "unreadable": unreadable,
         "official": official,
         "marker": marker,
@@ -368,7 +406,9 @@ def evaluate(args, checked: dict) -> dict:
         files = checked["xml_paths"][subject]
         row = night_row(
             args.embeddings / f"{subject}.npz",
-            lambda files=files, record=record: read_annotations(args.cohort, files, record),
+            lambda files=files, record=record, sha=checked["annotation_sha"][subject]: read_stable(
+                args.cohort, files, record, sha
+            ),
             frozen,
             record["n_epochs"],
         )
@@ -397,6 +437,7 @@ def evaluate(args, checked: dict) -> dict:
             "embeddings_manifest": file_sha256(args.embeddings / "manifest.json"),
             "subjects": extraction["list_sha"],
             "caches": {s: extraction["records"][s]["npz_sha256"] for s in extraction["done"]},
+            "annotations": checked["annotation_sha"],
         },
         "nights": {
             "listed": len(extraction["subjects"]),
@@ -405,6 +446,8 @@ def evaluate(args, checked: dict) -> dict:
             "excluded": excluded,
         },
         "policy": {"xml_overrun_tolerance_s": XML_OVERRUN_TOLERANCE_S, "min_sleep_h": MIN_SLEEP_H},
+        "model_status": model_status(night, extraction["records"], subjects),
+        "null_means": "valeur non calculable (série constante, dénominateur nul)",
         "thresholds": frozen["thresholds"],
         "calibration": frozen["calibration"],
         "results": results,

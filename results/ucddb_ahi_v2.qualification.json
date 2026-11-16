@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-16",
+  "kind": "result_qualification",
+  "osf": {
+    "interpretable": true,
+    "scope": "contrôle externe descriptif sur 25 nuits, sans verdict ni validation clinique"
+  },
+  "report": "ucddb_ahi_v2.json",
+  "report_sha256": "414c0b843e0c18406fd62833fab62f58cb35023ec8614d89808ab5f4f42ac4e3",
+  "sleepfm": {
+    "interpretable": false,
+    "reason": "indice constant sur les 25 nuits malgré la règle v2 ; cause probable : respiration à 8 Hz (test de robustesse PhysioNet en cours)"
+  },
+  "source": "audit du 15 novembre (F1, F5) ; Journal/Compte rendu contrôle externe UCDDB 13-11.md",
+  "status": "analyse exploratoire sur une cohorte déjà ouverte (second passage après correction de la règle)"
+}
