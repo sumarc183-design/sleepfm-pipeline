@@ -94,10 +94,10 @@ def test_h5_reconstruction_rejects_overlapping_stage_indicators(tmp_path):
 
 def test_existing_output_is_protected_before_reading_inputs(tmp_path):
     out = tmp_path / "result"
-    out.with_suffix(".json").write_text("keep")
+    out.with_suffix(".json").write_text("keep", encoding="utf-8")
     with pytest.raises(ValueError, match="Sortie existante"):
         analysis.run(SimpleNamespace(out=out))
-    assert out.with_suffix(".json").read_text() == "keep"
+    assert out.with_suffix(".json").read_text(encoding="utf-8") == "keep"
 
 
 def test_pipeline_checks_source_hashes_and_reconstructed_labels(tmp_path, monkeypatch):
@@ -131,7 +131,7 @@ def test_pipeline_checks_source_hashes_and_reconstructed_labels(tmp_path, monkey
         hea = record / f"{subject}.hea"
         hea.write_bytes(b"header fixture")
         inventory[subject] = {"h5_sha256": file_sha256(h5), "header_sha256": file_sha256(hea)}
-    (tmp_path / "source.inputs.json").write_text(json.dumps(inventory))
+    (tmp_path / "source.inputs.json").write_text(json.dumps(inventory), encoding="utf-8")
     source = tmp_path / "source.json"
     report = {
         "status": "terminé",
@@ -163,9 +163,9 @@ def test_pipeline_checks_source_hashes_and_reconstructed_labels(tmp_path, monkey
             for kind in analysis.PROBES
         },
     }
-    source.write_text(json.dumps(report))
+    source.write_text(json.dumps(report), encoding="utf-8")
     plan = tmp_path / "plan.md"
-    plan.write_text("fixed plan")
+    plan.write_text("fixed plan", encoding="utf-8")
     args = SimpleNamespace(source=source, annotations_dir=annotations, plan=plan, out=tmp_path / "result")
     monkeypatch.setattr(analysis, "read_samples", lambda record, n: (grid, 1))
     result = analysis.run(args)

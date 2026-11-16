@@ -107,8 +107,8 @@ def paired_ap(y, sleepfm, osf, subjects, n_boot=N_BOOT) -> dict:
 
 
 def validated_inputs(args) -> tuple[dict, dict, dict, dict]:
-    baseline = json.loads(args.baseline.read_text())
-    split = json.loads(args.split_file.read_text())
+    baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+    split = json.loads(args.split_file.read_text(encoding="utf-8"))
     if (
         baseline.get("status") != "terminé"
         or baseline.get("partitions") != partition_subjects(split)
@@ -120,22 +120,22 @@ def validated_inputs(args) -> tuple[dict, dict, dict, dict]:
     manifest_path = args.labels_dir / "manifest.json"
     if file_sha256(manifest_path) != baseline["label_manifest_sha256"]:
         raise ValueError("Inventaire des labels différent de la baseline")
-    labels = json.loads(manifest_path.read_text())
-    if labels["embeddings_manifest"] != json.loads((args.sleepfm_dir / "manifest.json").read_text()):
+    labels = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if labels["embeddings_manifest"] != json.loads((args.sleepfm_dir / "manifest.json").read_text(encoding="utf-8")):
         raise ValueError("Contrat SleepFM différent de celui des labels")
     archive = args.baseline.with_suffix(".predictions.npz")
     if file_sha256(archive) != baseline["predictions_sha256"]:
         raise ValueError("Prédictions SleepFM modifiées")
     if file_sha256(args.baseline.with_suffix(".joblib")) != baseline["model_sha256"]:
         raise ValueError("Modèle SleepFM de référence modifié")
-    osf_manifest = json.loads((args.osf_dir / "manifest.json").read_text())
+    osf_manifest = json.loads((args.osf_dir / "manifest.json").read_text(encoding="utf-8"))
     if (
         osf_manifest.get("model") != "OSF"
         or osf_manifest.get("extraction_preprocessing_version") != 2
         or not osf_manifest.get("osf_checkpoint_sha256")
     ):
         raise ValueError("Contrat OSF incomplet ou incompatible")
-    status = json.loads((args.osf_dir / "run_status.json").read_text())
+    status = json.loads((args.osf_dir / "run_status.json").read_text(encoding="utf-8"))
     subjects = set(split["train"] + split["test"])
     if (
         not status.get("complete")

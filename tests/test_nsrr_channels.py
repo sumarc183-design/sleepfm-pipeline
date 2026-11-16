@@ -55,8 +55,8 @@ def test_physionet_median_scale_matches_archived_result():
     from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE
 
     root = Path(__file__).resolve().parents[1] / "results"
-    summary = json.loads((root / "respiratory_amplitude_physionet2018.json").read_text())["summary"]
-    summary |= json.loads((root / "eeg_amplitude_physionet2018.json").read_text())["summary"]
+    summary = json.loads((root / "respiratory_amplitude_physionet2018.json").read_text(encoding="utf-8"))["summary"]
+    summary |= json.loads((root / "eeg_amplitude_physionet2018.json").read_text(encoding="utf-8"))["summary"]
     assert len(PHYSIONET_MEDIAN_SCALE) == 8
     for target, value in PHYSIONET_MEDIAN_SCALE.items():
         assert summary[target]["robust_scale"]["median"] == value

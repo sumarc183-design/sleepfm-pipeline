@@ -35,10 +35,10 @@ def run(directory, subjects, **overrides):
 
 @pytest.mark.parametrize("mismatch", ["checkpoint_sha256", "preprocessing_version"])
 def test_contract_mismatch_preserves_corrupt_cache_and_markers(tmp_path, mismatch):
-    (tmp_path / "manifest.json").write_text(json.dumps(CONTRACT))
+    (tmp_path / "manifest.json").write_text(json.dumps(CONTRACT), encoding="utf-8")
     (tmp_path / "s1.npz").write_bytes(b"corrompu")
     (tmp_path / "s1.tmp.npz").write_bytes(b"partiel")
-    (tmp_path / "s1.skipped").write_text("rejet historique")
+    (tmp_path / "s1.skipped").write_text("rejet historique", encoding="utf-8")
     before = {p.name: p.read_bytes() for p in tmp_path.iterdir()}
     changed = CONTRACT | {mismatch: "autre" if mismatch == "checkpoint_sha256" else 3}
     with pytest.raises(SystemExit):
@@ -47,15 +47,15 @@ def test_contract_mismatch_preserves_corrupt_cache_and_markers(tmp_path, mismatc
 
 
 def test_retry_and_cleanup_only_touch_requested_subjects(tmp_path):
-    (tmp_path / "manifest.json").write_text(json.dumps(CONTRACT))
+    (tmp_path / "manifest.json").write_text(json.dumps(CONTRACT), encoding="utf-8")
     np.savez(tmp_path / "s1.npz", X=np.zeros((1, 1536)), y=np.array([0]), epoch_idx=[0], onset_s=[0.0])
     for subject in ("s1", "foreign"):
-        (tmp_path / f"{subject}.skipped").write_text("rejet")
+        (tmp_path / f"{subject}.skipped").write_text("rejet", encoding="utf-8")
         (tmp_path / f"{subject}.tmp.npz").write_bytes(b"partiel")
     run(tmp_path, ["s1"], retry_skipped=True)
     assert not (tmp_path / "s1.skipped").exists()
     assert not (tmp_path / "s1.tmp.npz").exists()
-    assert (tmp_path / "foreign.skipped").read_text() == "rejet"
+    assert (tmp_path / "foreign.skipped").read_text(encoding="utf-8") == "rejet"
     assert (tmp_path / "foreign.tmp.npz").read_bytes() == b"partiel"
 
 
@@ -103,10 +103,10 @@ def test_prefetch_overlaps_embeddings_and_cleans_up_on_error(tmp_path, monkeypat
 
     def extract(raw, processed, num_threads):
         processed.mkdir()
-        (processed / "subject").write_text(next(raw.iterdir()).name)
+        (processed / "subject").write_text(next(raw.iterdir()).name, encoding="utf-8")
 
     def dataset(processed):
-        return SimpleNamespace(subject=(processed / "subject").read_text())
+        return SimpleNamespace(subject=(processed / "subject").read_text(encoding="utf-8"))
 
     def embed(encoders, data, *args):
         if data.subject == "s1":

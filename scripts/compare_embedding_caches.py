@@ -74,7 +74,9 @@ def main() -> None:
 
     for directory in (args.old, args.new):
         manifest = directory / "manifest.json"
-        version = json.loads(manifest.read_text()).get("preprocessing_version") if manifest.exists() else "?"
+        version = (
+            json.loads(manifest.read_text(encoding="utf-8")).get("preprocessing_version") if manifest.exists() else "?"
+        )
         print(f"{directory} : {len(cache_subjects(directory))} sujet(s), prétraitement version {version}")
     old, new = cache_subjects(args.old), cache_subjects(args.new)
     common = sorted(old & new)

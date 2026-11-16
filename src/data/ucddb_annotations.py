@@ -53,7 +53,7 @@ def edf_start_seconds(edf_path: str | Path) -> int:
 def parse_ucddb(stage_path: str | Path, respevt_path: str | Path, start_s: int) -> dict:
     """Stades (début, durée, stade) et événements (début, fin, type) en secondes depuis le début."""
     stages, unscored, unknown = [], 0, Counter()
-    codes = [line.strip() for line in Path(stage_path).read_text().splitlines() if line.strip()]
+    codes = [line.strip() for line in Path(stage_path).read_text(encoding="utf-8").splitlines() if line.strip()]
     if not codes:
         raise ValueError("Fichier de stades vide")
     for epoch, text in enumerate(codes):

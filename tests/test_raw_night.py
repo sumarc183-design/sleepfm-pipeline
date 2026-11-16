@@ -47,8 +47,8 @@ def test_raw_grid_ignores_annotations_and_drops_tail(night):
 def test_raw_reorders_channels_without_changing_values(night):
     reference = RawNightDataset(night)[0]
     hea, mat = night / "raw-night.hea", night / "raw-night.mat"
-    lines = hea.read_text().splitlines()
-    hea.write_text("\n".join([lines[0], *lines[1:][::-1]]) + "\n")
+    lines = hea.read_text(encoding="utf-8").splitlines()
+    hea.write_text("\n".join([lines[0], *lines[1:][::-1]]) + "\n", encoding="utf-8")
     savemat(mat, {"val": loadmat(mat)["val"][::-1]})
     np.testing.assert_allclose(RawNightDataset(night)[0], reference, rtol=0, atol=0)
 
@@ -56,7 +56,7 @@ def test_raw_reorders_channels_without_changing_values(night):
 @pytest.mark.parametrize("problem", ["nan", "shape", "missing", "duplicate", "short", "almost_complete"])
 def test_raw_rejects_invalid_or_incomplete_input(night, problem):
     hea, mat = night / "raw-night.hea", night / "raw-night.mat"
-    lines = hea.read_text().splitlines()
+    lines = hea.read_text(encoding="utf-8").splitlines()
     signal = loadmat(mat)["val"].astype(float)
     if problem == "nan":
         signal[0, 0] = np.nan
@@ -71,7 +71,7 @@ def test_raw_rejects_invalid_or_incomplete_input(night, problem):
         fields = lines[0].split()
         fields[3] = str(signal.shape[1])
         lines[0] = " ".join(fields)
-    hea.write_text("\n".join(lines) + "\n")
+    hea.write_text("\n".join(lines) + "\n", encoding="utf-8")
     savemat(mat, {"val": signal})
     with pytest.raises(ValueError):
         RawNightDataset(night)
@@ -98,9 +98,9 @@ def test_raw_signal_matches_annotated_processing_when_grid_matches(tmp_path):
 def test_resampling_rounding_never_pads_an_incomplete_epoch(night):
     # 30 s moins un échantillon à 512 Hz : MNE arrondirait à 7680 à 256 Hz.
     hea, mat = night / "raw-night.hea", night / "raw-night.mat"
-    lines = hea.read_text().splitlines()
+    lines = hea.read_text(encoding="utf-8").splitlines()
     lines[0] = "raw-night 13 512 15359"
-    hea.write_text("\n".join(lines) + "\n")
+    hea.write_text("\n".join(lines) + "\n", encoding="utf-8")
     savemat(mat, {"val": np.zeros((13, 15359))})
     with pytest.raises(ValueError, match="aucune fenêtre complète"):
         RawNightDataset(night)
@@ -114,11 +114,11 @@ def test_csv_failure_preserves_previous_file(tmp_path):
             return np.full((len(X), 5), np.nan)
 
     path = tmp_path / "night.csv"
-    path.write_text("ancien résultat\n")
+    path.write_text("ancien résultat\n", encoding="utf-8")
     groups = (np.array(["s"]), np.array([0]), np.array([0.0]))
     with pytest.raises(ValueError, match="probabilités invalides"):
         write_predictions({"bad": InvalidProbe()}, np.zeros((1, 1536)), groups, path)
-    assert path.read_text() == "ancien résultat\n"
+    assert path.read_text(encoding="utf-8") == "ancien résultat\n"
     assert sorted(p.name for p in tmp_path.iterdir()) == ["night.csv"]
 
 
@@ -152,7 +152,7 @@ def test_raw_cli_with_real_encoders_and_exported_probe(night, tmp_path):
     assert [int(row["epoch_idx"]) for row in rows] == [0, 1]
     assert [float(row["onset_s"]) for row in rows] == [0.0, 30.0]
     assert all(row["dummy_stade"] == "wake" for row in rows)
-    metadata = json.loads((out / "raw-night.json").read_text())
+    metadata = json.loads((out / "raw-night.json").read_text(encoding="utf-8"))
     assert metadata["annotations_used"] is False
     assert metadata["csv_sha256"] == file_sha256(out / "raw-night.csv")
     assert metadata["source_files"]["raw-night.mat"] == file_sha256(night / "raw-night.mat")

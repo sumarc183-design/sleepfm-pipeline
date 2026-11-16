@@ -49,13 +49,13 @@ def scores(y: np.ndarray, pred: np.ndarray, subjects: np.ndarray) -> dict:
 
 
 def evaluate(embeddings_dir: Path, models_dir: Path, split_file: Path, reference: Path | None) -> dict:
-    manifest = json.loads((embeddings_dir / "manifest.json").read_text())
+    manifest = json.loads((embeddings_dir / "manifest.json").read_text(encoding="utf-8"))
     if manifest.get("epoch_selection") != "fixed_30s_from_recording_start":
         raise SystemExit("Dossier qui ne vient pas de la grille fixe (embed_raw_grid.py)")
     contract = {k: v for k, v in manifest.items() if k != "epoch_selection"}
     models, export = load_probes(models_dir, contract)
-    split = json.loads(split_file.read_text())
-    status = json.loads((embeddings_dir / "run_status.json").read_text())
+    split = json.loads(split_file.read_text(encoding="utf-8"))
+    status = json.loads((embeddings_dir / "run_status.json").read_text(encoding="utf-8"))
     if not status.get("complete"):
         raise SystemExit("Run de la grille incomplet : voir run_status.json")
     subjects = status["done"]

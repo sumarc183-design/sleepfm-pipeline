@@ -123,9 +123,9 @@ def run_confirmation(
     json_path, predictions_path = Path(f"{out}.json"), Path(f"{out}.predictions.npz")
     if json_path.exists() or predictions_path.exists():
         raise SystemExit(f"{json_path} existe déjà : un seul passage. Rien n'a été calculé.")
-    config = json.loads(config_path.read_text())
-    split = json.loads(split_file.read_text())
-    reserved = json.loads(reserved_file.read_text())["subjects"]
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    split = json.loads(split_file.read_text(encoding="utf-8"))
+    reserved = json.loads(reserved_file.read_text(encoding="utf-8"))["subjects"]
     is_rehearsal = rehearsal is not None
     if is_rehearsal and set(rehearsal) & set(reserved):
         raise SystemExit("La répétition ne doit utiliser aucun sujet réservé. Rien n'a été calculé.")
@@ -137,7 +137,7 @@ def run_confirmation(
     if set(reserved) & (set(split["train"]) | set(split["test"])):
         problems.append("sujets réservés présents dans le découpage")
     manifest_path = embeddings_dir / "manifest.json"
-    cache_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+    cache_manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
     if cache_manifest is None:
         problems.append("dossier d'embeddings sans manifeste")
     else:

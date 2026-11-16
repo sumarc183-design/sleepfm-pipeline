@@ -77,8 +77,8 @@ def recall_summary(denominators, covered, matched):
 
 
 def source_inputs(args):
-    reference = json.loads(args.thresholds.read_text())
-    baseline = json.loads(args.baseline.read_text())
+    reference = json.loads(args.thresholds.read_text(encoding="utf-8"))
+    baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
     if (
         reference.get("status") != "terminé"
         or baseline.get("status") != "terminé"
@@ -120,7 +120,13 @@ def source_inputs(args):
     order = np.lexsort((arrays["epoch_idx"], arrays["subject"]))
     arrays = {key: value[order] for key, value in arrays.items()}
     check_rows(arrays["subject"], arrays["epoch_idx"], arrays["onset_s"])
-    return reference, json.loads(args.labels_manifest.read_text())["sources"], arrays, order, info["sha256"]
+    return (
+        reference,
+        json.loads(args.labels_manifest.read_text(encoding="utf-8"))["sources"],
+        arrays,
+        order,
+        info["sha256"],
+    )
 
 
 def run(args):

@@ -73,8 +73,8 @@ def save_chunk(processed_dir: Path, chunk: list[str], model, out: Path, batch_si
         rows = np.flatnonzero(subjects == subject) if dataset is not None else np.zeros(0, dtype=int)
         if not len(rows):
             reason_file = processed_dir / "rejected" / f"{subject}.txt"
-            reason = reason_file.read_text() if reason_file.exists() else "aucune époque valide\n"
-            (out / f"{subject}.skipped").write_text(reason)
+            reason = reason_file.read_text(encoding="utf-8") if reason_file.exists() else "aucune époque valide\n"
+            (out / f"{subject}.skipped").write_text(reason, encoding="utf-8", newline="\n")
             continue
         rows = rows[np.argsort(epoch_idx[rows], kind="stable")]  # ordre chronologique
         epochs = np.stack([np.load(dataset.samples[i][0]).astype(np.float32) for i in rows])
@@ -101,7 +101,7 @@ def main() -> None:
     if min(args.chunk_size, args.batch_size, args.num_threads) <= 0 or (args.limit is not None and args.limit <= 0):
         parser.error("--chunk-size, --batch-size, --num-threads et --limit doivent être positifs")
 
-    split = json.loads(args.split_file.read_text())
+    split = json.loads(args.split_file.read_text(encoding="utf-8"))
     subjects = (split["train"] + split["test"])[: args.limit]
     validate_subject_ids(subjects)
     contract = {
@@ -114,7 +114,7 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != contract:
+        if json.loads(manifest_path.read_text(encoding="utf-8")) != contract:
             raise SystemExit(f"{manifest_path} : contrat différent, utiliser un nouveau dossier")
     elif any(args.out.glob("*.npz")) or any(args.out.glob("*.skipped")):
         raise SystemExit(f"{args.out} : fichiers sans manifeste, provenance inconnue")
@@ -131,7 +131,7 @@ def main() -> None:
     print(f"{len(subjects) - len(todo)} sujet(s) déjà faits, {len(todo)} à traiter sur {args.device}")
     model = load_osf_backbone(args.osf_checkpoint).to(args.device)
     status_path = args.out / "run_status.json"
-    flats = json.loads(status_path.read_text()).get("flat_channels", {}) if status_path.exists() else {}
+    flats = json.loads(status_path.read_text(encoding="utf-8")).get("flat_channels", {}) if status_path.exists() else {}
 
     def fetch(chunk: list[str]) -> tuple[str, float]:
         tmp = tempfile.mkdtemp()
@@ -171,7 +171,11 @@ def main() -> None:
                     pass
 
     embedded = [s for s in subjects if (args.out / f"{s}.npz").exists()]
-    rejected = {s: (args.out / f"{s}.skipped").read_text().strip() for s in subjects if s not in embedded and done(s)}
+    rejected = {
+        s: (args.out / f"{s}.skipped").read_text(encoding="utf-8").strip()
+        for s in subjects
+        if s not in embedded and done(s)
+    }
     status = {
         "requested": subjects,
         "embedded": embedded,

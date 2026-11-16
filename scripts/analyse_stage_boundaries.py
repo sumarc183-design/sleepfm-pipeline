@@ -115,7 +115,7 @@ def run(args) -> dict:
     if any(args.source.resolve() == p.resolve() for p in outputs.values()):
         raise ValueError("La source ne peut pas être écrasée")
     source_hash = file_sha256(args.source)
-    reference = json.loads(args.source.read_text())
+    reference = json.loads(args.source.read_text(encoding="utf-8"))
     if reference.get("status") != "terminé":
         raise ValueError("Résultat source non terminé")
     label_code = Path(__file__).resolve().parents[1] / "src/data/majority_grid_labels.py"
@@ -141,7 +141,7 @@ def run(args) -> dict:
     ):
         raise ValueError("Stade inconnu")
     subjects = sorted(validate_subject_ids(np.unique(arrays["subject"]).tolist()))
-    inventory = json.loads(artifacts["inputs.json"].read_text())
+    inventory = json.loads(artifacts["inputs.json"].read_text(encoding="utf-8"))
     if len(subjects) != reference["nights"] or set(subjects) != set(inventory):
         raise ValueError("Nuits différentes de la source")
     profiles = {

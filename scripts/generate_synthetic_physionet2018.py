@@ -42,7 +42,7 @@ def write_hea(path: str, subject_id: str, sample_rate: int, n_samples: int) -> N
     for ch in ALL_CHANNELS:
         # Format PhysioNet réel : nom_fichier gain unite adc_res zero_val ... nom_canal
         lines.append(f"{subject_id}.mat 16 100/mV 16 0 0 0 0 {ch}")
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
 
 

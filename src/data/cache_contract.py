@@ -52,7 +52,7 @@ def write_json_atomic(path: Path, value) -> None:
     """Écrit un JSON strict sous un nom temporaire puis le renomme : jamais de fichier tronqué."""
     temporary = path.with_name(f".{path.name}.tmp")
     text = json.dumps(finite_json(value), indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
-    temporary.write_text(text + "\n")
+    temporary.write_text(text + "\n", encoding="utf-8", newline="\n")
     os.replace(temporary, path)
 
 
@@ -79,7 +79,7 @@ def import_embeddings(source_manifests: list[Path], destination: Path, expected:
     destination.mkdir(parents=True, exist_ok=True)
     manifest_path = destination / "manifest.json"
     if manifest_path.exists():
-        current = json.loads(manifest_path.read_text())
+        current = json.loads(manifest_path.read_text(encoding="utf-8"))
         differs = missing_contract_keys(current) or contract_differences(current, expected)
         if differs:
             raise ValueError(f"{destination} : cache existant au contrat différent ou incomplet ({', '.join(differs)})")
@@ -94,7 +94,7 @@ def import_embeddings(source_manifests: list[Path], destination: Path, expected:
     planned, ignored = {}, []
     for source_manifest in sorted(source_manifests):
         source = source_manifest.parent
-        manifest = json.loads(source_manifest.read_text())
+        manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
         problems = missing_contract_keys(manifest) or contract_differences(manifest, expected)
         if problems:
             print(f"Ignoré : {source} (contrat différent ou incomplet : {', '.join(problems)})")
@@ -122,7 +122,7 @@ def import_embeddings(source_manifests: list[Path], destination: Path, expected:
         if file_sha256(staging / name) != entry["sha256"]:
             raise OSError(f"{name} : copie différente de sa source")
     provenance_path = destination / "provenance.json"
-    provenance = json.loads(provenance_path.read_text()) if provenance_path.exists() else {}
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8")) if provenance_path.exists() else {}
     provenance |= {name: {"source": e["source"], "sha256": e["sha256"]} for name, e in planned.items()}
     write_json_atomic(provenance_path, provenance)
     write_json_atomic(manifest_path, expected)

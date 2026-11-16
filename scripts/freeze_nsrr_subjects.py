@@ -38,7 +38,7 @@ def file_names(source: Path) -> list[str]:
     """Noms des fichiers d'un dossier, ou d'un index texte (un nom par ligne, liste du site NSRR)."""
     if source.is_dir():
         return sorted(path.name for path in source.iterdir())
-    return sorted({Path(line.strip()).name for line in source.read_text().splitlines() if line.strip()})
+    return sorted({Path(line.strip()).name for line in source.read_text(encoding="utf-8").splitlines() if line.strip()})
 
 
 def subjects_in(source: Path, cohort: str, suffix: str) -> tuple[set[str], list[str]]:

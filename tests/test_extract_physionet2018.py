@@ -18,7 +18,7 @@ def test_import_signal_names(tmp_path):
     for ch in ALL_CHANNELS:
         lines.append(f"tr03-0005.mat 16 100/mV 16 0 0 0 0 {ch}")
     hea_path = tmp_path / "tr03-0005.hea"
-    hea_path.write_text("\n".join(lines) + "\n")
+    hea_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     channels, sample_rate, n_samples = import_signal_names(str(hea_path))
     assert channels == ALL_CHANNELS

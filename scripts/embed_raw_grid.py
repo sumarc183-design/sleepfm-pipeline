@@ -72,13 +72,13 @@ def main() -> None:
     if args.batch_size <= 0 or (args.limit is not None and args.limit <= 0):
         parser.error("--batch-size et --limit doivent être positifs")
 
-    subjects = json.loads(args.split_file.read_text())["test"][: args.limit]
+    subjects = json.loads(args.split_file.read_text(encoding="utf-8"))["test"][: args.limit]
     validate_subject_ids(subjects)
     contract = embeddings_manifest(args.checkpoint) | {"epoch_selection": GRID}
     args.out.mkdir(parents=True, exist_ok=True)
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != contract:
+        if json.loads(manifest_path.read_text(encoding="utf-8")) != contract:
             raise SystemExit(f"{manifest_path} : contrat différent, utiliser un nouveau dossier")
     elif any(args.out.glob("*.npz")):
         raise SystemExit(f"{args.out} : fichiers sans manifeste, provenance inconnue")
@@ -112,7 +112,7 @@ def main() -> None:
                     result = embed_subject(Path(tmp) / subject, encoders, args.batch_size, args.device)
                 except ValueError as exc:
                     # Données refusées (canaux, signal, annotations) : rejet motivé, sans arrêter le run.
-                    (args.out / f"{subject}.skipped").write_text(f"{exc}\n")
+                    (args.out / f"{subject}.skipped").write_text(f"{exc}\n", encoding="utf-8", newline="\n")
                     print(f"[{index + 1}/{len(todo)}] {subject} rejeté : {exc}")
                     continue
                 finally:
@@ -135,9 +135,11 @@ def main() -> None:
 
     done = sorted(p.name.removesuffix(".npz") for p in args.out.glob("*.npz") if not p.name.endswith(".tmp.npz"))
     status_path = args.out / "run_status.json"
-    previous = json.loads(status_path.read_text()).get("counts", {}) if status_path.exists() else {}
+    previous = json.loads(status_path.read_text(encoding="utf-8")).get("counts", {}) if status_path.exists() else {}
     skipped = {
-        s: (args.out / f"{s}.skipped").read_text().strip() for s in subjects if (args.out / f"{s}.skipped").exists()
+        s: (args.out / f"{s}.skipped").read_text(encoding="utf-8").strip()
+        for s in subjects
+        if (args.out / f"{s}.skipped").exists()
     }
     status = {
         "requested": subjects,

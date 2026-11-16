@@ -83,7 +83,7 @@ def input_contract(predictions_path: Path) -> dict | None:
     if not source.exists():
         return None
     try:
-        contract = json.loads(source.read_text()).get("embeddings_manifest")
+        contract = json.loads(source.read_text(encoding="utf-8")).get("embeddings_manifest")
     except (OSError, ValueError, AttributeError):
         return None
     return contract if isinstance(contract, dict) and not missing_contract_keys(contract) else None

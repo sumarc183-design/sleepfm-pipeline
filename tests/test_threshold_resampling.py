@@ -134,7 +134,7 @@ def source_fixture(tmp_path):
                 "threshold": t,
                 "validation": {"confusion_matrix": confusion_matrix(y, p[model] >= t, labels=[0, 1]).tolist()},
             }
-    source.write_text(json.dumps(r))
+    source.write_text(json.dumps(r), encoding="utf-8")
     return source, archive, r
 
 
@@ -143,7 +143,7 @@ def test_validation_source_checks_original_thresholds_and_artifact_integrity(tmp
     _, _, subjects, _ = study.validation_inputs(source)
     assert len(subjects) == 3
     r["results"]["osf"]["initial_f1"]["threshold"] += 0.01
-    source.write_text(json.dumps(r))
+    source.write_text(json.dumps(r), encoding="utf-8")
     with pytest.raises(ValueError, match="Seuil complet"):
         study.validation_inputs(source)
     archive.write_bytes(archive.read_bytes() + b"changed")
@@ -157,7 +157,7 @@ def test_driver_preserves_sources_and_archives_only_validation_predictions(tmp_p
     original = study.bootstrap_diagnostic
     monkeypatch.setattr(study, "bootstrap_diagnostic", lambda *a: original(*a, n_boot=10))
     plan = tmp_path / "plan.md"
-    plan.write_text("fixed plan")
+    plan.write_text("fixed plan", encoding="utf-8")
     args = SimpleNamespace(source=source, plan=plan, out=tmp_path / "result")
     result = study.run(args)
     assert result["windows"] == 12 and result["bootstrap"]["n_boot"] == 10

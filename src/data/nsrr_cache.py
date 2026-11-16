@@ -49,7 +49,7 @@ def read_record(folder: Path, subject: str) -> dict:
     path = record_path(folder, subject)
     if not path.exists():
         raise ValueError(f"{subject} : NPZ sans fiche, provenance inconnue")
-    record = json.loads(path.read_text())
+    record = json.loads(path.read_text(encoding="utf-8"))
     if record.get("subject") != subject:  # paire renommée ou échangée (audit du 15 novembre, F4)
         raise ValueError(f"{subject} : fiche d'un autre sujet ({record.get('subject')!r})")
     return record

@@ -97,12 +97,16 @@ def test_frozen_pipeline_validates_old_labels_before_any_new_score(tmp_path, mon
     for directory in (cache, annotations, models):
         directory.mkdir()
     contract = {"checkpoint_sha256": "synthetic", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
-    (cache / "manifest.json").write_text(json.dumps(contract | {"epoch_selection": "fixed_30s_from_recording_start"}))
+    (cache / "manifest.json").write_text(
+        json.dumps(contract | {"epoch_selection": "fixed_30s_from_recording_start"}), encoding="utf-8"
+    )
     subjects = ["test1", "test2"]
-    (cache / "run_status.json").write_text(json.dumps({"complete": True, "done": subjects, "rejected": {}}))
-    (models / "manifest.json").write_text("{}")
+    (cache / "run_status.json").write_text(
+        json.dumps({"complete": True, "done": subjects, "rejected": {}}), encoding="utf-8"
+    )
+    (models / "manifest.json").write_text("{}", encoding="utf-8")
     split = tmp_path / "split.json"
-    split.write_text(json.dumps({"train": ["train1"], "test": subjects}))
+    split.write_text(json.dumps({"train": ["train1"], "test": subjects}), encoding="utf-8")
     frozen = tmp_path / "frozen.json"
     frozen.write_text(
         json.dumps(
@@ -129,14 +133,14 @@ def test_frozen_pipeline_validates_old_labels_before_any_new_score(tmp_path, mon
         folder = annotations / subject
         folder.mkdir()
         for extension in ("hea", "arousal"):
-            (folder / f"{subject}.{extension}").write_text("fixture")
+            (folder / f"{subject}.{extension}").write_text("fixture", encoding="utf-8")
         (folder / f"{subject}-arousal.mat").write_bytes(b"fixture")
         sources[subject] = {
             "header_sha256": file_sha256(folder / f"{subject}.hea"),
             "annotation_sha256": file_sha256(folder / f"{subject}.arousal"),
         }
     annotation_manifest = tmp_path / "annotations.json"
-    annotation_manifest.write_text(json.dumps({"sources": sources}))
+    annotation_manifest.write_text(json.dumps({"sources": sources}), encoding="utf-8")
     args = SimpleNamespace(
         embeddings_dir=cache,
         annotations_dir=annotations,

@@ -47,7 +47,7 @@ def main() -> None:
     parser.add_argument("--predictions", type=Path, default=None, help="archive d'ablation, pour compter REM")
     args = parser.parse_args()
 
-    subjects = sorted(json.loads(args.split_file.read_text())["test"])[: args.nights]
+    subjects = sorted(json.loads(args.split_file.read_text(encoding="utf-8"))["test"])[: args.nights]
     nights = []
     for subject in subjects:
         with np.load(args.embeddings_dir / f"{subject}.npz") as data:

@@ -35,12 +35,12 @@ def test_embed_subject_sleepfm_needs_rule(edf):
 
 def test_subject_list(tmp_path):
     path = tmp_path / "list.json"
-    path.write_text(json.dumps({"cohort": "mesa", "subjects": ["mesa-sleep-0001"]}))
+    path.write_text(json.dumps({"cohort": "mesa", "subjects": ["mesa-sleep-0001"]}), encoding="utf-8")
     subjects, sha = subject_list(path, "mesa")
     assert subjects == ["mesa-sleep-0001"] and len(sha) == 64
     with pytest.raises(SystemExit):
         subject_list(path, "shhs1")
-    path.write_text(json.dumps({"cohort": "mesa", "subjects": ["a", "a"]}))
+    path.write_text(json.dumps({"cohort": "mesa", "subjects": ["a", "a"]}), encoding="utf-8")
     with pytest.raises(SystemExit):
         subject_list(path, "mesa")
 
@@ -108,7 +108,7 @@ def test_json_written_strictly(tmp_path):
     from src.data.cache_contract import write_json_atomic
 
     write_json_atomic(tmp_path / "x.json", {"a": float("nan"), "b": [float("inf"), 1.0]})
-    assert json.loads((tmp_path / "x.json").read_text()) == {"a": None, "b": [None, 1.0]}
+    assert json.loads((tmp_path / "x.json").read_text(encoding="utf-8")) == {"a": None, "b": [None, 1.0]}
 
 
 def test_channel_qc_flags_offset():

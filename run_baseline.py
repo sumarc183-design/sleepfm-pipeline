@@ -162,7 +162,7 @@ def load_or_extend_split(
         raise SystemExit(f"--test-fraction doit être entre 0 et 1 (reçu {test_fraction})")
     if path is None:
         return split_subject_ids(subjects, test_fraction, seed)
-    frozen = json.loads(path.read_text()) if path.exists() else {"train": [], "test": []}
+    frozen = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"train": [], "test": []}
     validate_split(frozen, str(path))
     known = set(frozen["train"]) | set(frozen["test"])
     new = sorted(set(subjects) - known)
@@ -178,7 +178,7 @@ def load_or_extend_split(
         validate_split(frozen, str(path))
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp.json")
-        tmp.write_text(json.dumps(frozen, indent=2) + "\n")
+        tmp.write_text(json.dumps(frozen, indent=2) + "\n", encoding="utf-8", newline="\n")
         os.replace(tmp, path)
         print(f"Découpage figé : {len(new)} nouveau(x) sujet(s) ajouté(s) à {path} ({len(new_test)} en test)")
     available = set(subjects)
@@ -230,7 +230,7 @@ def epoch_onsets(dataset: PhysioNet2018EpochDataset, processed_dir: Path) -> np.
         subject = epoch_file.parent.name
         if subject not in onsets_by_subject:
             path = processed_dir / "T" / f"{subject}.json"
-            onsets_by_subject[subject] = json.loads(path.read_text()) if path.exists() else {}
+            onsets_by_subject[subject] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
         out[i] = onsets_by_subject[subject].get(epoch_file.name, np.nan)
     return out
 
@@ -276,7 +276,7 @@ def check_embeddings_manifest(embeddings_dir: Path, expected: dict, n_to_compute
         raise SystemExit(f"Contrat attendu incomplet : {', '.join(missing)}")
     path = embeddings_dir / "manifest.json"
     if path.exists():
-        manifest = json.loads(path.read_text())
+        manifest = json.loads(path.read_text(encoding="utf-8"))
         missing = missing_contract_keys(manifest)
         if missing:
             raise SystemExit(f"{path} : contrat incomplet ({', '.join(missing)})")
@@ -419,8 +419,12 @@ def embed_subjects_in_chunks(
                             # stades...) : marqué, avec la raison, pour ne pas le
                             # retenter à chaque relance.
                             reason_file = processed_dir / "rejected" / f"{subject}.txt"
-                            reason = reason_file.read_text() if reason_file.exists() else "aucune époque valide\n"
-                            (embeddings_dir / f"{subject}.skipped").write_text(reason)
+                            reason = (
+                                reason_file.read_text(encoding="utf-8")
+                                if reason_file.exists()
+                                else "aucune époque valide\n"
+                            )
+                            (embeddings_dir / f"{subject}.skipped").write_text(reason, encoding="utf-8", newline="\n")
                             continue
                         tmp_file = embeddings_dir / f"{subject}.tmp.npz"
                         np.savez(
@@ -450,7 +454,7 @@ MIN_EPOCH_STEP_S = 29.9  # époques de 30 s : un pas plus court signale un cheva
 def requires_epoch_times(embeddings_dir: Path) -> bool:
     """Un dossier au prétraitement version 2 ou plus doit avoir des temps complets."""
     path = embeddings_dir / "manifest.json"
-    return path.exists() and (json.loads(path.read_text()).get("preprocessing_version") or 0) >= 2
+    return path.exists() and (json.loads(path.read_text(encoding="utf-8")).get("preprocessing_version") or 0) >= 2
 
 
 def cache_problem(path: Path, require_labels: bool = True, strict_times: bool = False) -> str | None:
@@ -815,7 +819,7 @@ def save_results_json(
         else {"chosen": selection["chosen"], "reason": selection["reason"], "cv": selection["cv"]},
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n")
     print(f"Résultats JSON : {path}")
     if y_test is not None and test_groups is not None:
         save_test_predictions(path.with_suffix(".predictions.npz"), results, y_test, test_groups)
@@ -845,7 +849,7 @@ def rejection_reason(path: Path) -> tuple[str | None, str | None]:
     """(raison, problème) d'un marqueur de rejet : un rejet n'est valide qu'avec
     une raison lisible et non vide. Règle commune au bilan du run et à la confirmation."""
     try:
-        reason = path.read_text().strip()
+        reason = path.read_text(encoding="utf-8").strip()
     except (OSError, UnicodeError) as exc:
         return None, f"rejet illisible ({exc.__class__.__name__})"
     return (reason, None) if reason else (None, "raison du rejet vide")
@@ -913,7 +917,11 @@ def run_in_chunks(args, checkpoint_path: Path, tmp_path: Path) -> None:
         subject_ids = sorted(p.name for p in raw_dir.iterdir() if p.is_dir())
 
         def fetch_subject(subject: str, dest_dir: Path) -> None:
-            (dest_dir / subject).symlink_to((raw_dir / subject).resolve(), target_is_directory=True)
+            source = (raw_dir / subject).resolve()
+            try:
+                (dest_dir / subject).symlink_to(source, target_is_directory=True)
+            except OSError:  # Windows sans droit de créer des liens : copie
+                shutil.copytree(source, dest_dir / subject)
 
         data_kind = "SYNTHÉTIQUES" if args.raw_data is None else "RÉELLES"
 

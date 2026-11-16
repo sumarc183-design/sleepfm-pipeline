@@ -68,7 +68,7 @@ ID_TO_EVENT = {v: k for k, v in EVENT_TO_ID.items()}
 
 
 def import_signal_names(hea_path: str) -> Tuple[List[str], int, int]:
-    with open(hea_path, "r") as f:
+    with open(hea_path, "r", encoding="utf-8") as f:
         lines = [line.split() for line in f.read().split("\n")]
     n_signals = int(lines[0][1])
     sample_rate = int(lines[0][2])
@@ -130,7 +130,7 @@ def reject(path_to_save: str, subject_id: str, reason: str) -> None:
     """Affiche et enregistre la raison du rejet d'un sujet."""
     print(f"[{subject_id}] skipped: {reason}")
     os.makedirs(os.path.join(path_to_save, "rejected"), exist_ok=True)
-    with open(os.path.join(path_to_save, "rejected", f"{subject_id}.txt"), "w") as f:
+    with open(os.path.join(path_to_save, "rejected", f"{subject_id}.txt"), "w", encoding="utf-8", newline="\n") as f:
         f.write(reason + "\n")
 
 
@@ -140,7 +140,7 @@ def is_extracted(path_to_x: str, path_to_y: str, path_to_t: str) -> bool:
     try:
         with open(path_to_y, "rb") as f:
             labels = pickle.load(f)
-        with open(path_to_t) as f:
+        with open(path_to_t, encoding="utf-8") as f:
             onsets = json.load(f)
     except Exception:
         return False
@@ -277,7 +277,7 @@ def process_one_subject(
         onsets[file_name] = start / sample_rate + float(epochs.events[idx, 0]) / raw.info["sfreq"]
 
     def dump_json(tmp):
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             json.dump(onsets, f)
 
     def dump_pickle(tmp):

@@ -103,10 +103,10 @@ def run(args) -> dict:
     for root in (args.embeddings_dir, args.models, args.annotations_dir):
         if args.out.resolve().is_relative_to(root.resolve()):
             raise ValueError("Sortie dans un dossier d'entrée refusée")
-    split = json.loads(args.split_file.read_text())
+    split = json.loads(args.split_file.read_text(encoding="utf-8"))
     validate_split(split, "grille brute")
     subjects = sorted(validate_subject_ids(split["test"]))
-    status = json.loads((args.embeddings_dir / "run_status.json").read_text())
+    status = json.loads((args.embeddings_dir / "run_status.json").read_text(encoding="utf-8"))
     if (
         not status.get("complete")
         or status.get("rejected")
@@ -115,17 +115,17 @@ def run(args) -> dict:
         or len(status.get("done", [])) != len(subjects)
     ):
         raise ValueError("Couverture de la grille différente du test")
-    manifest = json.loads((args.embeddings_dir / "manifest.json").read_text())
+    manifest = json.loads((args.embeddings_dir / "manifest.json").read_text(encoding="utf-8"))
     if manifest.get("epoch_selection") != "fixed_30s_from_recording_start":
         raise ValueError("Grille indépendante des annotations requise")
-    frozen = json.loads(args.frozen.read_text())
+    frozen = json.loads(args.frozen.read_text(encoding="utf-8"))
     contract = {k: v for k, v in manifest.items() if k != "epoch_selection"}
     if contract != frozen["contract"] or file_sha256(args.split_file) != frozen["split_sha256"]:
         raise ValueError("Contrat ou découpage différent de la référence figée")
-    reference = json.loads(args.reference.read_text())
+    reference = json.loads(args.reference.read_text(encoding="utf-8"))
     if reference["models_manifest_sha256"] != file_sha256(args.models / "manifest.json"):
         raise ValueError("Manifeste des sondes différent de l'évaluation uniforme")
-    annotation_sources = json.loads(args.annotation_manifest.read_text())["sources"]
+    annotation_sources = json.loads(args.annotation_manifest.read_text(encoding="utf-8"))["sources"]
     rows = {key: [] for key in ("X", "subject", "epoch_idx", "onset_s", "y_uniform", "y_majority", "category")}
     inventory = {}
     # Labels et empreintes validés sur toutes les nuits avant le moindre score.

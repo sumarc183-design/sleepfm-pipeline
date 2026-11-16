@@ -38,7 +38,7 @@ def setup(tmp_path, frozen, monkeypatch):
     emb, ann = tmp_path / "emb", tmp_path / "ann"
     emb.mkdir(), ann.mkdir()
     subjects_path = tmp_path / "list.json"
-    subjects_path.write_text(json.dumps({"cohort": "mesa", "subjects": SUBJECTS}))
+    subjects_path.write_text(json.dumps({"cohort": "mesa", "subjects": SUBJECTS}), encoding="utf-8")
     list_sha = hashlib.sha256(subjects_path.read_bytes()).hexdigest()
     edf = tmp_path / "fake.edf"
     edf.write_bytes(b" " * 176 + b"22.00.00" + b" " * 72)  # heure de début dans l'en-tête
@@ -54,17 +54,17 @@ def setup(tmp_path, frozen, monkeypatch):
         save_night(emb, subject, result, edf)
         (ann / f"{subject}-nsrr.xml").write_bytes(night_xml(n_events=5 + 10 * i))
     (ann / "mesa-sleep-0001-nsrr.xml").write_bytes(night_xml(n_events=3, sleep_s=1800))  # < 1 h : exclue
-    (emb / "mesa-sleep-0012.skipped").write_text("EDF tronqué\n")
+    (emb / "mesa-sleep-0012.skipped").write_text("EDF tronqué\n", encoding="utf-8")
     contract = expected_contract(
         "mesa", list_sha, MODELS, frozen["checkpoints"]["sleepfm"], frozen["checkpoints"]["osf"], "physionet_median_v2"
     )
-    (emb / "manifest.json").write_text(json.dumps(contract))
+    (emb / "manifest.json").write_text(json.dumps(contract), encoding="utf-8")
     status = {"done": SUBJECTS[:-1], "rejected": {"mesa-sleep-0012": "EDF tronqué"}, "missing": [], "complete": True}
-    (emb / "run_status.json").write_text(json.dumps(status))
+    (emb / "run_status.json").write_text(json.dumps(status), encoding="utf-8")
     official = tmp_path / "official.csv"
     lines = [f"{i},{3 * i},{2 * i}" for i in range(12)] + ["5000,1,1"]
     lines[3] = "3,,6"  # IAH 3 % manquant pour ce sujet
-    official.write_text("mesaid,ahi_a0h3,ahi_a0h4\n" + "\n".join(lines) + "\n")
+    official.write_text("mesaid,ahi_a0h3,ahi_a0h4\n" + "\n".join(lines) + "\n", encoding="utf-8")
     return Namespace(
         cohort="mesa",
         embeddings=emb,
@@ -83,7 +83,7 @@ def setup(tmp_path, frozen, monkeypatch):
 
 
 def edit_json(path: Path, **changes) -> None:
-    path.write_text(json.dumps(json.loads(path.read_text()) | changes))
+    path.write_text(json.dumps(json.loads(path.read_text(encoding="utf-8")) | changes))
 
 
 def refused_before_targets(args, monkeypatch, match: str) -> None:
@@ -120,7 +120,7 @@ def test_run_end_to_end_and_single_pass(setup):
         result = official[column]["results"]["sleepfm"]
         assert {"auc_rate", "bland_altman", "weighted_kappa_linear"} <= set(result)
         assert "ci95" in official[column]["bootstrap"]
-    marker = json.loads(next(setup.marker_dir.iterdir()).read_text())
+    marker = json.loads(next(setup.marker_dir.iterdir()).read_text(encoding="utf-8"))
     assert marker["state"] == "completed"
     setup.out = setup.out.with_name("autre_prefixe")
     with pytest.raises(ValueError, match="déjà lancée"):
@@ -135,7 +135,7 @@ def test_failed_pass_cannot_be_rerun(setup, monkeypatch):
     monkeypatch.setattr(ev, "evaluate", broken)
     with pytest.raises(RuntimeError):
         ev.run(setup)
-    marker = json.loads(next(setup.marker_dir.iterdir()).read_text())
+    marker = json.loads(next(setup.marker_dir.iterdir()).read_text(encoding="utf-8"))
     assert marker["state"] == "failed" and "panne" in marker["error"]
     monkeypatch.undo()
     monkeypatch.setattr(ev, "uncommitted", lambda paths: [])
@@ -217,7 +217,7 @@ def test_missing_plan_or_dirty_code_refused(setup, monkeypatch):
     ],
 )
 def test_official_csv_checked_before_pass(setup, monkeypatch, csv_text, match):
-    setup.official_csv.write_text(csv_text)
+    setup.official_csv.write_text(csv_text, encoding="utf-8")
     refused_before_targets(setup, monkeypatch, match)
 
 
@@ -272,20 +272,23 @@ def test_ucddb_descriptive_run(setup, monkeypatch):
     for old, new in zip(SUBJECTS[:-1], subjects[:-1], strict=True):
         for ext in (".npz", ".json"):
             (emb / f"{old}{ext}").rename(emb / f"{new}{ext}")
-        record = json.loads((emb / f"{new}.json").read_text())
-        (emb / f"{new}.json").write_text(json.dumps(record | {"subject": new}))
+        record = json.loads((emb / f"{new}.json").read_text(encoding="utf-8"))
+        (emb / f"{new}.json").write_text(json.dumps(record | {"subject": new}), encoding="utf-8")
     (emb / "mesa-sleep-0012.skipped").rename(emb / "ucddb012.skipped")
     for i, subject in enumerate(subjects[:-1]):
-        (ann / f"{subject}_stage.txt").write_text("\n".join(["0"] * 20 + ["3"] * 240) + "\n")
+        (ann / f"{subject}_stage.txt").write_text("\n".join(["0"] * 20 + ["3"] * 240) + "\n", encoding="utf-8")
         events = "".join(f"22:{12 + i // 2:02d}:{(i % 2) * 30:02d}  HYP-O   20  90  3\n" for i in range(5 + 6 * i))
-        (ann / f"{subject}_respevt.txt").write_text(" Time Type\n" + events)
+        (ann / f"{subject}_respevt.txt").write_text(" Time Type\n" + events, encoding="utf-8")
     subjects_path = setup.approved_subjects[0]
-    subjects_path.write_text(json.dumps({"cohort": "ucddb", "subjects": subjects}))
+    subjects_path.write_text(json.dumps({"cohort": "ucddb", "subjects": subjects}), encoding="utf-8")
     list_sha = hashlib.sha256(subjects_path.read_bytes()).hexdigest()
-    manifest = json.loads((emb / "manifest.json").read_text()) | {"cohort": "ucddb", "subjects_sha256": list_sha}
-    (emb / "manifest.json").write_text(json.dumps(manifest))
+    manifest = json.loads((emb / "manifest.json").read_text(encoding="utf-8")) | {
+        "cohort": "ucddb",
+        "subjects_sha256": list_sha,
+    }
+    (emb / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     status = {"done": subjects[:-1], "rejected": {"ucddb012": "EDF tronqué"}, "missing": [], "complete": True}
-    (emb / "run_status.json").write_text(json.dumps(status))
+    (emb / "run_status.json").write_text(json.dumps(status), encoding="utf-8")
     setup.cohort, setup.official_csv, setup.approved_subjects = "ucddb", None, (subjects_path, list_sha)
     report = ev.run(setup)
     assert report["success_criterion"]["applies"] is False
@@ -308,7 +311,7 @@ def test_event_outside_signal_excludes_night(setup):
     assert "hors du signal" in report["nights"]["excluded"]["mesa-sleep-0006"]
     assert set(report["model_status"]["models"]) == {"sleepfm", "osf"}
     assert len(report["source_sha256"]["annotations"]) == 12
-    json.loads(Path(f"{setup.out}.json").read_text(), parse_constant=lambda c: pytest.fail(c))
+    json.loads(Path(f"{setup.out}.json").read_text(encoding="utf-8"), parse_constant=lambda c: pytest.fail(c))
 
 
 def test_annotation_change_after_precheck_is_detected(tmp_path):

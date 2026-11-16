@@ -73,7 +73,7 @@ def test_analysis_on_synthetic_archives_never_trains_and_preserves_inputs(tmp_pa
         folder = annotations / subject
         folder.mkdir()
         for ext in ("hea", "arousal"):
-            (folder / f"{subject}.{ext}").write_text("synthetic")
+            (folder / f"{subject}.{ext}").write_text("synthetic", encoding="utf-8")
         np.savez(labels_dir / f"{subject}.npz", y=y, epoch_idx=indices, onset_s=onsets)
         np.savez(cache_dir / f"{subject}.npz", y=stages, epoch_idx=indices, onset_s=onsets)
         sources[subject] = {
@@ -82,9 +82,9 @@ def test_analysis_on_synthetic_archives_never_trains_and_preserves_inputs(tmp_pa
             "labels_sha256": file_sha256(labels_dir / f"{subject}.npz"),
             "embedding_sha256": file_sha256(cache_dir / f"{subject}.npz"),
         }
-    (labels_dir / "manifest.json").write_text(json.dumps({"sources": sources}))
+    (labels_dir / "manifest.json").write_text(json.dumps({"sources": sources}), encoding="utf-8")
     baseline = tmp_path / "baseline.json"
-    baseline.write_text(json.dumps({"status": "terminé"}))
+    baseline.write_text(json.dumps({"status": "terminé"}), encoding="utf-8")
     comparison = tmp_path / "comparison.json"
     predictions = tmp_path / "comparison.predictions.npz"
     proba = np.tile([0.1, 0.8, 0.2, 0.6], 2)
@@ -134,7 +134,7 @@ def test_analysis_on_synthetic_archives_never_trains_and_preserves_inputs(tmp_pa
     with pytest.raises(ValueError, match="existante"):
         analysis.run(args)
     args.out = tmp_path / "new/errors"
-    (annotations / "s1/s1.arousal").write_text("changed")
+    (annotations / "s1/s1.arousal").write_text("changed", encoding="utf-8")
     with pytest.raises(ValueError, match="modifiée"):
         analysis.run(args)
     assert not args.out.parent.exists()

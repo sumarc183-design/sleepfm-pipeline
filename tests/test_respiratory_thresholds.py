@@ -83,10 +83,10 @@ def test_artifact_hash_and_location_are_checked(tmp_path):
 
 def test_outputs_cannot_overwrite_sources_or_enter_caches(tmp_path):
     out = tmp_path / "result"
-    out.with_suffix(".json").write_text("keep")
+    out.with_suffix(".json").write_text("keep", encoding="utf-8")
     with pytest.raises(ValueError, match="Sortie existante"):
         evaluation.run(SimpleNamespace(out=out))
-    assert out.with_suffix(".json").read_text() == "keep"
+    assert out.with_suffix(".json").read_text(encoding="utf-8") == "keep"
     args = SimpleNamespace(
         out=tmp_path / "cache/result",
         sleepfm_dir=tmp_path / "cache",
@@ -140,7 +140,7 @@ def test_pipeline_freezes_all_six_thresholds_before_new_test_metrics(tmp_path, m
     )
     for name in ["source", "baseline", "comparison", "errors", "plan"]:
         path = tmp_path / f"{name}.json"
-        path.write_text(json.dumps({"original": name}))
+        path.write_text(json.dumps({"original": name}), encoding="utf-8")
         setattr(args, name, path)
     snapshots = {name: getattr(args, name).read_bytes() for name in ["baseline", "comparison", "errors"]}
     result = evaluation.run(args)

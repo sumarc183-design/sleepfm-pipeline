@@ -91,10 +91,10 @@ def test_rate_bootstrap_resamples_whole_nights_with_exposure_weights():
 
 def test_existing_output_is_preserved_before_reading_inputs(tmp_path):
     out = tmp_path / "result"
-    out.with_suffix(".json").write_text("keep")
+    out.with_suffix(".json").write_text("keep", encoding="utf-8")
     with pytest.raises(ValueError, match="Sortie existante"):
         analysis.run(SimpleNamespace(out=out))
-    assert out.with_suffix(".json").read_text() == "keep"
+    assert out.with_suffix(".json").read_text(encoding="utf-8") == "keep"
 
 
 @pytest.mark.parametrize("reorder", [False, True])
@@ -122,7 +122,7 @@ def test_pipeline_preserves_reference_counts_and_checks_artifact_integrity(tmp_p
         "artifacts": {"predictions.npz": {"file": archive.name, "sha256": file_sha256(archive)}},
     }
     comparison_path = tmp_path / "comparison.json"
-    comparison_path.write_text(json.dumps(comparison))
+    comparison_path.write_text(json.dumps(comparison), encoding="utf-8")
     point = {
         "threshold": 0.5,
         "test": {"confusion_matrix": [[2, 3], [1, 2]], "false_positive_windows": 3, "predicted_positive": 5},
@@ -134,9 +134,9 @@ def test_pipeline_preserves_reference_counts_and_checks_artifact_integrity(tmp_p
         "results": {m: {p: point for p in analysis.POINTS} for m in analysis.MODELS},
     }
     thresholds = tmp_path / "thresholds.json"
-    thresholds.write_text(json.dumps(reference))
+    thresholds.write_text(json.dumps(reference), encoding="utf-8")
     plan = tmp_path / "plan.md"
-    plan.write_text("fixed plan")
+    plan.write_text("fixed plan", encoding="utf-8")
     args = SimpleNamespace(out=tmp_path / "result", thresholds=thresholds, comparison=comparison_path, plan=plan)
     result = analysis.run(args)
     row = result["results"]["osf"]["initial_f1"]
@@ -148,7 +148,7 @@ def test_pipeline_preserves_reference_counts_and_checks_artifact_integrity(tmp_p
     before = thresholds.read_bytes()
     # A source with mismatching window counts is refused before output.
     reference["results"]["osf"]["initial_f1"]["test"]["false_positive_windows"] = 4
-    thresholds.write_text(json.dumps(reference))
+    thresholds.write_text(json.dumps(reference), encoding="utf-8")
     args.out = tmp_path / "wrong_count"
     with pytest.raises(ValueError, match="comptes"):
         analysis.run(args)

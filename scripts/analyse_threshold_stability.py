@@ -30,7 +30,7 @@ N_BOOT, SEED = 500, 42
 
 
 def validation_inputs(source_path):
-    reference = json.loads(source_path.read_text())
+    reference = json.loads(source_path.read_text(encoding="utf-8"))
     if reference.get("status") != "terminé":
         raise ValueError("Référence non terminée")
     parts = reference["partitions"]

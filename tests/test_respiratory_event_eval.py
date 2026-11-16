@@ -2,6 +2,7 @@
 
 import json
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -96,10 +97,10 @@ def test_bootstrap_recall_matches_explicit_night_resampling_and_handles_no_eligi
 
 def test_existing_output_and_annotation_directory_are_protected(tmp_path):
     out = tmp_path / "result"
-    out.with_suffix(".json").write_text("keep")
+    out.with_suffix(".json").write_text("keep", encoding="utf-8")
     with pytest.raises(ValueError, match="Sortie existante"):
         evaluation.run(SimpleNamespace(out=out))
-    assert out.with_suffix(".json").read_text() == "keep"
+    assert out.with_suffix(".json").read_text(encoding="utf-8") == "keep"
     with pytest.raises(ValueError, match="entrée"):
         evaluation.run(SimpleNamespace(out=tmp_path / "annotations/out", annotations_dir=tmp_path / "annotations"))
 
@@ -123,7 +124,7 @@ def test_validation_pipeline_verifies_labels_and_does_not_open_test_predictions(
             "event_counts": {kind: int(kind == "resp_hypopnea") for kind in TARGET_EVENTS},
         }
     manifest = tmp_path / "labels.json"
-    manifest.write_text(json.dumps({"sources": sources}))
+    manifest.write_text(json.dumps({"sources": sources}), encoding="utf-8")
     baseline = tmp_path / "baseline.json"
     baseline.write_text(
         json.dumps({"status": "terminé", "partitions": parts, "label_manifest_sha256": file_sha256(manifest)})
@@ -155,12 +156,12 @@ def test_validation_pipeline_verifies_labels_and_does_not_open_test_predictions(
         },
     }
     thresholds = tmp_path / "thresholds.json"
-    thresholds.write_text(json.dumps(reference))
+    thresholds.write_text(json.dumps(reference), encoding="utf-8")
     plan = tmp_path / "plan.md"
-    plan.write_text("fixed plan")
+    plan.write_text("fixed plan", encoding="utf-8")
 
     def read(record, extension):
-        assert record.split("/")[-1] in subjects
+        assert Path(record).name in subjects
         return SimpleNamespace(fs=1, sample=np.array([10, 50]), aux_note=["(resp_hypopnea", "resp_hypopnea)"])
 
     monkeypatch.setitem(sys.modules, "wfdb", SimpleNamespace(rdann=read, __version__="fixture"))

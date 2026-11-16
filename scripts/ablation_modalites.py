@@ -103,7 +103,7 @@ def main() -> None:
         args.embeddings_dir, args.split_file, args.checkpoint
     )
     if args.train_nights is not None:
-        kept = json.loads(args.split_file.read_text())["train"][: args.train_nights]
+        kept = json.loads(args.split_file.read_text(encoding="utf-8"))["train"][: args.train_nights]
         if len(kept) != args.train_nights:
             raise SystemExit(f"{len(kept)} nuits d'entraînement disponibles, {args.train_nights} demandées")
         rows = np.isin(train_groups[0], kept)
@@ -125,7 +125,7 @@ def main() -> None:
         "train_subjects": sorted(set(train_groups[0].tolist())),
         "test_subjects": sorted(set(subjects.tolist())),
         "split_sha256": file_sha256(args.split_file),
-        "embeddings_manifest": json.loads((args.embeddings_dir / "manifest.json").read_text()),
+        "embeddings_manifest": json.loads((args.embeddings_dir / "manifest.json").read_text(encoding="utf-8")),
         "environment": run_environment(),
         "probes": {},
     }

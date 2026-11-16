@@ -125,7 +125,7 @@ def test_cli_checks_without_importing_torch_or_writing_signals(tmp_path, epochs)
         timeout=30,
     )
     assert result.returncode == 0, result.stderr
-    metadata = json.loads(report.read_text())
+    metadata = json.loads(report.read_text(encoding="utf-8"))
     assert metadata["format_valid"] is True and metadata["epoch_count"] == 2
     assert metadata["channels"] == list(OSF_CHANNELS)
     assert sorted(p.name for p in tmp_path.iterdir()) == ["epochs.npz", "report.json"]
@@ -135,12 +135,12 @@ def test_invalid_archive_preserves_existing_report_and_inputs(tmp_path, epochs, 
     archive, report = tmp_path / "bad.npz", tmp_path / "report.json"
     np.savez(archive, epochs=epochs, channels=np.array(OSF_CHANNELS), sample_rate=256)
     before = archive.read_bytes()
-    report.write_text("ancien rapport")
+    report.write_text("ancien rapport", encoding="utf-8")
     monkeypatch.setattr(sys, "argv", ["check", str(archive), "--report", str(report)])
     with pytest.raises(SystemExit) as error:
         main()
     assert error.value.code == 2
-    assert report.read_text() == "ancien rapport" and archive.read_bytes() == before
+    assert report.read_text(encoding="utf-8") == "ancien rapport" and archive.read_bytes() == before
     monkeypatch.setattr(sys, "argv", ["check", str(archive), "--report", str(archive)])
     with pytest.raises(SystemExit):
         main()

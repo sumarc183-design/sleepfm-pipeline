@@ -112,8 +112,8 @@ def checked_artifact(report_path: Path, report: dict, key: str) -> Path:
 
 def load_sources(args):
     baseline, labels, osf_contract, _ = validated_inputs(args)
-    comparison = json.loads(args.comparison.read_text())
-    errors = json.loads(args.errors.read_text())
+    comparison = json.loads(args.comparison.read_text(encoding="utf-8"))
+    errors = json.loads(args.errors.read_text(encoding="utf-8"))
     if (
         comparison.get("status") != "terminé"
         or errors.get("status") != "terminé"
@@ -162,7 +162,7 @@ def load_sources(args):
 
 
 def validation_probabilities(args, baseline, comparison, paths):
-    inventory = json.loads(paths["inputs.json"].read_text())
+    inventory = json.loads(paths["inputs.json"].read_text(encoding="utf-8"))
     selected = baseline["partitions"]["validation"]
     verified = {}
     for subject in selected:

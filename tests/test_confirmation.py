@@ -43,15 +43,15 @@ def setup(tmp_path):
 
     embeddings = tmp_path / "embeddings"
     embeddings.mkdir()
-    (embeddings / "manifest.json").write_text(json.dumps(CONTRACT))
+    (embeddings / "manifest.json").write_text(json.dumps(CONTRACT), encoding="utf-8")
     for i, subject in enumerate(RESERVED):
         _write_cache(embeddings, subject, 10 + i)
-    (embeddings / f"{REJECTED}.skipped").write_text("canaux manquants\n")
+    (embeddings / f"{REJECTED}.skipped").write_text("canaux manquants\n", encoding="utf-8")
 
     reserved = tmp_path / "reserved.json"
-    reserved.write_text(json.dumps({"subjects": [*RESERVED, REJECTED]}))
+    reserved.write_text(json.dumps({"subjects": [*RESERVED, REJECTED]}), encoding="utf-8")
     split = tmp_path / "split.json"
-    split.write_text(json.dumps({"train": ["tr03-0", "tr03-1"], "test": ["tr03-2", "tr03-3"]}))
+    split.write_text(json.dumps({"train": ["tr03-0", "tr03-1"], "test": ["tr03-2", "tr03-3"]}), encoding="utf-8")
     config = tmp_path / "config.json"
     config.write_text(
         json.dumps(
@@ -87,7 +87,7 @@ def test_confirmation_reports_every_subject_without_training(setup, monkeypatch)
 
     assert report["status"] == "terminé" and report["n_requested"] == 5 and report["n_evaluated"] == 4
     assert report["rejected"] == {REJECTED: "canaux manquants"}
-    written = json.loads((setup["out"].parent / "confirmation.json").read_text())
+    written = json.loads((setup["out"].parent / "confirmation.json").read_text(encoding="utf-8"))
     assert written["status"] == "terminé"
     assert "gain_confirmed" in written["primary"] and "tr09" in written["secondary"]["kappa_by_prefix"]
     saved = np.load(setup["out"].parent / "confirmation.predictions.npz")
@@ -122,10 +122,10 @@ def test_any_gap_with_the_protocol_stops_before_any_score(setup, alter, message)
 
 
 def test_reserved_subjects_inside_the_split_are_refused(setup):
-    setup["split_file"].write_text(json.dumps({"train": [RESERVED[0]], "test": ["tr03-3"]}))
-    config = json.loads(setup["config_path"].read_text())
+    setup["split_file"].write_text(json.dumps({"train": [RESERVED[0]], "test": ["tr03-3"]}), encoding="utf-8")
+    config = json.loads(setup["config_path"].read_text(encoding="utf-8"))
     config["split_sha256"] = file_sha256(setup["split_file"])
-    setup["config_path"].write_text(json.dumps(config))
+    setup["config_path"].write_text(json.dumps(config), encoding="utf-8")
     with pytest.raises(SystemExit, match="découpage"):
         confirm.run_confirmation(**setup)
 
@@ -148,9 +148,9 @@ def test_manifest_redirecting_a_probe_is_refused_before_any_trace(setup):
     models = setup["models_dir"]
     other = train_probe("logistic_unweighted", *_night(99), seed=0, max_iter=50)
     joblib.dump(other, models / "autre.joblib")
-    manifest = json.loads((models / "manifest.json").read_text())
+    manifest = json.loads((models / "manifest.json").read_text(encoding="utf-8"))
     manifest["probes"]["logistic"]["file"] = "autre.joblib"
-    (models / "manifest.json").write_text(json.dumps(manifest))
+    (models / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
     with pytest.raises(SystemExit, match="empreinte du fichier chargé"):
         confirm.run_confirmation(**setup)
@@ -176,6 +176,6 @@ def test_empty_or_unreadable_rejection_is_refused_before_any_score(setup, conten
 def test_all_subjects_rejected_is_refused(setup):
     for subject in RESERVED:
         (setup["embeddings_dir"] / f"{subject}.npz").unlink()
-        (setup["embeddings_dir"] / f"{subject}.skipped").write_text("canaux manquants\n")
+        (setup["embeddings_dir"] / f"{subject}.skipped").write_text("canaux manquants\n", encoding="utf-8")
     with pytest.raises(SystemExit, match="aucune nuit évaluable"):
         confirm.run_confirmation(**setup)

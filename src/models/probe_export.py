@@ -105,7 +105,9 @@ def save_probes(directory: Path, models: dict, embedding_dim: int, embeddings_ma
         "probes": probes,
         "environment": run_environment(),
     }
-    (directory / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    (directory / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
+    )
     print(f"Sondes exportées : {directory} ({', '.join(models)})")
 
 
@@ -124,7 +126,7 @@ def load_probes(
     et l'empreinte est vérifiée sur le fichier réellement chargé, juste avant le
     chargement : un manifeste qui redirige une sonde vers un autre fichier est
     refusé. Le manifeste renvoyé indique alors les fichiers chargés (`loaded`)."""
-    manifest = json.loads((directory / "manifest.json").read_text())
+    manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     if manifest.get("export_format") not in READABLE_EXPORT_FORMATS:
         raise ValueError(f"{directory} : format d'export {manifest.get('export_format')} non pris en charge")
     trained_on = manifest["input"]["embeddings_manifest"]

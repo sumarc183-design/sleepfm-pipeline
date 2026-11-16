@@ -202,8 +202,8 @@ def run(args):
         raise ValueError("Sortie existante : aucun résultat écrasé")
     sources = {"thresholds": args.thresholds, "comparison": args.comparison, "plan": args.plan}
     hashes = {name: file_sha256(path) for name, path in sources.items()}
-    reference = json.loads(args.thresholds.read_text())
-    comparison = json.loads(args.comparison.read_text())
+    reference = json.loads(args.thresholds.read_text(encoding="utf-8"))
+    comparison = json.loads(args.comparison.read_text(encoding="utf-8"))
     if (
         reference.get("status") != "terminé"
         or comparison.get("status") != "terminé"

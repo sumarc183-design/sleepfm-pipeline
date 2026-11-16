@@ -36,7 +36,7 @@ def baseline():
 
 def save(tmp_path, payload, name="run.json"):
     path = tmp_path / name
-    path.write_text(json.dumps(payload))
+    path.write_text(json.dumps(payload), encoding="utf-8")
     return path
 
 
@@ -115,12 +115,12 @@ def test_cli_failure_preserves_previous_outputs(tmp_path, baseline, monkeypatch)
     source = save(tmp_path, baseline)
     bad = save(tmp_path, {"status": "en cours"}, "bad.json")
     output = tmp_path / "result.csv"
-    output.write_text("ancien tableau")
+    output.write_text("ancien tableau", encoding="utf-8")
     monkeypatch.setattr(sys, "argv", ["consolidate", str(source), str(bad), "--out", str(output)])
     with pytest.raises(SystemExit) as error:
         main()
     assert error.value.code == 2
-    assert output.read_text() == "ancien tableau"
+    assert output.read_text(encoding="utf-8") == "ancien tableau"
 
 
 def test_cli_never_overwrites_input_or_merges_outputs(tmp_path, baseline, monkeypatch):
@@ -149,4 +149,4 @@ def test_cli_runs_without_model_dependencies(tmp_path, baseline):
     )
     assert result.returncode == 0, result.stderr
     assert len(list(csv.DictReader(csv_path.open()))) == 1
-    assert "0,500 [0,200 ; 0,800]" in md_path.read_text()
+    assert "0,500 [0,200 ; 0,800]" in md_path.read_text(encoding="utf-8")

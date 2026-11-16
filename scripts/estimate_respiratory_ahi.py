@@ -59,8 +59,8 @@ CODE = [
 
 def load_sources(args) -> dict:
     """Modèles, seuils, partitions et manifestes, chacun contrôlé par son empreinte."""
-    baseline = json.loads(args.baseline.read_text())
-    comparison = json.loads(args.comparison.read_text())
+    baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+    comparison = json.loads(args.comparison.read_text(encoding="utf-8"))
     if file_sha256(args.baseline.with_suffix(".joblib")) != baseline["model_sha256"]:
         raise ValueError("Modèle SleepFM différent de l'archive")
     artifacts = comparison["artifacts"]
@@ -87,8 +87,8 @@ def load_sources(args) -> dict:
         "models": {m: models[m]["model"] for m in MODELS},
         "thresholds": thresholds,
         "partitions": {k: sorted(baseline["partitions"][k]) for k in ("validation", "test")},
-        "labels": json.loads((args.labels_dir / "manifest.json").read_text())["sources"],
-        "osf_inputs": json.loads((folder / artifacts["inputs.json"]["file"]).read_text()),
+        "labels": json.loads((args.labels_dir / "manifest.json").read_text(encoding="utf-8"))["sources"],
+        "osf_inputs": json.loads((folder / artifacts["inputs.json"]["file"]).read_text(encoding="utf-8")),
         "archives": {
             "test": folder / artifacts["predictions.npz"]["file"],
             "validation": args.validation_archive,
@@ -149,7 +149,7 @@ def night_annotations(subject: str, args, sources: dict, wfdb) -> dict:
 
 
 def read_reference_csv(path: Path) -> dict:
-    with path.open(newline="") as handle:
+    with path.open(newline="", encoding="utf-8") as handle:
         return {row["sujet"]: (float(row["sommeil_h"]), float(row["iah"])) for row in csv.DictReader(handle)}
 
 

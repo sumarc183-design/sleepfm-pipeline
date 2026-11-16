@@ -21,7 +21,7 @@ def validate_subject_ids(subjects, source: str = "Sujets", allow_empty: bool = F
 
 
 def load_subjects_file(path: Path) -> list[str]:
-    payload = json.loads(path.read_text())
+    payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or "subjects" not in payload:
         raise ValueError(f'{path} : attendu un objet JSON {{"subjects": [...]}}')
     return validate_subject_ids(payload["subjects"], str(path))

@@ -6,6 +6,7 @@ tests unitaires rapides.
 """
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -21,6 +22,14 @@ from src.data.extract_physionet2018 import main as extract_main
 from src.models.effnet import EffNet
 from src.models.embeddings import CHANNEL_INDICES, SleepFMEncoders
 from src.models.linear_probe import evaluate_probe, train_linear_probe
+
+
+def stage_subject(source: Path, dest: Path) -> None:
+    """Lien vers le sujet brut ; copie sous Windows sans droit de créer des liens."""
+    try:
+        dest.symlink_to(source, target_is_directory=True)
+    except OSError:
+        shutil.copytree(source, dest)
 
 
 def _generate_synthetic_raw(raw_dir: Path, n_subjects: int, seed: int) -> None:
@@ -129,7 +138,7 @@ def test_chunked_embeddings_cache_and_resume(tmp_path):
 
     def fetch_subject(subject, dest_dir):
         fetched.append(subject)
-        (dest_dir / subject).symlink_to(raw_dir / subject, target_is_directory=True)
+        stage_subject(raw_dir / subject, dest_dir / subject)
 
     embeddings_dir = tmp_path / "embeddings"
     embed_subjects_in_chunks(
@@ -236,7 +245,7 @@ def test_chunked_embeddings_prefetch_error_cleans_up(tmp_path, monkeypatch):
     def fetch_subject(subject, dest_dir):
         if subject == subjects[2]:
             raise OSError("téléchargement impossible")
-        (dest_dir / subject).symlink_to(raw_dir / subject, target_is_directory=True)
+        stage_subject(raw_dir / subject, dest_dir / subject)
 
     embeddings_dir = tmp_path / "embeddings"
     with pytest.raises(OSError, match="téléchargement impossible"):
@@ -276,7 +285,7 @@ def test_results_json_records_subjects_settings_and_convergence(tmp_path):
     groups = (np.repeat(["s3", "s4"], 25), np.tile(np.arange(25), 2))
     save_results_json(path, results, None, "desc", "ckpt", args, ["s2", "s1"], ["s3"], y[150:], groups)
 
-    payload = json.loads(path.read_text())
+    payload = json.loads(path.read_text(encoding="utf-8"))
     assert payload["train_subjects"] == ["s1", "s2"] and payload["test_subjects"] == ["s3"]
     assert payload["settings"]["max_gap"] == 0.15
     assert payload["probes"]["logistic"]["converged"] is True
@@ -355,7 +364,7 @@ def test_embeddings_manifest_refuses_mixing_checkpoints_or_preprocessing(tmp_pat
     assert not (legacy_dir / "manifest.json").exists()
     assert (legacy_dir / "s1.npz").exists()
     # Un vrai contrat historique reste lisible, sans être réécrit en version 2.
-    (legacy_dir / "manifest.json").write_text(json.dumps(expected | {"preprocessing_version": 1}))
+    (legacy_dir / "manifest.json").write_text(json.dumps(expected | {"preprocessing_version": 1}), encoding="utf-8")
     # Rien à calculer : la version différente est seulement signalée...
     check_embeddings_manifest(legacy_dir, expected, n_to_compute=0)
     # ... mais on refuse d'y ajouter des sujets calculés avec la version 2.
@@ -378,7 +387,7 @@ def test_split_file_rejects_overlap_duplicates_and_keeps_test_fraction(tmp_path)
 
     bad = tmp_path / "bad.json"
     for content in ({"train": ["s1"], "test": ["s1"]}, {"train": ["s1", "s1"], "test": ["s2"]}, {"train": []}):
-        bad.write_text(json.dumps(content))
+        bad.write_text(json.dumps(content), encoding="utf-8")
         with pytest.raises(SystemExit):
             load_or_extend_split(bad, ["s1", "s2"], 0.2, seed=42)
     with pytest.raises(SystemExit):
@@ -534,7 +543,7 @@ def test_split_file_requires_lists(tmp_path):
     from run_baseline import load_or_extend_split
 
     path = tmp_path / "split.json"
-    path.write_text(json.dumps({"train": "abc", "test": ["d"]}))
+    path.write_text(json.dumps({"train": "abc", "test": ["d"]}), encoding="utf-8")
     with pytest.raises(SystemExit, match="liste"):
         load_or_extend_split(path, ["a", "b"], 0.5, 0)
 
@@ -544,7 +553,7 @@ CONTRACT = {"checkpoint_sha256": "aaa", "preprocessing_version": 2, "channels": 
 
 def _source(directory, manifest, subject="s1", content=b"contenu"):
     directory.mkdir(parents=True)
-    (directory / "manifest.json").write_text(json.dumps(manifest))
+    (directory / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     (directory / f"{subject}.npz").write_bytes(content)
     return directory / "manifest.json"
 
@@ -564,8 +573,8 @@ def test_import_rejects_other_contract_before_copy_and_flags_conflicts(tmp_path)
 
     assert report["copied"] == 2 and len(report["ignored"]) == 4
     assert sorted(p.name for p in destination.glob("*.npz")) == ["s1.npz", "s2.npz"]
-    assert json.loads((destination / "manifest.json").read_text()) == CONTRACT
-    assert "s1.npz" in json.loads((destination / "provenance.json").read_text())
+    assert json.loads((destination / "manifest.json").read_text(encoding="utf-8")) == CONTRACT
+    assert "s1.npz" in json.loads((destination / "provenance.json").read_text(encoding="utf-8"))
 
     assert import_embeddings([good], destination, CONTRACT)["copied"] == 0  # déjà là, identique
     conflict = _source(tmp_path / "conflict", CONTRACT, "s1", b"autre contenu")
@@ -645,7 +654,7 @@ def test_band_shares_cover_the_whole_range_including_3_hz():
 
 def _npz_source(folder, manifest, subject, content=b"cache"):
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "manifest.json").write_text(json.dumps(manifest))
+    (folder / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     (folder / f"{subject}.npz").write_bytes(content)
     return folder / "manifest.json"
 
@@ -674,7 +683,7 @@ def test_import_checks_every_conflict_before_copying_anything(tmp_path):
 
     report = import_embeddings([first], destination, CONTRACT)
     assert report["copied"] == 2 and not (destination / ".import_en_cours").exists()
-    provenance = json.loads((destination / "provenance.json").read_text())
+    provenance = json.loads((destination / "provenance.json").read_text(encoding="utf-8"))
     assert provenance["s1.npz"]["sha256"] == file_sha256(destination / "s1.npz")
 
 
@@ -696,7 +705,7 @@ def test_import_interrupted_before_publication_leaves_only_verified_files(tmp_pa
     with pytest.raises(KeyboardInterrupt):
         cache_contract.import_embeddings([source], destination, CONTRACT)
     monkeypatch.setattr(cache_contract.os, "replace", real_replace)
-    assert json.loads((destination / "manifest.json").read_text()) == CONTRACT
+    assert json.loads((destination / "manifest.json").read_text(encoding="utf-8")) == CONTRACT
     assert len(list(destination.glob("*.npz"))) == 1
     assert cache_contract.import_embeddings([source], destination, CONTRACT)["copied"] == 1
     assert len(list(destination.glob("*.npz"))) == 2
@@ -786,7 +795,7 @@ def test_same_windows_are_not_attributed_to_training_without_same_embeddings(tmp
     contract = {"checkpoint_sha256": "a", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
 
     def run(name, manifest):
-        (tmp_path / f"{name}.json").write_text(json.dumps({"embeddings_manifest": manifest}))
+        (tmp_path / f"{name}.json").write_text(json.dumps({"embeddings_manifest": manifest}), encoding="utf-8")
         return input_contract(tmp_path / f"{name}.predictions.npz")
 
     same = run("a", contract)
@@ -802,11 +811,11 @@ def test_run_status_covers_exactly_the_requested_subjects(tmp_path):
 
     np.savez(tmp_path / "a.npz", X=np.zeros((1, 1536), np.float32), y=np.array([0]), epoch_idx=np.array([0]))
     (tmp_path / "etranger.npz").write_bytes(b"")
-    (tmp_path / "b.skipped").write_text("canaux manquants\n")
+    (tmp_path / "b.skipped").write_text("canaux manquants\n", encoding="utf-8")
     status = write_run_status(tmp_path, ["a", "b", "c"], 0.0)
     assert not status["complete"] and status["missing"] == ["c"] and status["not_requested"] == ["etranger"]
     assert status["rejected"] == {"b": "canaux manquants"}
     np.savez(tmp_path / "c.npz", X=np.zeros((1, 1536), np.float32), y=np.array([0]), epoch_idx=np.array([0]))
     assert write_run_status(tmp_path, ["a", "b", "c"], 0.0)["complete"]
-    (tmp_path / "a.skipped").write_text("x")
+    (tmp_path / "a.skipped").write_text("x", encoding="utf-8")
     assert not write_run_status(tmp_path, ["a", "b", "c"], 0.0)["complete"]

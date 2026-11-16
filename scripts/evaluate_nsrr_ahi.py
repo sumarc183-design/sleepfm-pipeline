@@ -95,12 +95,12 @@ def load_frozen(ahi_json: Path, baseline: Path, comparison: Path, expected_sha: 
     """Modèles, seuils, calibration et poids attendus, tous rattachés au résultat PhysioNet figé."""
     if file_sha256(ahi_json) != expected_sha:
         raise ValueError("Résultat IAH PhysioNet différent de la règle figée")
-    frozen = json.loads(ahi_json.read_text())
+    frozen = json.loads(ahi_json.read_text(encoding="utf-8"))
     if file_sha256(baseline) != frozen["source_sha256"]["baseline"]:
         raise ValueError("Baseline SleepFM différente de celle de la règle figée")
     if file_sha256(comparison) != frozen["source_sha256"]["comparison"]:
         raise ValueError("Comparaison OSF différente de celle de la règle figée")
-    base, comp = json.loads(baseline.read_text()), json.loads(comparison.read_text())
+    base, comp = json.loads(baseline.read_text(encoding="utf-8")), json.loads(comparison.read_text(encoding="utf-8"))
     paths = {"sleepfm": baseline.with_suffix(".joblib"), "osf": comparison.parent / comp["artifacts"]["joblib"]["file"]}
     expected = {"sleepfm": base["model_sha256"], "osf": comp["artifacts"]["joblib"]["sha256"]}
     models = {}
@@ -130,14 +130,14 @@ def check_embeddings(folder: Path, cohort: str, frozen: dict, subjects_path: Pat
         raise ValueError(str(exc)) from exc
     if list_sha != approved_sha:
         raise ValueError(f"{subjects_path} : liste différente de la liste approuvée")
-    manifest = json.loads((folder / "manifest.json").read_text())
+    manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
     expected = expected_contract(
         cohort, list_sha, MODELS, frozen["checkpoints"]["sleepfm"], frozen["checkpoints"]["osf"], RESPIRATORY_RULE
     )
     wrong = sorted(k for k in expected.keys() | manifest.keys() if manifest.get(k) != expected.get(k))
     if wrong:
         raise ValueError(f"Embeddings NSRR non conformes au contrat : {wrong}")
-    status = json.loads((folder / "run_status.json").read_text())
+    status = json.loads((folder / "run_status.json").read_text(encoding="utf-8"))
     done, rejected = status.get("done", []), status.get("rejected", {})
     if not status.get("complete") or status.get("missing"):
         raise ValueError("Extraction incomplète : terminer le run avant l'évaluation")
@@ -244,7 +244,7 @@ def subject_number(subject: str) -> int:
 
 def official_reference(path: Path, id_column: str, columns=OFFICIAL_COLUMNS) -> dict[str, dict[int, float]]:
     """IAH officiels par identifiant ; vide = manquant, négatif ou non numérique = erreur."""
-    with path.open(newline="") as handle:
+    with path.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     if not rows or any(c not in rows[0] for c in (id_column, *columns)):
         raise ValueError(f"{path} : colonnes {id_column} et {list(columns)} attendues")
@@ -394,7 +394,7 @@ def run(args) -> dict:
         "plan_sha256": file_sha256(args.plan),
     }
     marker.parent.mkdir(parents=True, exist_ok=True)
-    with marker.open("x") as handle:  # échoue si un autre passage l'a créé entre-temps
+    with marker.open("x", encoding="utf-8", newline="\n") as handle:  # échoue si un autre passage l'a créé entre-temps
         json.dump(state, handle)
     try:
         report = evaluate(args, checked)

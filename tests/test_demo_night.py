@@ -54,11 +54,11 @@ def test_demo_refuses_nonmatching_respiratory_archive(tmp_path):
         "predictions_sha256": file_sha256(predictions),
         "threshold": {"value": 0.5},
     }
-    report.write_text(json.dumps(payload))
+    report.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="alignées"):
         night_data(path, "night", report, None)
     payload["predictions_sha256"] = "different"
-    report.write_text(json.dumps(payload))
+    report.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="empreinte"):
         night_data(path, "night", report, None)
 
@@ -123,11 +123,11 @@ def test_demo_adds_osf_only_for_the_same_reference_and_windows(tmp_path):
         "thresholds": {"osf": 0.6},
         "artifacts": {"predictions.npz": {"sha256": file_sha256(comparative_predictions)}},
     }
-    comparison.write_text(json.dumps(report))
+    comparison.write_text(json.dumps(report), encoding="utf-8")
     data = night_data(stages, None, respiratory, None, comparison)
     assert data["respiratory"]["osf_probability"] == [0.9, None, 0.2]
     assert data["respiratory"]["osf_threshold"] == 0.6
     report["baseline_sha256"] = "different"
-    comparison.write_text(json.dumps(report))
+    comparison.write_text(json.dumps(report), encoding="utf-8")
     with pytest.raises(ValueError, match="baseline différente"):
         night_data(stages, None, respiratory, None, comparison)

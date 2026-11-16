@@ -79,9 +79,9 @@ def main() -> None:
     parser.add_argument("--plan", type=Path, default=PLAN, help="plan fixé avant calcul (empreinte enregistrée)")
     args = parser.parse_args()
     channels = tuple(args.channels.split(","))
-    subjects = sorted(json.loads(args.baseline.read_text())["partitions"]["fit"])[: args.limit]
+    subjects = sorted(json.loads(args.baseline.read_text(encoding="utf-8"))["partitions"]["fit"])[: args.limit]
     partial_path = args.out.with_suffix(".partial.json")
-    nights = json.loads(partial_path.read_text()) if partial_path.exists() else {}
+    nights = json.loads(partial_path.read_text(encoding="utf-8")) if partial_path.exists() else {}
     todo = [s for s in subjects if s not in nights]
     print(f"{len(nights)} nuit(s) déjà lues, {len(todo)} à traiter")
 

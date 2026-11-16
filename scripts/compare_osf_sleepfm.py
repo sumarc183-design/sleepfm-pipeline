@@ -81,8 +81,8 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True, help="préfixe du JSON de sortie")
     args = parser.parse_args()
 
-    split = json.loads(args.split_file.read_text())
-    status = json.loads((args.osf_dir / "run_status.json").read_text())
+    split = json.loads(args.split_file.read_text(encoding="utf-8"))
+    status = json.loads((args.osf_dir / "run_status.json").read_text(encoding="utf-8"))
     if not status["complete"] or status["rejected"]:
         raise SystemExit("Run OSF incomplet ou avec rejets : comparaison sur des nuits différentes refusée")
 
@@ -123,8 +123,8 @@ def main() -> None:
         "caveat": "4 des 12 canaux OSF absents (mis à zéro) ; normalisation par nuit supposée ; exploratoire",
         "nights": {"train": len(split["train"]), "test": len(split["test"])},
         "test_epochs": int(len(y_test)),
-        "osf_manifest": json.loads((args.osf_dir / "manifest.json").read_text()),
-        "sleepfm_manifest": json.loads((args.sleepfm_dir / "manifest.json").read_text()),
+        "osf_manifest": json.loads((args.osf_dir / "manifest.json").read_text(encoding="utf-8")),
+        "sleepfm_manifest": json.loads((args.sleepfm_dir / "manifest.json").read_text(encoding="utf-8")),
         "split_sha256": file_sha256(args.split_file),
         "models": report_models,
         "difference_osf_minus_sleepfm": differences,

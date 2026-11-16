@@ -24,7 +24,7 @@ def test_bad_subjects_are_refused_without_files(tmp_path, subjects):
 def test_valid_subjects_and_file_metadata_are_preserved(tmp_path):
     subjects = ["tr03-0005", "synthetic_0001"]
     path = tmp_path / "subjects.json"
-    path.write_text(json.dumps({"subjects": subjects, "description": "protocole"}))
+    path.write_text(json.dumps({"subjects": subjects, "description": "protocole"}), encoding="utf-8")
     assert load_subjects_file(path) == subjects
     assert validate_subject_ids([], allow_empty=True) == []
 
@@ -32,7 +32,7 @@ def test_valid_subjects_and_file_metadata_are_preserved(tmp_path):
 @pytest.mark.parametrize("payload", [{}, [], {"subjects": []}, {"subjects": "s1"}, {"subjects": ["s1", "s1"]}])
 def test_invalid_subject_file_is_refused_before_checkpoint(tmp_path, monkeypatch, payload):
     path = tmp_path / "subjects.json"
-    path.write_text(json.dumps(payload))
+    path.write_text(json.dumps(payload), encoding="utf-8")
     monkeypatch.setattr(
         sys,
         "argv",

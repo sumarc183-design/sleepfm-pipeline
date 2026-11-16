@@ -63,5 +63,7 @@ def test_empty_selection_refused(tmp_path):
 def test_edf_names_from_index_file(tmp_path):
     touch(tmp_path / "xml", "mesa-sleep-0001-nsrr.xml", "mesa-sleep-0002-nsrr.xml")
     index = tmp_path / "edfs.txt"
-    index.write_text("polysomnography/edfs/mesa-sleep-0001.edf\n\nmesa-sleep-0002.edf\nmesa-sleep-0001.edf\n")
+    index.write_text(
+        "polysomnography/edfs/mesa-sleep-0001.edf\n\nmesa-sleep-0002.edf\nmesa-sleep-0001.edf\n", encoding="utf-8"
+    )
     assert freeze("mesa", index, tmp_path / "xml")["subjects"] == ["mesa-sleep-0001", "mesa-sleep-0002"]

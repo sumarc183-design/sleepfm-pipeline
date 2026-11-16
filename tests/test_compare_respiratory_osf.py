@@ -89,12 +89,14 @@ def test_full_synthetic_comparison_preserves_reference_and_checks_hashes(tmp_pat
         folder.mkdir()
     contract = {"checkpoint_sha256": "s", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
     osf_contract = {"model": "OSF", "extraction_preprocessing_version": 2, "osf_checkpoint_sha256": "o"}
-    (sleepfm_dir / "manifest.json").write_text(json.dumps(contract))
-    (osf_dir / "manifest.json").write_text(json.dumps(osf_contract))
+    (sleepfm_dir / "manifest.json").write_text(json.dumps(contract), encoding="utf-8")
+    (osf_dir / "manifest.json").write_text(json.dumps(osf_contract), encoding="utf-8")
     subjects = split["train"] + split["test"]
-    (osf_dir / "run_status.json").write_text(json.dumps({"complete": True, "embedded": subjects, "rejected": {}}))
+    (osf_dir / "run_status.json").write_text(
+        json.dumps({"complete": True, "embedded": subjects, "rejected": {}}), encoding="utf-8"
+    )
     split_path = tmp_path / "split.json"
-    split_path.write_text(json.dumps(split))
+    split_path.write_text(json.dumps(split), encoding="utf-8")
     y = np.tile([0, 1, -1, 0, 1], 4)
     indices, onsets, stages = np.arange(20), np.arange(20) * 30.0, np.arange(20) % 5
     sources = {}
@@ -108,7 +110,9 @@ def test_full_synthetic_comparison_preserves_reference_and_checks_hashes(tmp_pat
             "embedding_sha256": file_sha256(sleepfm_dir / f"{subject}.npz"),
             "labels_sha256": file_sha256(labels_dir / f"{subject}.npz"),
         }
-    (labels_dir / "manifest.json").write_text(json.dumps({"embeddings_manifest": contract, "sources": sources}))
+    (labels_dir / "manifest.json").write_text(
+        json.dumps({"embeddings_manifest": contract, "sources": sources}), encoding="utf-8"
+    )
     keep = y >= 0
     truth = np.tile(y[keep], 2)
     probability = np.where(truth == 1, 0.8, 0.2)
@@ -138,7 +142,7 @@ def test_full_synthetic_comparison_preserves_reference_and_checks_hashes(tmp_pat
         "coverage": {},
         "metrics": baseline.binary_metrics(truth, probability, 0.5),
     }
-    reference_path.write_text(json.dumps(reference))
+    reference_path.write_text(json.dumps(reference), encoding="utf-8")
     args = SimpleNamespace(
         baseline=reference_path,
         sleepfm_dir=sleepfm_dir,

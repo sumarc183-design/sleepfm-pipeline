@@ -15,7 +15,7 @@ CONTRACT = {"checkpoint_sha256": "test", "preprocessing_version": 2, "channels":
 
 def cache(directory, subject="s1", **changes):
     directory.mkdir(exist_ok=True)
-    (directory / "manifest.json").write_text(json.dumps(CONTRACT))
+    (directory / "manifest.json").write_text(json.dumps(CONTRACT), encoding="utf-8")
     arrays = {"X": np.zeros((2, 1536), np.float32), "y": [0, 1], "epoch_idx": [0, 1], "onset_s": [0.0, 30.0]}
     np.savez(directory / f"{subject}.npz", **(arrays | changes))
 
@@ -37,7 +37,7 @@ def test_corrupt_cache_never_counts_as_embedded(tmp_path, problem):
     assert status["embedded"] == [] and "s1" in status["invalid"]
     assert status["missing"] == []  # présent, mais inutilisable
     assert (tmp_path / "s1.npz").read_bytes() == before
-    assert json.loads((tmp_path / "run_status.json").read_text())["invalid"] == status["invalid"]
+    assert json.loads((tmp_path / "run_status.json").read_text(encoding="utf-8"))["invalid"] == status["invalid"]
 
 
 @pytest.mark.parametrize("reason", [b"", b" \n", b"\xff"])
@@ -52,7 +52,7 @@ def test_empty_or_unreadable_rejection_is_not_a_valid_result(tmp_path, reason):
 
 def test_valid_rejections_and_foreign_files_do_not_hide_requested_results(tmp_path, monkeypatch):
     cache(tmp_path)
-    (tmp_path / "s2.skipped").write_text("canaux manquants\n")
+    (tmp_path / "s2.skipped").write_text("canaux manquants\n", encoding="utf-8")
     (tmp_path / "foreign.npz").write_bytes(b"corrompu, ne pas lire")
     (tmp_path / "other.skipped").write_bytes(b"\xff")
     check = pipeline.cache_problem
@@ -106,14 +106,14 @@ def test_invalid_final_status_stops_before_success_or_training(tmp_path, monkeyp
     )
     with pytest.raises(SystemExit, match="Bilan du run incomplet ou invalide"):
         pipeline.run_in_chunks(args, tmp_path / "unused.pt", tmp_path)
-    assert json.loads((out / "run_status.json").read_text())["complete"] is False
+    assert json.loads((out / "run_status.json").read_text(encoding="utf-8"))["complete"] is False
 
 
 def test_notebook_reports_invalid_cache_before_export(tmp_path):
     cache(tmp_path, X=np.zeros((2, 8)))
     pipeline.write_run_status(tmp_path, ["s1"], 0.0)
     notebook = Path(__file__).resolve().parents[1] / "notebooks/sleepfm_embeddings_physionet2018.ipynb"
-    cells = json.loads(notebook.read_text())["cells"]
+    cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
     source = next("".join(c["source"]) for c in cells if "status_path =" in "".join(c.get("source", [])))
     # Exécute le contrôle avant la première commande IPython ; aucun export ni pip freeze.
     prefix = source.split("!python", 1)[0]

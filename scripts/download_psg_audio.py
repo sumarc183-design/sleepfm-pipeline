@@ -195,7 +195,7 @@ def main() -> None:
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     log_path = args.out / "download_log.json"
-    log = json.loads(log_path.read_text()) if log_path.exists() else {"done": {}, "failed": {}}
+    log = json.loads(log_path.read_text(encoding="utf-8")) if log_path.exists() else {"done": {}, "failed": {}}
     rmls = {
         f["fileName"].removesuffix(".rml"): f for f in list_folder("/V3/APNEA_RML") if f["fileName"].endswith(".rml")
     }

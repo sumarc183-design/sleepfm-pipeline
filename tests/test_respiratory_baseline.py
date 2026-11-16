@@ -120,10 +120,10 @@ def test_pipeline_on_synthetic_embeddings_keeps_staging_and_refuses_overwrite(tm
     contract = {"checkpoint_sha256": "synthetic", "preprocessing_version": 2, "channels": ["C3"], "sample_rate": 256}
     embeddings = tmp_path / "embeddings"
     embeddings.mkdir()
-    (embeddings / "manifest.json").write_text(json.dumps(contract))
+    (embeddings / "manifest.json").write_text(json.dumps(contract), encoding="utf-8")
     split = {"train": [f"s{i:02d}" for i in range(10)], "test": ["test1", "test2"]}
     split_file = tmp_path / "split.json"
-    split_file.write_text(json.dumps(split))
+    split_file.write_text(json.dumps(split), encoding="utf-8")
     staging_bytes = {}
     for subject in split["train"] + split["test"]:
         y = np.tile([0, 1, -1, 0, 1], 4)
@@ -146,7 +146,7 @@ def test_pipeline_on_synthetic_embeddings_keeps_staging_and_refuses_overwrite(tm
         folder = annotations / subject
         folder.mkdir(parents=True)
         for ext in ("hea", "arousal"):
-            (folder / f"{subject}.{ext}").write_text("fixture")
+            (folder / f"{subject}.{ext}").write_text("fixture", encoding="utf-8")
     monkeypatch.setattr(baseline, "read_respiratory_labels", fake_labels)
     monkeypatch.setattr(baseline, "N_BOOT", 10)
     original_bootstrap = baseline.ap_bootstrap

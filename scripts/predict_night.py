@@ -84,7 +84,7 @@ def main() -> None:
     except ValueError as exc:
         parser.error(str(exc))
     manifest_path = args.embeddings_dir / "manifest.json"
-    cache_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+    cache_manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
     models, export = load_probes(args.models, cache_manifest, args.allow_unverified_provenance)
     expected_dim = export["input"]["embedding_dim"]
     args.out.mkdir(parents=True, exist_ok=True)

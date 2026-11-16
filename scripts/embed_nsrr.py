@@ -81,7 +81,7 @@ def identity_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
 
 
 def subject_list(path: Path, cohort: str) -> tuple[list[str], str]:
-    payload = json.loads(path.read_text())
+    payload = json.loads(path.read_text(encoding="utf-8"))
     if payload.get("cohort") != cohort or not isinstance(payload.get("subjects"), list):
         raise SystemExit(f"{path} : liste figée {{cohort, subjects}} attendue pour {cohort}")
     subjects = payload["subjects"]
@@ -181,7 +181,7 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != contract:
+        if json.loads(manifest_path.read_text(encoding="utf-8")) != contract:
             raise SystemExit(f"{manifest_path} : contrat différent, utiliser un nouveau dossier")
     elif any(args.out.glob("*.npz")):
         raise SystemExit(f"{args.out} : fichiers sans manifeste, provenance inconnue")
@@ -219,7 +219,7 @@ def main() -> None:
             print(f"[{index + 1}/{len(todo)}] {subject} : EDF absent, laissé manquant (repris à la relance)")
             continue
         except ValueError as exc:
-            (args.out / f"{subject}.skipped").write_text(f"{exc}\n")
+            (args.out / f"{subject}.skipped").write_text(f"{exc}\n", encoding="utf-8", newline="\n")
             print(f"[{index + 1}/{len(todo)}] {subject} rejeté : {exc}")
             continue
         save_night(args.out, subject, result, edf)
@@ -227,7 +227,9 @@ def main() -> None:
 
     done = [s for s in subjects if (args.out / f"{s}.npz").exists()]
     skipped = {
-        s: (args.out / f"{s}.skipped").read_text().strip() for s in subjects if (args.out / f"{s}.skipped").exists()
+        s: (args.out / f"{s}.skipped").read_text(encoding="utf-8").strip()
+        for s in subjects
+        if (args.out / f"{s}.skipped").exists()
     }
     status = {
         "done": done,

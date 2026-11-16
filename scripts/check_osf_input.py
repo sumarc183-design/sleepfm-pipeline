@@ -51,7 +51,7 @@ def main() -> None:
     }:
         parser.error("Le rapport ne peut pas remplacer une entrée")
     try:
-        mapping = json.loads(args.mapping.read_text()) if args.mapping else None
+        mapping = json.loads(args.mapping.read_text(encoding="utf-8")) if args.mapping else None
         report = check_archive(args.archive, mapping)
     except (OSError, ValueError, KeyError) as exc:
         parser.error(str(exc))

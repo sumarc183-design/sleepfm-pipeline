@@ -14,8 +14,8 @@ UCDDB_LABELS = ["Lefteye", "RightEye", "EMG", "C3A2", "C4A1", "ECG", "SpO2", "So
 
 def write(tmp_path, stages, events):
     stage, resp = tmp_path / "s_stage.txt", tmp_path / "s_respevt.txt"
-    stage.write_text("\n".join(str(c) for c in stages) + "\n")
-    resp.write_text(HEADER + "".join(events))
+    stage.write_text("\n".join(str(c) for c in stages) + "\n", encoding="utf-8")
+    resp.write_text(HEADER + "".join(events), encoding="utf-8")
     return stage, resp
 
 

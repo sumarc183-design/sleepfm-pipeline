@@ -211,10 +211,10 @@ def run(args) -> dict:
     model_path = Path(f"{args.out}.joblib")
     if any(p.exists() for p in (report_path, archive, model_path, Path(f"{args.out}.labels.json"))):
         raise ValueError("Sortie existante : conserver le premier résultat, choisir un nouveau préfixe")
-    split = json.loads(args.split_file.read_text())
+    split = json.loads(args.split_file.read_text(encoding="utf-8"))
     parts = partition_subjects(split)
     manifest_path = args.embeddings_dir / "manifest.json"
-    contract = json.loads(manifest_path.read_text())
+    contract = json.loads(manifest_path.read_text(encoding="utf-8"))
     if missing_contract_keys(contract) or contract["preprocessing_version"] != 2:
         raise ValueError("Contrat SleepFM v2 complet requis")
     report_path.parent.mkdir(parents=True, exist_ok=True)

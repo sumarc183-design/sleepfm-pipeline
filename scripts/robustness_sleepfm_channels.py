@@ -118,10 +118,10 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=64)
     args = parser.parse_args()
     frozen_path = ROOT / "results/respiratory_ahi_physionet2018.json"
-    frozen = json.loads(frozen_path.read_text())
+    frozen = json.loads(frozen_path.read_text(encoding="utf-8"))
     baseline = ROOT / "results/respiratory_baseline_physionet2018.json"
     bundle = joblib.load(baseline.with_suffix(".joblib"))
-    if file_sha256(baseline.with_suffix(".joblib")) != json.loads(baseline.read_text())["model_sha256"]:
+    if file_sha256(baseline.with_suffix(".joblib")) != json.loads(baseline.read_text(encoding="utf-8"))["model_sha256"]:
         raise SystemExit("Sonde SleepFM modifiée")
     threshold = float(frozen["thresholds"]["sleepfm"])
     nights_npz = np.load(ROOT / "results/respiratory_ahi_physionet2018.nights.npz", allow_pickle=True)
@@ -133,7 +133,7 @@ def main() -> None:
     checkpoint = ROOT / "third_party/sleepfm/sleepfm/checkpoint/best.pt"
     encoders = SleepFMEncoders(checkpoint, embedding_dim=512).eval()
     partial = args.out.with_suffix(".partial.json")
-    nights = json.loads(partial.read_text()) if partial.exists() else {}
+    nights = json.loads(partial.read_text(encoding="utf-8")) if partial.exists() else {}
     todo = [s for s in subjects if s not in nights]
     print(f"{len(nights)} nuit(s) déjà faites, {len(todo)} à traiter")
 

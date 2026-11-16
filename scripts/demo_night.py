@@ -54,7 +54,7 @@ def night_data(
     if not np.isfinite(result["onset_s"]).all():
         raise ValueError("Temps d'origine absents")
     if respiratory is not None:
-        report = json.loads(respiratory.read_text())
+        report = json.loads(respiratory.read_text(encoding="utf-8"))
         if report.get("status") != "terminé" or subject not in report["partitions"]["test"]:
             raise ValueError("Nuit absente du test respiratoire terminé")
         archive = respiratory.with_suffix(".predictions.npz")
@@ -76,7 +76,7 @@ def night_data(
         }
         result["sources"]["respiratory_sha256"] = file_sha256(respiratory)
         if labels is not None:
-            label_manifest = json.loads((labels / "manifest.json").read_text())
+            label_manifest = json.loads((labels / "manifest.json").read_text(encoding="utf-8"))
             if file_sha256(labels / "manifest.json") != report["label_manifest_sha256"]:
                 raise ValueError("Manifeste des labels différent du run")
             label_path = labels / f"{subject}.npz"
@@ -87,7 +87,7 @@ def night_data(
     if comparison is not None:
         if respiratory is None:
             raise ValueError("La comparaison exige la baseline respiratoire de référence")
-        report = json.loads(comparison.read_text())
+        report = json.loads(comparison.read_text(encoding="utf-8"))
         if (
             report.get("status") != "terminé"
             or subject not in report["partitions"]["test"]

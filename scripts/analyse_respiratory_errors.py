@@ -124,13 +124,13 @@ def annotations_by_type(record: Path, onsets) -> tuple[np.ndarray, np.ndarray]:
 
 
 def load_inputs(args) -> tuple[dict, dict, dict, dict]:
-    report = json.loads(args.comparison.read_text())
+    report = json.loads(args.comparison.read_text(encoding="utf-8"))
     if report.get("status") != "terminé":
         raise ValueError("Comparaison non terminée")
-    baseline = json.loads(args.baseline.read_text())
+    baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
     if file_sha256(args.baseline) != report["baseline_sha256"]:
         raise ValueError("Baseline différente de la comparaison")
-    inventory = json.loads((args.labels_dir / "manifest.json").read_text())
+    inventory = json.loads((args.labels_dir / "manifest.json").read_text(encoding="utf-8"))
     if file_sha256(args.labels_dir / "manifest.json") != report["label_manifest_sha256"]:
         raise ValueError("Labels différents de la comparaison")
     archive = args.comparison.with_suffix(".predictions.npz")
