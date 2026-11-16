@@ -1,0 +1,9 @@
+{
+  "cohort": "ucddb",
+  "frozen_ahi_sha256": "eda69eb95c167a1df729b4c728e744ef0275a4ec725b7ace2727f40954bd2990",
+  "out": "results/ucddb_ahi_v2",
+  "plan_sha256": "eddd2bc1b6d5dd52644122ceb4bd8b242ef23de00aacf58c4683dc26f133fc89",
+  "report_sha256": "414c0b843e0c18406fd62833fab62f58cb35023ec8614d89808ab5f4f42ac4e3",
+  "state": "completed",
+  "subjects_sha256": "ee768b212108e647f9dbf6b8aedb398fd82385da67e005c93cf3dfaf376a5411"
+}

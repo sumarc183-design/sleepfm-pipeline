@@ -1,0 +1,227 @@
+{
+  "artifacts": {
+    "code.zip": {
+      "file": "ucddb_ahi_v2.code.zip",
+      "sha256": "f51da0868f5af4b96c4216ecd4fbd97b85cda5dfa9b25ee09278c6c6f7c3cfaf"
+    },
+    "nights.npz": {
+      "file": "ucddb_ahi_v2.nights.npz",
+      "sha256": "00eaac84ae61189826d55a0d23b3d1b0f3d3270c42c6bc0fdb9867a1aae49848"
+    }
+  },
+  "bootstrap": {
+    "auc_difference_osf_minus_sleepfm_ci95": [
+      0.22218614718614718,
+      0.5
+    ],
+    "ci95": {
+      "osf": {
+        "auc_rate": [
+          0.7221861471861472,
+          1.0
+        ],
+        "sensitivity": [
+          0.23076923076923078,
+          0.7647058823529411
+        ],
+        "specificity": [
+          1.0,
+          1.0
+        ]
+      },
+      "sleepfm": {
+        "auc_rate": [
+          0.5,
+          0.5
+        ],
+        "sensitivity": [
+          0.0,
+          0.0
+        ],
+        "specificity": [
+          1.0,
+          1.0
+        ]
+      }
+    },
+    "draws": 1000,
+    "seed": 42,
+    "skipped_draws": 0
+  },
+  "calibration": {
+    "osf": {
+      "probability_sum": {
+        "a": -17.522697012844723,
+        "b": 0.9970068888094298
+      },
+      "rate": {
+        "a": -1.897994276555649,
+        "b": 1.0253058682724945
+      }
+    },
+    "sleepfm": {
+      "probability_sum": {
+        "a": -15.320388610716352,
+        "b": 0.8959847352703884
+      },
+      "rate": {
+        "a": 1.9918462942875743,
+        "b": 0.8687809295299882
+      }
+    }
+  },
+  "code_files": {
+    "scripts/embed_nsrr.py": "7dc8a52ba427dedb04fe4cddc641de136f8e678b900d0bb28e881834d17a07e3",
+    "scripts/embed_osf_physionet2018.py": "81cf04428987fc103937d50a37eba4b30c83e15b186b2f7d3d7eb6cee651b3d3",
+    "scripts/estimate_respiratory_ahi.py": "08679991cd837afcc1662cac5dfcafbb67b5caa825eeb0a8a6ec51052b461452",
+    "scripts/evaluate_nsrr_ahi.py": "6e7d9e4d47b84e796cdd1fb3dbae4dd54285436cf9f8c7b8585814e7789c6ffb",
+    "src/data/ahi.py": "231a76c1d875421b424c9bc73083ac0c5737ae88983fa4c32cf7fa0ec45cf168",
+    "src/data/nsrr_annotations.py": "5cd7b7e7a53d2b27fdec71601842624714f84c7af2600eca9b44a5595bc808ef",
+    "src/data/nsrr_cache.py": "cce4e9fb084c687a123dd4439243266836afece59fafcede62c042fb3748aaaf",
+    "src/data/nsrr_channels.py": "0b0beb76afac9c4cfe731d529fdf4a94aa14c783b61b76d10dbf51dc006cb0b7",
+    "src/data/nsrr_signals.py": "aae4318924912b0569c17136784709096f663811afa31da2e350ba98569c8ba6",
+    "src/data/osf_input.py": "58215dfb8e0ef2d097db1ac1e8807d04aa9320827687c7aeefc07e50461de7e3",
+    "src/data/ucddb_annotations.py": "cb32360ade864f7e5b8f6cc7870742ba1cce6e8e641c44e41e5b8b87890ff441"
+  },
+  "cohort": "ucddb",
+  "command": [
+    "scripts/evaluate_nsrr_ahi.py",
+    "--cohort",
+    "ucddb",
+    "--embeddings",
+    "embeddings/ucddb_v2",
+    "--annotations-dir",
+    "data/raw/ucddb",
+    "--out",
+    "results/ucddb_ahi_v2",
+    "--plan",
+    "../Journal/Plan contrôle externe IAH UCDDB PSG-Audio 13-11.md"
+  ],
+  "environment": {
+    "code_commit": "2ca8f2d597bea68bdfbc06a05f0b848947ee4f92",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "untracked_code": [],
+    "xgboost": null
+  },
+  "kind": "nsrr_ahi_confirmation",
+  "nights": {
+    "evaluated": 25,
+    "excluded": {},
+    "listed": 25,
+    "positive_15": 14
+  },
+  "policy": {
+    "min_sleep_h": 1.0,
+    "xml_overrun_tolerance_s": 30.0
+  },
+  "results": {
+    "osf": {
+      "auc_rate": 0.8896103896103896,
+      "bland_altman": {
+        "bias": -11.05548347713799,
+        "lower": -31.84926989332893,
+        "upper": 9.73830293905295
+      },
+      "confusion_15": {
+        "false_negative": 7,
+        "false_positive": 0,
+        "true_negative": 11,
+        "true_positive": 7
+      },
+      "mae": 11.404405154837972,
+      "primary": {
+        "sensitivity": 0.5,
+        "specificity": 1.0
+      },
+      "secondary_probability_sum": {
+        "sensitivity": 0.5714285714285714,
+        "specificity": 0.9090909090909091
+      },
+      "spearman": 0.7775214005211314,
+      "weighted_kappa_linear": 0.3674367436743675
+    },
+    "sleepfm": {
+      "auc_rate": 0.5,
+      "bland_altman": {
+        "bias": -22.564230851714363,
+        "lower": -63.64524521755922,
+        "upper": 18.516783514130495
+      },
+      "confusion_15": {
+        "false_negative": 14,
+        "false_positive": 0,
+        "true_negative": 11,
+        "true_positive": 0
+      },
+      "mae": 22.564230851714363,
+      "primary": {
+        "sensitivity": 0.0,
+        "specificity": 1.0
+      },
+      "secondary_probability_sum": {
+        "sensitivity": 0.0,
+        "specificity": 1.0
+      },
+      "spearman": NaN,
+      "weighted_kappa_linear": 0.0
+    }
+  },
+  "source_sha256": {
+    "caches": {
+      "ucddb002": "5bd5d4de8ee9b76deb9138d0e36f41ec26d4c0c626a39732beca99147de664fe",
+      "ucddb003": "7d47197aadbd44f0595f6cbc23985401666638caf8dfbb08ed5e699d370b7641",
+      "ucddb005": "493ab35edbae3a2b2f92f4d69e313ac2bd2fc9c8a3304a0ee8ef714d00d9691b",
+      "ucddb006": "827fa1b86f2331cc9a6d76f3a4df7d78691948db19d460da538956448c41ce23",
+      "ucddb007": "dea84328dcf98d4650eb739ef428828cd9658d862397b4c813afcb4c0f68acdc",
+      "ucddb008": "b2cfe3487b00da8d47b64dc4bca392e6a1ca07604b8e429567e05d0090e74365",
+      "ucddb009": "4a1fb6b64e92a7f471e30472aae540cfa75f4b8a7bfd0db7933b80001781a65f",
+      "ucddb010": "8bc07258157c83837aaa75b7bb466740888f038249ab45d9d583f574866e8a20",
+      "ucddb011": "6005fc59b78623bf8e092783536c7153e53fc14292960cfc79c3e2fe78f2d495",
+      "ucddb012": "e53a09fce34f9e47f798546196aed05fba47396fda993370d33299ba4b8f9428",
+      "ucddb013": "41f47d711328124c4dca8b898c8a06f92a4516ab2ffd5233eeeea5b14e963c8e",
+      "ucddb014": "d22da1ec70080657330687e297ccac4e70d12849bdf41ecde3b4cc1e82325952",
+      "ucddb015": "003b3a903e5b24f011438357c4f9ce34f56c6de8576ab94220a664df33020a1b",
+      "ucddb017": "bc4dfdbf94c69636751ce1260e8ffd01fdf60d82ac936c47b55ef948101b6eba",
+      "ucddb018": "96bfb4bad204108005110de4345cb105cf7825fd5baa6fdc4c5e330b15308bcd",
+      "ucddb019": "8cfebc5b933ba106c78c243056114533276232a443687ed94fb88fbe4421398f",
+      "ucddb020": "bc5126ba76b9267704b2434a3af83c01c28f028ef9d886b883d7a7278a0f3454",
+      "ucddb021": "8381f7e1c5c8af3e98a9ab0fa6939fc72481715774f1b818525abaaab9b12c6e",
+      "ucddb022": "ea92071394f4928c4b9959ca29f73169a5bc14f97d6287175bc26516f70a41e2",
+      "ucddb023": "90445a5deb2906c0ecbca5ac7950abe0bf5ce9e8a6d4f780e770b9350a86093c",
+      "ucddb024": "4664639ec9065c2618c9e194ed644433febbd5aba41ca17c6d5bc4d68592c3db",
+      "ucddb025": "27c6bca0cf844ca8c422e2a0d69dde99f978563d7de9d9e05288a8d11efb0ebb",
+      "ucddb026": "05b9e39a219cfb869684f94fbca669c4706df3fccbe2fc93b71819f167f0c292",
+      "ucddb027": "4c6908d4b10304125cf3ff40bb4a72326ef8ce1c2b01cc8c19cd7e4a047035c9",
+      "ucddb028": "471238a64960966048623ee6e765d138cac3fd59ef94e45aeb0076b987b0bba8"
+    },
+    "embeddings_manifest": "add8e05ba47d09f064c0f9242a75577a05ddb69817ec68bf1f025ad7c422081a",
+    "frozen_ahi": "eda69eb95c167a1df729b4c728e744ef0275a4ec725b7ace2727f40954bd2990",
+    "plan": "eddd2bc1b6d5dd52644122ceb4bd8b242ef23de00aacf58c4683dc26f133fc89",
+    "subjects": "ee768b212108e647f9dbf6b8aedb398fd82385da67e005c93cf3dfaf376a5411"
+  },
+  "success_criterion": {
+    "applies": false,
+    "lower_bound": 0.6,
+    "models": {
+      "osf": {
+        "sensitivity_lower": 0.23076923076923078,
+        "specificity_lower": 1.0,
+        "success": false
+      },
+      "sleepfm": {
+        "sensitivity_lower": 0.0,
+        "specificity_lower": 1.0,
+        "success": false
+      }
+    }
+  },
+  "thresholds": {
+    "osf": 0.763603687286377,
+    "sleepfm": 0.693376898765564
+  }
+}
