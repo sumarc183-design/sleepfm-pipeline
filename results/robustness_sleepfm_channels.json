@@ -1,0 +1,1178 @@
+{
+  "conditions": {
+    "eeg_mesa": {
+      "rates": {},
+      "zero": [
+        "F3-M2",
+        "F4-M1",
+        "C3-M2",
+        "O1-M2",
+        "O2-M1"
+      ]
+    },
+    "intact": {
+      "rates": {},
+      "zero": []
+    },
+    "mesa_like": {
+      "rates": {
+        "ABD": 32,
+        "AIRFLOW": 32,
+        "CHEST": 32,
+        "SaO2": 1
+      },
+      "zero": [
+        "F3-M2",
+        "F4-M1",
+        "C3-M2",
+        "O1-M2",
+        "O2-M1"
+      ]
+    },
+    "resp_8hz": {
+      "rates": {
+        "ABD": 8,
+        "AIRFLOW": 8,
+        "CHEST": 8,
+        "SaO2": 8
+      },
+      "zero": []
+    },
+    "shhs_like": {
+      "rates": {
+        "ABD": 10,
+        "AIRFLOW": 10,
+        "CHEST": 10,
+        "SaO2": 1
+      },
+      "zero": [
+        "F3-M2",
+        "F4-M1",
+        "O1-M2",
+        "O2-M1"
+      ]
+    },
+    "ucddb_like": {
+      "rates": {
+        "ABD": 8,
+        "AIRFLOW": 8,
+        "CHEST": 8,
+        "SaO2": 8
+      },
+      "zero": [
+        "F3-M2",
+        "F4-M1",
+        "O1-M2",
+        "O2-M1"
+      ]
+    }
+  },
+  "environment": {
+    "code_commit": "d623f96e0e45245890a50b07446c760d256515ce",
+    "code_modified": false,
+    "numpy": "1.26.4",
+    "platform": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.12.7",
+    "scikit-learn": "1.9.1",
+    "torch": "2.2.2",
+    "untracked_code": [],
+    "xgboost": null
+  },
+  "frozen_ahi_sha256": "eda69eb95c167a1df729b4c728e744ef0275a4ec725b7ace2727f40954bd2990",
+  "n_nights": 40,
+  "nights": {
+    "tr03-0304": {
+      "eeg_mesa": {
+        "max_probability": 0.9957358837127686,
+        "rate": 22.564102564102562
+      },
+      "intact": {
+        "max_probability": 0.9989473223686218,
+        "rate": 32.934472934472936
+      },
+      "mesa_like": {
+        "max_probability": 0.6496893167495728,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.7921773791313171,
+        "rate": 0.6837606837606838
+      },
+      "shhs_like": {
+        "max_probability": 0.6785454154014587,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.7381473779678345,
+        "rate": 0.11396011396011396
+      }
+    },
+    "tr03-0396": {
+      "eeg_mesa": {
+        "max_probability": 0.8990374207496643,
+        "rate": 1.1085450346420322
+      },
+      "intact": {
+        "max_probability": 0.9747427701950073,
+        "rate": 3.741339491916859
+      },
+      "mesa_like": {
+        "max_probability": 0.4562057852745056,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.6710795760154724,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.4574020504951477,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.4938841164112091,
+        "rate": 0.0
+      }
+    },
+    "tr03-0541": {
+      "eeg_mesa": {
+        "max_probability": 0.9547742009162903,
+        "rate": 1.3756613756613758
+      },
+      "intact": {
+        "max_probability": 0.9903870224952698,
+        "rate": 4.761904761904762
+      },
+      "mesa_like": {
+        "max_probability": 0.19355984032154083,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.6144830584526062,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.33179768919944763,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.47319719195365906,
+        "rate": 0.0
+      }
+    },
+    "tr03-0672": {
+      "eeg_mesa": {
+        "max_probability": 0.9814629554748535,
+        "rate": 7.430340557275542
+      },
+      "intact": {
+        "max_probability": 0.9943583607673645,
+        "rate": 28.60681114551084
+      },
+      "mesa_like": {
+        "max_probability": 0.2494274377822876,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.6372696161270142,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.3617347776889801,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.48901280760765076,
+        "rate": 0.0
+      }
+    },
+    "tr03-0686": {
+      "eeg_mesa": {
+        "max_probability": 0.8780047297477722,
+        "rate": 1.7758985200845665
+      },
+      "intact": {
+        "max_probability": 0.9709845185279846,
+        "rate": 15.47568710359408
+      },
+      "mesa_like": {
+        "max_probability": 0.23819369077682495,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.7350978851318359,
+        "rate": 0.12684989429175475
+      },
+      "shhs_like": {
+        "max_probability": 0.279033899307251,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.4419293701648712,
+        "rate": 0.0
+      }
+    },
+    "tr03-0733": {
+      "eeg_mesa": {
+        "max_probability": 0.9982292056083679,
+        "rate": 28.036253776435043
+      },
+      "intact": {
+        "max_probability": 0.9996054768562317,
+        "rate": 31.661631419939575
+      },
+      "mesa_like": {
+        "max_probability": 0.5047124624252319,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.7340371012687683,
+        "rate": 0.36253776435045315
+      },
+      "shhs_like": {
+        "max_probability": 0.3563528060913086,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.6101028323173523,
+        "rate": 0.0
+      }
+    },
+    "tr03-0764": {
+      "eeg_mesa": {
+        "max_probability": 0.7634665966033936,
+        "rate": 0.13029315960912052
+      },
+      "intact": {
+        "max_probability": 0.8577601909637451,
+        "rate": 2.0846905537459284
+      },
+      "mesa_like": {
+        "max_probability": 0.34601494669914246,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.37636566162109375,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.29492878913879395,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.347895085811615,
+        "rate": 0.0
+      }
+    },
+    "tr03-0879": {
+      "eeg_mesa": {
+        "max_probability": 0.9964224696159363,
+        "rate": 24.88120950323974
+      },
+      "intact": {
+        "max_probability": 0.9993385672569275,
+        "rate": 43.54211663066955
+      },
+      "mesa_like": {
+        "max_probability": 0.38379305601119995,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.8807845711708069,
+        "rate": 2.85097192224622
+      },
+      "shhs_like": {
+        "max_probability": 0.6382735371589661,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.8055023550987244,
+        "rate": 0.38876889848812096
+      }
+    },
+    "tr03-1294": {
+      "eeg_mesa": {
+        "max_probability": 0.9933704137802124,
+        "rate": 43.383545770567785
+      },
+      "intact": {
+        "max_probability": 0.9987733960151672,
+        "rate": 51.58748551564311
+      },
+      "mesa_like": {
+        "max_probability": 0.4488796889781952,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.8480810523033142,
+        "rate": 3.05909617612978
+      },
+      "shhs_like": {
+        "max_probability": 0.49631959199905396,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.6128347516059875,
+        "rate": 0.0
+      }
+    },
+    "tr03-1319": {
+      "eeg_mesa": {
+        "max_probability": 0.9916974306106567,
+        "rate": 20.320366132723112
+      },
+      "intact": {
+        "max_probability": 0.9985754489898682,
+        "rate": 29.382151029748286
+      },
+      "mesa_like": {
+        "max_probability": 0.406166672706604,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.8839017748832703,
+        "rate": 2.196796338672769
+      },
+      "shhs_like": {
+        "max_probability": 0.44371363520622253,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.6203532814979553,
+        "rate": 0.0
+      }
+    },
+    "tr04-0255": {
+      "eeg_mesa": {
+        "max_probability": 0.936901330947876,
+        "rate": 5.257142857142857
+      },
+      "intact": {
+        "max_probability": 0.9800221920013428,
+        "rate": 11.885714285714286
+      },
+      "mesa_like": {
+        "max_probability": 0.13666599988937378,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.43320411443710327,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.130766823887825,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.2669574022293091,
+        "rate": 0.0
+      }
+    },
+    "tr04-0265": {
+      "eeg_mesa": {
+        "max_probability": 0.9667087197303772,
+        "rate": 5.699614890885751
+      },
+      "intact": {
+        "max_probability": 0.9801701903343201,
+        "rate": 11.553273427471117
+      },
+      "mesa_like": {
+        "max_probability": 0.8719493746757507,
+        "rate": 0.46213093709884473
+      },
+      "resp_8hz": {
+        "max_probability": 0.5803341865539551,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.1925915628671646,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.4613059163093567,
+        "rate": 0.0
+      }
+    },
+    "tr04-0468": {
+      "eeg_mesa": {
+        "max_probability": 0.9397648572921753,
+        "rate": 0.7461139896373058
+      },
+      "intact": {
+        "max_probability": 0.9595325589179993,
+        "rate": 1.1191709844559585
+      },
+      "mesa_like": {
+        "max_probability": 0.178428515791893,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.17576605081558228,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.16042369604110718,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.1653275042772293,
+        "rate": 0.0
+      }
+    },
+    "tr04-0569": {
+      "eeg_mesa": {
+        "max_probability": 0.9793341159820557,
+        "rate": 4.753623188405797
+      },
+      "intact": {
+        "max_probability": 0.9914504885673523,
+        "rate": 9.159420289855072
+      },
+      "mesa_like": {
+        "max_probability": 0.4817811846733093,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.376844584941864,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.3024156391620636,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.29841968417167664,
+        "rate": 0.0
+      }
+    },
+    "tr04-1032": {
+      "eeg_mesa": {
+        "max_probability": 0.9639063477516174,
+        "rate": 11.684901531728666
+      },
+      "intact": {
+        "max_probability": 0.9465279579162598,
+        "rate": 10.76586433260394
+      },
+      "mesa_like": {
+        "max_probability": 0.6164876818656921,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.49265390634536743,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.4670155346393585,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.3632943034172058,
+        "rate": 0.0
+      }
+    },
+    "tr05-0048": {
+      "eeg_mesa": {
+        "max_probability": 0.9248042702674866,
+        "rate": 2.833787465940054
+      },
+      "intact": {
+        "max_probability": 0.9654854536056519,
+        "rate": 11.771117166212534
+      },
+      "mesa_like": {
+        "max_probability": 0.3703465759754181,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.33944687247276306,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.35260704159736633,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.3471773862838745,
+        "rate": 0.0
+      }
+    },
+    "tr05-0114": {
+      "eeg_mesa": {
+        "max_probability": 0.9772935509681702,
+        "rate": 6.148215919487649
+      },
+      "intact": {
+        "max_probability": 0.9882431626319885,
+        "rate": 18.115279048490397
+      },
+      "mesa_like": {
+        "max_probability": 0.37375348806381226,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.6346596479415894,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.31866443157196045,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.42050057649612427,
+        "rate": 0.0
+      }
+    },
+    "tr05-0531": {
+      "eeg_mesa": {
+        "max_probability": 0.9710025787353516,
+        "rate": 16.2564632885212
+      },
+      "intact": {
+        "max_probability": 0.9886475205421448,
+        "rate": 25.563598759048602
+      },
+      "mesa_like": {
+        "max_probability": 0.3333696722984314,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.6660449504852295,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.4524584114551544,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.6511989235877991,
+        "rate": 0.0
+      }
+    },
+    "tr05-0629": {
+      "eeg_mesa": {
+        "max_probability": 0.9611678719520569,
+        "rate": 18.597285067873305
+      },
+      "intact": {
+        "max_probability": 0.9933061003684998,
+        "rate": 45.61085972850679
+      },
+      "mesa_like": {
+        "max_probability": 0.6148898005485535,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.7183015942573547,
+        "rate": 0.4072398190045249
+      },
+      "shhs_like": {
+        "max_probability": 0.53143310546875,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.5191770792007446,
+        "rate": 0.0
+      }
+    },
+    "tr05-0664": {
+      "eeg_mesa": {
+        "max_probability": 0.9620845913887024,
+        "rate": 2.305084745762712
+      },
+      "intact": {
+        "max_probability": 0.994110643863678,
+        "rate": 8.677966101694915
+      },
+      "mesa_like": {
+        "max_probability": 0.2497226744890213,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.7458467483520508,
+        "rate": 0.13559322033898305
+      },
+      "shhs_like": {
+        "max_probability": 0.2727719247341156,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.3544902205467224,
+        "rate": 0.0
+      }
+    },
+    "tr05-0744": {
+      "eeg_mesa": {
+        "max_probability": 0.9871819019317627,
+        "rate": 24.07258064516129
+      },
+      "intact": {
+        "max_probability": 0.9960799813270569,
+        "rate": 48.508064516129025
+      },
+      "mesa_like": {
+        "max_probability": 0.8789292573928833,
+        "rate": 1.0887096774193548
+      },
+      "resp_8hz": {
+        "max_probability": 0.9401973485946655,
+        "rate": 9.07258064516129
+      },
+      "shhs_like": {
+        "max_probability": 0.8298436999320984,
+        "rate": 0.36290322580645157
+      },
+      "ucddb_like": {
+        "max_probability": 0.7746527791023254,
+        "rate": 0.6048387096774193
+      }
+    },
+    "tr05-0849": {
+      "eeg_mesa": {
+        "max_probability": 0.971399188041687,
+        "rate": 20.02209944751381
+      },
+      "intact": {
+        "max_probability": 0.9861387610435486,
+        "rate": 26.121546961325965
+      },
+      "mesa_like": {
+        "max_probability": 0.35687094926834106,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.4580818712711334,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.3012150824069977,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.37662985920906067,
+        "rate": 0.0
+      }
+    },
+    "tr05-0905": {
+      "eeg_mesa": {
+        "max_probability": 0.9939204454421997,
+        "rate": 23.736263736263737
+      },
+      "intact": {
+        "max_probability": 0.9969092011451721,
+        "rate": 28.57142857142857
+      },
+      "mesa_like": {
+        "max_probability": 0.6604859828948975,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.8006747961044312,
+        "rate": 0.5860805860805861
+      },
+      "shhs_like": {
+        "max_probability": 0.46304967999458313,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.6928139328956604,
+        "rate": 0.0
+      }
+    },
+    "tr05-0949": {
+      "eeg_mesa": {
+        "max_probability": 0.991923987865448,
+        "rate": 74.94926719278467
+      },
+      "intact": {
+        "max_probability": 0.9956598877906799,
+        "rate": 106.33596392333709
+      },
+      "mesa_like": {
+        "max_probability": 0.5261568427085876,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.4780195951461792,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.5334572792053223,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.3682720959186554,
+        "rate": 0.0
+      }
+    },
+    "tr05-1034": {
+      "eeg_mesa": {
+        "max_probability": 0.8214108347892761,
+        "rate": 0.13544018058690743
+      },
+      "intact": {
+        "max_probability": 0.8315091729164124,
+        "rate": 0.9480812641083521
+      },
+      "mesa_like": {
+        "max_probability": 0.1329561024904251,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.2521192729473114,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.14410720765590668,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.23298263549804688,
+        "rate": 0.0
+      }
+    },
+    "tr05-1042": {
+      "eeg_mesa": {
+        "max_probability": 0.9298052191734314,
+        "rate": 3.991130820399113
+      },
+      "intact": {
+        "max_probability": 0.9716631770133972,
+        "rate": 22.350332594235034
+      },
+      "mesa_like": {
+        "max_probability": 0.4840235412120819,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.6840909123420715,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.3413543403148651,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.4822878837585449,
+        "rate": 0.0
+      }
+    },
+    "tr05-1371": {
+      "eeg_mesa": {
+        "max_probability": 0.7359001040458679,
+        "rate": 0.12526096033402923
+      },
+      "intact": {
+        "max_probability": 0.8356364369392395,
+        "rate": 1.2526096033402923
+      },
+      "mesa_like": {
+        "max_probability": 0.12056658416986465,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.3575865924358368,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.15704795718193054,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.22507841885089874,
+        "rate": 0.0
+      }
+    },
+    "tr05-1386": {
+      "eeg_mesa": {
+        "max_probability": 0.9902128577232361,
+        "rate": 19.93730407523511
+      },
+      "intact": {
+        "max_probability": 0.9926784038543701,
+        "rate": 26.4576802507837
+      },
+      "mesa_like": {
+        "max_probability": 0.8255230188369751,
+        "rate": 0.12539184952978058
+      },
+      "resp_8hz": {
+        "max_probability": 0.8065540194511414,
+        "rate": 0.7523510971786834
+      },
+      "shhs_like": {
+        "max_probability": 0.7711619734764099,
+        "rate": 0.12539184952978058
+      },
+      "ucddb_like": {
+        "max_probability": 0.7425944209098816,
+        "rate": 0.3761755485893417
+      }
+    },
+    "tr06-0103": {
+      "eeg_mesa": {
+        "max_probability": 0.9746623635292053,
+        "rate": 9.193054136874363
+      },
+      "intact": {
+        "max_probability": 0.9897856116294861,
+        "rate": 24.269662921348313
+      },
+      "mesa_like": {
+        "max_probability": 0.7887176871299744,
+        "rate": 0.12257405515832483
+      },
+      "resp_8hz": {
+        "max_probability": 0.8431728482246399,
+        "rate": 0.9805924412665986
+      },
+      "shhs_like": {
+        "max_probability": 0.7569404244422913,
+        "rate": 0.24514811031664965
+      },
+      "ucddb_like": {
+        "max_probability": 0.699733316898346,
+        "rate": 0.12257405515832483
+      }
+    },
+    "tr06-0108": {
+      "eeg_mesa": {
+        "max_probability": 0.621613085269928,
+        "rate": 0.0
+      },
+      "intact": {
+        "max_probability": 0.8425703644752502,
+        "rate": 1.0333692142088267
+      },
+      "mesa_like": {
+        "max_probability": 0.47676047682762146,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.4126283824443817,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.4620942175388336,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.2991081774234772,
+        "rate": 0.0
+      }
+    },
+    "tr06-0249": {
+      "eeg_mesa": {
+        "max_probability": 0.7145481109619141,
+        "rate": 0.2441505595116989
+      },
+      "intact": {
+        "max_probability": 0.9145479798316956,
+        "rate": 6.958290946083419
+      },
+      "mesa_like": {
+        "max_probability": 0.3235946297645569,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.575566828250885,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.31235647201538086,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.3077215552330017,
+        "rate": 0.0
+      }
+    },
+    "tr06-0262": {
+      "eeg_mesa": {
+        "max_probability": 0.7495207786560059,
+        "rate": 0.4157043879907621
+      },
+      "intact": {
+        "max_probability": 0.9288724660873413,
+        "rate": 3.464203233256351
+      },
+      "mesa_like": {
+        "max_probability": 0.4420730769634247,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.4816390872001648,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.27774858474731445,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.3429064452648163,
+        "rate": 0.0
+      }
+    },
+    "tr06-0313": {
+      "eeg_mesa": {
+        "max_probability": 0.9166895747184753,
+        "rate": 2.737094837935174
+      },
+      "intact": {
+        "max_probability": 0.9807997941970825,
+        "rate": 12.965186074429772
+      },
+      "mesa_like": {
+        "max_probability": 0.4076368808746338,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.5590037107467651,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.2893885672092438,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.37892940640449524,
+        "rate": 0.0
+      }
+    },
+    "tr06-0404": {
+      "eeg_mesa": {
+        "max_probability": 0.9782336354255676,
+        "rate": 18.549346016646847
+      },
+      "intact": {
+        "max_probability": 0.9952802658081055,
+        "rate": 35.81450653983353
+      },
+      "mesa_like": {
+        "max_probability": 0.8583841323852539,
+        "rate": 0.8561236623067776
+      },
+      "resp_8hz": {
+        "max_probability": 0.8312696218490601,
+        "rate": 1.426872770511296
+      },
+      "shhs_like": {
+        "max_probability": 0.6226245164871216,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.7311112284660339,
+        "rate": 0.2853745541022592
+      }
+    },
+    "tr06-0429": {
+      "eeg_mesa": {
+        "max_probability": 0.7408410310745239,
+        "rate": 0.4086265607264472
+      },
+      "intact": {
+        "max_probability": 0.9066855907440186,
+        "rate": 2.4517593643586832
+      },
+      "mesa_like": {
+        "max_probability": 0.2818470597267151,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.49254855513572693,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.18576523661613464,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.2924695611000061,
+        "rate": 0.0
+      }
+    },
+    "tr06-0452": {
+      "eeg_mesa": {
+        "max_probability": 0.8372390866279602,
+        "rate": 0.38176033934252385
+      },
+      "intact": {
+        "max_probability": 0.9087834358215332,
+        "rate": 4.7083775185577945
+      },
+      "mesa_like": {
+        "max_probability": 0.19786612689495087,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.3597145974636078,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.1792280226945877,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.19551455974578857,
+        "rate": 0.0
+      }
+    },
+    "tr06-0515": {
+      "eeg_mesa": {
+        "max_probability": 0.9938055276870728,
+        "rate": 38.2258064516129
+      },
+      "intact": {
+        "max_probability": 0.9979386925697327,
+        "rate": 57.45967741935483
+      },
+      "mesa_like": {
+        "max_probability": 0.7880180478096008,
+        "rate": 0.12096774193548386
+      },
+      "resp_8hz": {
+        "max_probability": 0.7973747253417969,
+        "rate": 1.9354838709677418
+      },
+      "shhs_like": {
+        "max_probability": 0.5740564465522766,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.6225529909133911,
+        "rate": 0.0
+      }
+    },
+    "tr06-0570": {
+      "eeg_mesa": {
+        "max_probability": 0.973628044128418,
+        "rate": 6.659551760939167
+      },
+      "intact": {
+        "max_probability": 0.9922319650650024,
+        "rate": 17.28922091782284
+      },
+      "mesa_like": {
+        "max_probability": 0.5064409971237183,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.7072122097015381,
+        "rate": 0.384204909284952
+      },
+      "shhs_like": {
+        "max_probability": 0.5424677729606628,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.5154026746749878,
+        "rate": 0.0
+      }
+    },
+    "tr06-0696": {
+      "eeg_mesa": {
+        "max_probability": 0.9350709915161133,
+        "rate": 4.246713852376137
+      },
+      "intact": {
+        "max_probability": 0.971267580986023,
+        "rate": 14.196157735085945
+      },
+      "mesa_like": {
+        "max_probability": 0.6350120306015015,
+        "rate": 0.0
+      },
+      "resp_8hz": {
+        "max_probability": 0.4925936162471771,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.3143269121646881,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.34883400797843933,
+        "rate": 0.0
+      }
+    },
+    "tr06-0802": {
+      "eeg_mesa": {
+        "max_probability": 0.9407593607902527,
+        "rate": 0.13590033975084936
+      },
+      "intact": {
+        "max_probability": 0.959762692451477,
+        "rate": 1.6308040770101926
+      },
+      "mesa_like": {
+        "max_probability": 0.8620511889457703,
+        "rate": 0.40770101925254815
+      },
+      "resp_8hz": {
+        "max_probability": 0.5905933380126953,
+        "rate": 0.0
+      },
+      "shhs_like": {
+        "max_probability": 0.3705885708332062,
+        "rate": 0.0
+      },
+      "ucddb_like": {
+        "max_probability": 0.44440534710884094,
+        "rate": 0.0
+      }
+    }
+  },
+  "plan": "Plan robustesse SleepFM canaux PhysioNet 16-11.md",
+  "plan_sha256": "1d54fd60f6157258b7af8fef2aeb4704bfca403cf726cfdca5a37cade7d264b0",
+  "summary": {
+    "eeg_mesa": {
+      "auc_rate": 0.9473684210526315,
+      "median_rate": 5.478378874014304,
+      "median_rate_over_intact": 0.3692644595440001,
+      "prohibitive": false,
+      "spearman_reference": 0.8517823639774861,
+      "zero_rate_nights": 1
+    },
+    "intact": {
+      "auc_rate": 0.9147869674185464,
+      "median_rate": 14.835922419340012,
+      "median_rate_over_intact": 1.0,
+      "prohibitive": false,
+      "spearman_reference": 0.8240150093808631,
+      "zero_rate_nights": 0
+    },
+    "mesa_like": {
+      "auc_rate": 0.6165413533834586,
+      "median_rate": 0.0,
+      "median_rate_over_intact": 0.0,
+      "prohibitive": true,
+      "spearman_reference": 0.2532512868756467,
+      "zero_rate_nights": 33
+    },
+    "resp_8hz": {
+      "auc_rate": 0.7493734335839599,
+      "median_rate": 0.0,
+      "median_rate_over_intact": 0.0,
+      "prohibitive": true,
+      "spearman_reference": 0.5709179691527714,
+      "zero_rate_nights": 25
+    },
+    "shhs_like": {
+      "auc_rate": 0.5714285714285714,
+      "median_rate": 0.0,
+      "median_rate_over_intact": 0.0,
+      "prohibitive": true,
+      "spearman_reference": 0.20250274804348356,
+      "zero_rate_nights": 37
+    },
+    "ucddb_like": {
+      "auc_rate": 0.6428571428571429,
+      "median_rate": 0.0,
+      "median_rate_over_intact": 0.0,
+      "prohibitive": true,
+      "spearman_reference": 0.39316736128091423,
+      "zero_rate_nights": 34
+    }
+  },
+  "threshold": 0.693376898765564
+}
