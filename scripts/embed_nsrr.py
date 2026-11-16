@@ -49,7 +49,7 @@ from src.models.probe_export import run_environment  # noqa: E402
 # 4 : contrôle de préparation par voie dans la fiche, code exécuté complet (audit du 15 nov.)
 PREPARATION_VERSION = 4
 ROOT = Path(__file__).resolve().parents[1]
-EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec"}
+EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec", "psgaudio": ".edf"}
 # Tout le code exécuté de l'EDF aux embeddings (audit du 15 novembre, F2 : encodeurs et préparation OSF).
 PREPARATION_CODE = (
     "scripts/embed_nsrr.py",
@@ -59,6 +59,7 @@ PREPARATION_CODE = (
     "src/data/nsrr_signals.py",
     "src/data/osf_input.py",
     "src/data/osf_physionet2018.py",
+    "src/data/psg_audio_annotations.py",
     "src/data/ucddb_annotations.py",
     "src/models/effnet.py",
     "src/models/embeddings.py",

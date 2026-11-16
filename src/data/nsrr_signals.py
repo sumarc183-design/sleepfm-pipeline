@@ -48,6 +48,7 @@ def read_edf(path: str | Path, wanted: list[int] | None = None) -> dict:
     h = data[256:header_bytes]
     offsets = np.cumsum([0, 16, 80, 8, 8, 8, 8, 8, 80, 8]) * n_signals
     labels = _field(h, offsets[0], 16, n_signals)
+    transducers = _field(h, offsets[1], 80, n_signals)
     units = _field(h, offsets[2], 8, n_signals)
     pmin, pmax, dmin, dmax = (np.array(_field(h, offsets[k], 8, n_signals), float) for k in (3, 4, 5, 6))
     per_record = np.array(_field(h, offsets[8], 8, n_signals), int)
@@ -65,11 +66,19 @@ def read_edf(path: str | Path, wanted: list[int] | None = None) -> dict:
         signals[i] = (digital - dmin[i]) * (pmax[i] - pmin[i]) / (dmax[i] - dmin[i]) + pmin[i]
     return {
         "labels": labels,
+        "names": signal_names(labels, transducers),
+        "transducers": transducers,
         "units": units,
         "sample_rates": per_record / record_s,
         "duration_s": n_records * record_s,
         "signals": signals,
     }
+
+
+def signal_names(labels: list[str], transducers: list[str]) -> list[str]:
+    """Libellé, ou « libellé|capteur » quand le libellé est en double (PSG-Audio : `Flow Patient|Thermistor`)."""
+    counts = {label: labels.count(label) for label in labels}
+    return [f"{label}|{t}" if counts[label] > 1 else label for label, t in zip(labels, transducers, strict=True)]
 
 
 def to_256(signal: np.ndarray, rate: float) -> np.ndarray:
@@ -115,7 +124,7 @@ def nsrr_night(path: str | Path, cohort: str, respiratory_scale: RespiratoryScal
     ne sert alors pas à SleepFM.
     """
     header = read_edf(path, wanted=[])
-    plan = channel_plan(header["labels"], cohort, "sleepfm")
+    plan = channel_plan(header["names"], cohort, "sleepfm")
     present = {target: index for target, index in plan["indices"].items() if index is not None}
     median_scaled = MEDIAN_SCALED[cohort]
     if respiratory_scale is None and any(t in present for t in median_scaled):

@@ -24,9 +24,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.data.cache_contract import write_json_atomic  # noqa: E402
 
 # Noms de la documentation NSRR, à vérifier sur les premiers fichiers. SHHS : visite 1 seulement.
-SUBJECT_PATTERNS = {"mesa": r"mesa-sleep-\d{4}", "shhs1": r"shhs1-\d{6}", "ucddb": r"ucddb\d{3}"}
-EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec"}
-ANNOTATION_SUFFIX = {"mesa": "-nsrr.xml", "shhs1": "-nsrr.xml", "ucddb": "_respevt.txt"}
+SUBJECT_PATTERNS = {
+    "mesa": r"mesa-sleep-\d{4}",
+    "shhs1": r"shhs1-\d{6}",
+    "ucddb": r"ucddb\d{3}",
+    "psgaudio": r"\d{8}-100507",
+}
+EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec", "psgaudio": ".edf"}
+ANNOTATION_SUFFIX = {"mesa": "-nsrr.xml", "shhs1": "-nsrr.xml", "ucddb": "_respevt.txt", "psgaudio": ".rml"}
 
 
 def file_names(source: Path) -> list[str]:

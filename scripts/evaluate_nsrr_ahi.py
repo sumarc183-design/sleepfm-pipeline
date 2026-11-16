@@ -43,6 +43,7 @@ from src.data.ahi import AHI_CUTOFF, MIN_SLEEP_H, positive_rate  # noqa: E402
 from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
 from src.data.nsrr_annotations import parse_nsrr_xml, reference_ahi_nsrr  # noqa: E402
 from src.data.nsrr_cache import EPOCH_S, check_cache  # noqa: E402
+from src.data.psg_audio_annotations import parse_rml  # noqa: E402
 from src.data.ucddb_annotations import parse_ucddb  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
@@ -75,6 +76,11 @@ APPROVED_SUBJECTS = {
     ),
     # Contrôle externe UCDDB, liste figée le 13 novembre depuis l'index public PhysioNet.
     "ucddb": (ROOT / "configs/ucddb_subjects.json", "ee768b212108e647f9dbf6b8aedb398fd82385da67e005c93cf3dfaf376a5411"),
+    # Contrôle externe PSG-Audio, liste figée le 16 novembre depuis l'index public ScienceDB (V3).
+    "psgaudio": (
+        ROOT / "configs/psgaudio_subjects.json",
+        "c81c004c96a6cba78460a75ca1fe876b93e72d2ae384446e17b5b7b335f94e10",
+    ),
 }
 OFFICIAL_ID_COLUMN = {"mesa": "mesaid", "shhs1": "nsrrid"}
 # Contrôle externe UCDDB (plan validé le 13 novembre) : 25 nuits, descriptif seulement, sans verdict.
@@ -173,12 +179,16 @@ def uncommitted(paths) -> list[str]:
 def annotation_files(cohort: str, folder: Path, pattern: str, subject: str) -> tuple[Path, ...]:
     if cohort == "ucddb":
         return folder / f"{subject}_stage.txt", folder / f"{subject}_respevt.txt"
+    if cohort == "psgaudio":
+        return (folder / f"{subject}.rml",)
     return (folder / pattern.format(subject=subject),)
 
 
 def read_annotations(cohort: str, files: tuple[Path, ...], record: dict) -> dict:
     if cohort == "ucddb":
         return parse_ucddb(*files, start_s=record["edf_start_s"])
+    if cohort == "psgaudio":
+        return parse_rml(files[0])
     return parse_nsrr_xml(files[0])
 
 

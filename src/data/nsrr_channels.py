@@ -62,7 +62,20 @@ UCDDB_LABELS = {
     "THERMISTOR": ("Flow",),
     "SPO2": ("SpO2",),
 }
-COHORT_LABELS = {"mesa": MESA_LABELS, "shhs1": SHHS1_LABELS, "ucddb": UCDDB_LABELS}
+# PSG-Audio (contrôle externe validé le 13 novembre) : en-tête lu ; deux voies `Flow Patient`, la
+# thermistance est désignée par son capteur. EEG, EOG, EMG et ECG calibrés en µV.
+PSG_AUDIO_LABELS = {
+    "EEG_C3_M2": ("EEG C3-A2",),
+    "EEG_C4_M1": ("EEG C4-A1",),
+    "EOG_L": ("EOG LOC-A2",),
+    "EMG_CHIN": ("EMG Chin",),
+    "ECG": ("ECG I",),
+    "THORAX": ("Effort THO",),
+    "ABDOMEN": ("Effort ABD",),
+    "THERMISTOR": ("Flow Patient|Thermistor",),
+    "SPO2": ("SpO2",),
+}
+COHORT_LABELS = {"mesa": MESA_LABELS, "shhs1": SHHS1_LABELS, "ucddb": UCDDB_LABELS, "psgaudio": PSG_AUDIO_LABELS}
 
 # Entrée SleepFM -> signal NSRR. Absent = zéros. `AIRFLOW` : capteur PhysioNet non documenté.
 SLEEPFM_SOURCES = {
@@ -75,7 +88,7 @@ SLEEPFM_SOURCES = {
         "ABD": "ABDOMEN", "CHEST": "THORAX", "AIRFLOW": "THERMISTOR", "SaO2": "SPO2", "ECG": "ECG",
     },
 }  # fmt: skip
-SLEEPFM_SOURCES["ucddb"] = SLEEPFM_SOURCES["shhs1"]
+SLEEPFM_SOURCES["ucddb"] = SLEEPFM_SOURCES["psgaudio"] = SLEEPFM_SOURCES["shhs1"]
 # Entrée OSF -> signal NSRR, limitée aux canaux non nuls sur PhysioNet (PHYSIONET_TO_OSF).
 # `NP` : PhysioNet a fourni AIRFLOW ; on garde le même type de capteur (thermistance).
 OSF_SOURCES = {
@@ -88,7 +101,7 @@ OSF_SOURCES = {
         "EOG_E1_A2": "EOG_L", "EEG_C3_A2": "EEG_C3_M2", "EEG_C4_A1": "EEG_C4_M1",
     },
 }  # fmt: skip
-OSF_SOURCES["ucddb"] = OSF_SOURCES["shhs1"]
+OSF_SOURCES["ucddb"] = OSF_SOURCES["psgaudio"] = OSF_SOURCES["shhs1"]
 UNCERTAIN = {"sleepfm": ("AIRFLOW",), "osf": ("NP",)}
 # Entrées SleepFM mises à l'échelle par la règle des médianes PhysioNet, par cohorte : les sangles et
 # le débit partout ; en plus, les voies électriques non calibrées d'UCDDB (en-tête 0 à 1, « NV »).
@@ -96,6 +109,7 @@ MEDIAN_SCALED = {
     "mesa": ("ABD", "CHEST", "AIRFLOW"),
     "shhs1": ("ABD", "CHEST", "AIRFLOW"),
     "ucddb": ("ABD", "CHEST", "AIRFLOW", "C3-M2", "C4-M1", "E1-M2", "Chin1-Chin2", "ECG"),
+    "psgaudio": ("ABD", "CHEST", "AIRFLOW"),
 }
 MODEL_CHANNELS = {"sleepfm": SLEEPFM_CHANNELS, "osf": OSF_CHANNELS}
 MODEL_SOURCES = {"sleepfm": SLEEPFM_SOURCES, "osf": OSF_SOURCES}

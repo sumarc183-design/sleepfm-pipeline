@@ -242,7 +242,7 @@ def test_approved_lists_pass_metadata_checks():
 
     for cohort, (path, sha) in ev.APPROVED_SUBJECTS.items():
         subjects, digest = subject_list(path, cohort)
-        assert digest == sha and len(subjects) == {"mesa": 2056, "shhs1": 5793, "ucddb": 25}[cohort]
+        assert digest == sha and len(subjects) == {"mesa": 2056, "shhs1": 5793, "ucddb": 25, "psgaudio": 287}[cohort]
         if cohort in ev.OFFICIAL_ID_COLUMN:
             assert all(ev.subject_number(s) > 0 for s in subjects)
 
