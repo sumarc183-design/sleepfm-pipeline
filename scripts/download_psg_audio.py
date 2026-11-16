@@ -8,6 +8,8 @@ contrôle de leur continuité (heure de début de chaque tranche = fin de la pr�
 après arrêt : un patient terminé n'est jamais refait ; un patient en échec est noté et repris.
 
     python scripts/download_psg_audio.py --out data/raw/psg_audio [--limit 1]
+
+Ordre de téléchargement aléatoire, figé par la graine 42 (voir `main`).
 """
 
 from __future__ import annotations
@@ -22,6 +24,8 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -195,7 +199,10 @@ def main() -> None:
     rmls = {
         f["fileName"].removesuffix(".rml"): f for f in list_folder("/V3/APNEA_RML") if f["fileName"].endswith(".rml")
     }
-    patients = sorted(rmls)[: args.limit]
+    # Ordre aléatoire figé (graine 42) : tout préfixe téléchargé est un tirage au sort sans biais,
+    # si le téléchargement complet (environ 9 jours) devait être arrêté avant la fin.
+    order = np.random.default_rng(42).permutation(len(rmls))
+    patients = [sorted(rmls)[i] for i in order][: args.limit]
     todo = [p for p in patients if p not in log["done"]]
     print(f"{len(patients)} patients, {len(todo)} à télécharger", flush=True)
     for index, patient in enumerate(todo):
