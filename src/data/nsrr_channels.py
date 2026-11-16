@@ -164,6 +164,23 @@ def robust_scale(signal: np.ndarray) -> float:
 
 
 def physionet_median_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
+    """Règle v1 (13 novembre), conservée pour la trace : amplitude seule, sans recentrage.
+
+    Défaut trouvé sur UCDDB : une voie dont la ligne de base est loin de zéro le reste, alors que
+    les voies PhysioNet sont centrées sur 0. Remplacée par `physionet_median_centered_scale`.
+    """
+    return _median_scale(target, signal)
+
+
+def physionet_median_centered_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
+    """Règle v2 (16 novembre) : voie recentrée sur sa médiane de la nuit, puis échelle robuste
+    ramenée à la médiane PhysioNet. Les voies PhysioNet concernées ont une médiane proche de 0
+    (results/*amplitude_physionet2018.json, « median_of_medians »)."""
+    x = np.asarray(signal, dtype=np.float64)
+    return _median_scale(target, x - np.median(x))
+
+
+def _median_scale(target: str, signal: np.ndarray) -> np.ndarray:
     """Signal multiplié pour que son échelle robuste égale la médiane PhysioNet de la voie."""
     if target not in PHYSIONET_MEDIAN_SCALE:
         raise ValueError(f"{target} : pas de médiane PhysioNet établie pour cette voie")

@@ -134,3 +134,8 @@ Contrôles ajoutés après l'audit du 13 novembre (sans changement de règle, de
   manquantes comptées, valeurs négatives ou identifiants non entiers refusés.
 - **Question ouverte au tuteur** : conduite si très peu de nuits positives ou négatives sont
   évaluables (IC bootstrap dégénérés), à fixer avant le passage.
+
+Correction du 16 novembre (accord du tuteur) : la règle d'échelle passe en **v2**
+(`physionet_median_v2`). Chaque sangle et le débit sont recentrés sur leur médiane de la nuit avant
+la mise à l'échelle, car les voies PhysioNet correspondantes sont centrées sur 0. Défaut trouvé sur
+UCDDB, où des lignes de base décalées ont rendu SleepFM inutilisable. Rien d'autre ne change.

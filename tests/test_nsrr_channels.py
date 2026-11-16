@@ -73,3 +73,12 @@ def test_physionet_median_scale_rule():
         physionet_median_scale("ABD", np.zeros(100), "")
     with pytest.raises(ValueError):
         physionet_median_scale("SaO2", signal, "%")
+
+
+def test_centered_rule_removes_offset():
+    from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE, physionet_median_centered_scale, robust_scale
+
+    signal = 0.5 + 0.01 * np.sin(np.linspace(0, 300, 30000))  # plage 0 à 1, ligne de base à 0,5
+    scaled = physionet_median_centered_scale("C3-M2", signal, "NV")
+    assert abs(np.median(scaled)) < 1e-6
+    assert robust_scale(scaled) == pytest.approx(PHYSIONET_MEDIAN_SCALE["C3-M2"])

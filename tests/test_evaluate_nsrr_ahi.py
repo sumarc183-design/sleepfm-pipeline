@@ -56,7 +56,7 @@ def setup(tmp_path, frozen, monkeypatch):
     (ann / "mesa-sleep-0001-nsrr.xml").write_bytes(night_xml(n_events=3, sleep_s=1800))  # < 1 h : exclue
     (emb / "mesa-sleep-0012.skipped").write_text("EDF tronqué\n")
     contract = expected_contract(
-        "mesa", list_sha, MODELS, frozen["checkpoints"]["sleepfm"], frozen["checkpoints"]["osf"], "physionet_median_v1"
+        "mesa", list_sha, MODELS, frozen["checkpoints"]["sleepfm"], frozen["checkpoints"]["osf"], "physionet_median_v2"
     )
     (emb / "manifest.json").write_text(json.dumps(contract))
     status = {"done": SUBJECTS[:-1], "rejected": {"mesa-sleep-0012": "EDF tronqué"}, "missing": [], "complete": True}

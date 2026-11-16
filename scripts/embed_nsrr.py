@@ -9,12 +9,13 @@ où le run s'est arrêté ; une nuit refusée laisse un <sujet>.skipped motivé.
 score : l'IAH se calcule ensuite sur le Mac avec la règle figée.
 
 SleepFM exige une règle d'échelle des sangles et du débit (`--respiratory-rule`) :
-`physionet_median_v1`, validée par le tuteur le 13 novembre (médianes PhysioNet). OSF n'en a pas
+`physionet_median_v2` (16 novembre : recentrage sur la médiane de la nuit, puis médianes PhysioNet ;
+la v1 du 13 novembre, sans recentrage, reste disponible pour la trace). OSF n'en a pas
 besoin (z-score par nuit, insensible à l'échelle).
 
     python scripts/embed_nsrr.py --cohort mesa --edf-dir /kaggle/input/mesa-edf \\
         --subjects configs/nsrr_mesa_subjects.json --out embeddings/nsrr_mesa \\
-        --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt --respiratory-rule physionet_median_v1 \\
+        --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt --respiratory-rule physionet_median_v2 \\
         --osf-checkpoint third_party/osf/osf_backbone.pth
 """
 
@@ -35,12 +36,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.embed_osf_physionet2018 import embed_night as embed_osf_night  # noqa: E402
 from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
 from src.data.nsrr_cache import check_cache, record_path, validate_night_arrays  # noqa: E402
-from src.data.nsrr_channels import PHYSIONET_MEDIAN_SCALE, physionet_median_scale  # noqa: E402
+from src.data.nsrr_channels import (  # noqa: E402
+    PHYSIONET_MEDIAN_SCALE,
+    physionet_median_centered_scale,
+    physionet_median_scale,
+)
 from src.data.nsrr_signals import nsrr_night  # noqa: E402
 from src.data.ucddb_annotations import edf_start_seconds  # noqa: E402
 from src.models.probe_export import run_environment  # noqa: E402
 
-PREPARATION_VERSION = 2  # 2 : fiche par nuit, contrat complet (audit du 13 novembre)
+PREPARATION_VERSION = 3  # 2 : fiche par nuit, contrat complet (audit du 13 nov.) ; 3 : règle v2 (16 nov.)
 ROOT = Path(__file__).resolve().parents[1]
 EDF_SUFFIX = {"mesa": ".edf", "shhs1": ".edf", "ucddb": ".rec"}
 PREPARATION_CODE = (
@@ -53,7 +58,12 @@ PREPARATION_CODE = (
 )
 SLEEPFM_DIM = 1536
 # Règles d'échelle des sangles et du débit pour SleepFM (validée par le tuteur le 13 novembre 2026).
-RESPIRATORY_RULES = {"physionet_median_v1": physionet_median_scale}
+# v1 : validée le 13 novembre, conservée pour la trace (premier passage UCDDB). v2 : recentrage
+# avant mise à l'échelle, adoptée le 16 novembre après le défaut trouvé sur UCDDB (accord du tuteur).
+RESPIRATORY_RULES = {
+    "physionet_median_v1": physionet_median_scale,
+    "physionet_median_v2": physionet_median_centered_scale,
+}
 
 
 def identity_scale(target: str, signal: np.ndarray, unit: str) -> np.ndarray:
@@ -146,7 +156,7 @@ def main() -> None:
     if not models or models - {"sleepfm", "osf"}:
         parser.error("--models : sleepfm, osf ou les deux")
     if "sleepfm" in models and (args.checkpoint is None or args.respiratory_rule not in RESPIRATORY_RULES):
-        parser.error("SleepFM : --checkpoint et --respiratory-rule physionet_median_v1 obligatoires")
+        parser.error("SleepFM : --checkpoint et --respiratory-rule (physionet_median_v2) obligatoires")
     if "osf" in models and args.osf_checkpoint is None:
         parser.error("OSF : --osf-checkpoint obligatoire")
 

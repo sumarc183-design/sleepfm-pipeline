@@ -1,7 +1,7 @@
 """Confirmation de l'IAH ≥ 15 sur NSRR avec la règle figée sur PhysioNet (un seul passage).
 
 Plan validé : docs/plans/Plan confirmation IAH NSRR SleepFM OSF 13-11.md. Entrées : embeddings de
-`scripts/embed_nsrr.py` (les deux modèles, règle d'échelle `physionet_median_v1`) et annotations XML
+`scripts/embed_nsrr.py` (les deux modèles, règle d'échelle `physionet_median_v2`) et annotations XML
 NSRR. Modèles, seuils et droites de calibration viennent du résultat PhysioNet figé
 (`results/respiratory_ahi_physionet2018.json`, empreinte contrôlée) : rien n'est réajusté.
 
@@ -47,7 +47,7 @@ from src.models.probe_export import run_environment  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 FROZEN_AHI_SHA256 = "eda69eb95c167a1df729b4c728e744ef0275a4ec725b7ace2727f40954bd2990"
-RESPIRATORY_RULE = "physionet_median_v1"
+RESPIRATORY_RULE = "physionet_median_v2"  # 16 novembre : recentrage ajouté (défaut trouvé sur UCDDB)
 SUCCESS_LOWER_BOUND = 0.60
 PLAN = ROOT / "docs/plans/Plan confirmation IAH NSRR SleepFM OSF 13-11.md"
 CODE = tuple(
@@ -318,7 +318,9 @@ def precheck(args) -> dict:
         listed = {subject_number(s) for s in extraction["done"]}
         if not any(listed & set(values) for values in official.values()):
             raise ValueError(f"{args.official_csv} : aucun sujet de l'extraction n'a d'IAH officiel")
-    marker = args.marker_dir / f"{args.cohort}-{approved_sha[:12]}-{args.expected_sha[:12]}.json"
+    # Le marqueur nomme aussi la règle d'échelle : un passage avec la règle corrigée est un second
+    # passage déclaré, distinct du premier (UCDDB, 16 novembre).
+    marker = args.marker_dir / f"{args.cohort}-{approved_sha[:12]}-{args.expected_sha[:12]}-{RESPIRATORY_RULE}.json"
     if marker.exists():
         raise ValueError(f"Confirmation déjà lancée ({marker.name}) : un seul passage")
     return {
