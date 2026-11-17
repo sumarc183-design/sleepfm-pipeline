@@ -142,6 +142,13 @@ ce titre au notebook importé pour s'y retrouver.
 | `notebooks/sleepfm_raw_grid_physionet2018.ipynb` | SleepFM — prédiction sur PSG brute, grille fixe (PhysioNet 2018, GPU) | Embeddings des 100 nuits de test sur la grille fixe de 30 s, pour évaluer la prédiction sur PSG brute ; évaluation ensuite sur le Mac |
 | `notebooks/sleepfm_osf_physionet2018.ipynb` | SleepFM — embeddings OSF PhysioNet 2018 (comparaison exploratoire, GPU) | Embeddings OSF figés des 500 sujets de développement, mêmes fenêtres que SleepFM (option A de `docs/OSF_COMPARISON.md`) |
 
+**NSRR sans cloud** : `scripts/run_nsrr_local.py` reprend la logique du notebook NSRR sur la machine
+locale (lots de 10 nuits téléchargés depuis sleepdata.org, taille et MD5 vérifiés, embeddings puis EDF
+supprimés ; environ 1 min par nuit sur processeur). Les données ne quittent pas la machine, tant que
+l'accord NSRR n'a pas été vérifié pour Kaggle. Jeton personnel dans `~/.nsrr_token` (jamais commité).
+Essai : `--cohort mesa --limit 2` ; annotations XML : `--annotations`. Il s'arrête net si l'accès à la
+cohorte n'est pas encore ouvert (page HTML au lieu du fichier).
+
 ### Google Colab (GPU gratuit)
 
 [![Ouvrir dans Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sumarc183-design/sleepfm-pipeline/blob/main/notebooks/sleepfm_embeddings_physionet2018.ipynb)
