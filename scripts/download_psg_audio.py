@@ -139,7 +139,7 @@ def patient_segments(patient_dir: str) -> list[dict]:
 
 def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS) -> dict:
     rml_bytes = fetch(rml["id"])  # vérifié avant l'EDF : un .rml faux échoue en quelques secondes
-    if hashlib.md5(rml_bytes).hexdigest() != rml["md5"]:
+    if hashlib.md5(rml_bytes).hexdigest() != rml["md5"].lower():  # le dépôt donne 93 MD5 en majuscules
         raise RuntimeError("MD5 du .rml différent de celui du dépôt")
     segments = patient_segments(f"/V3/APNEA_EDF/{patient}")
     if not segments:
@@ -190,7 +190,7 @@ def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS)
         "segments": [{"name": i["name"], "records": i["n_records"]} for i in infos],
         "kept_signals": [label.decode().strip() for label in infos[0]["fields"]["label"][:keep]],
         "duration_s": total * infos[0]["record_s"],
-        "rml_md5": rml["md5"],
+        "rml_md5": rml["md5"].lower(),
     }
 
 

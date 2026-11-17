@@ -77,6 +77,14 @@ def test_parallel_download_writes_records_in_order(server, tmp_path, workers):
     assert not (tmp_path / "p.edf.part").exists()
 
 
+def test_uppercase_md5_from_repository_is_accepted(server, tmp_path):
+    """93 des 287 .rml du dépôt ont un MD5 annoncé en majuscules (ex. 00001579)."""
+    files, _ = server
+    md5 = hashlib.md5(files["rml"]).hexdigest()
+    entry = dl.download_patient("p", {"id": "rml", "md5": md5.upper()}, tmp_path)
+    assert entry["rml_md5"] == md5 and (tmp_path / "p.rml").exists()
+
+
 def test_wrong_rml_fails_before_any_edf_request(server, tmp_path):
     _, calls = server
     with pytest.raises(RuntimeError, match="MD5 du .rml"):
