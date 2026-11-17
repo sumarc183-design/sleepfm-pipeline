@@ -17,12 +17,14 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import http.client
 import json
 import os
 import re
 import sys
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +38,7 @@ LIST_URL = "https://www.scidb.cn/api/gin-sdb-filetree/public/file/childrenFileLi
 DOWNLOAD_URL = "https://download.scidb.cn/download?fileId={}"
 AUDIO_MIN_RATE = 1000.0  # voies à 48 kHz retirées
 RANGES_PER_REQUEST = 300
+WORKERS = 4  # requêtes simultanées : débit x3 environ (mesuré le 16 nov.)
 HEADERS = {"User-Agent": "sleepfm-pipeline research download"}
 
 
@@ -64,7 +67,7 @@ def fetch(file_id: str, ranges: list[tuple[int, int]] | None = None, retries: in
             if not ranges:
                 return body
             return parse_ranges(body, ctype, ranges)
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, http.client.HTTPException) as exc:  # IncompleteRead : coupure en cours de réponse
             if attempt == retries - 1:
                 raise
             print(f"  nouvelle tentative ({exc})", flush=True)
@@ -134,7 +137,10 @@ def patient_segments(patient_dir: str) -> list[dict]:
     return sorted(files, key=lambda f: int(re.search(r"\[(\d+)\]", f["fileName"]).group(1)))
 
 
-def download_patient(patient: str, rml: dict, out: Path) -> dict:
+def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS) -> dict:
+    rml_bytes = fetch(rml["id"])  # vérifié avant l'EDF : un .rml faux échoue en quelques secondes
+    if hashlib.md5(rml_bytes).hexdigest() != rml["md5"]:
+        raise RuntimeError("MD5 du .rml différent de celui du dépôt")
     segments = patient_segments(f"/V3/APNEA_EDF/{patient}")
     if not segments:
         raise RuntimeError("aucune EDF")
@@ -163,21 +169,21 @@ def download_patient(patient: str, rml: dict, out: Path) -> dict:
     total = sum(info["n_records"] for info in infos)
     partial = out / f"{patient}.edf.part"
     digest = hashlib.sha256()
-    with partial.open("wb") as handle:
+    jobs = []
+    for info, size in zip(infos, record_bytes, strict=True):
+        offsets = [info["header_bytes"] + i * size for i in range(info["n_records"])]
+        for start in range(0, len(offsets), RANGES_PER_REQUEST):
+            jobs.append((info["id"], [(o, o + kept_bytes - 1) for o in offsets[start : start + RANGES_PER_REQUEST]]))
+    with partial.open("wb") as handle, ThreadPoolExecutor(workers) as pool:
         header = light_header(infos[0], keep, total)
         handle.write(header)
         digest.update(header)
-        for info, size in zip(infos, record_bytes, strict=True):
-            offsets = [info["header_bytes"] + i * size for i in range(info["n_records"])]
-            for start in range(0, len(offsets), RANGES_PER_REQUEST):
-                chunk = [(o, o + kept_bytes - 1) for o in offsets[start : start + RANGES_PER_REQUEST]]
-                data = b"".join(fetch(info["id"], chunk))
-                handle.write(data)
-                digest.update(data)
+        # `map` rend les réponses dans l'ordre des requêtes : le fichier est écrit dans l'ordre.
+        for parts in pool.map(lambda job: fetch(*job), jobs):
+            data = b"".join(parts)
+            handle.write(data)
+            digest.update(data)
     os.replace(partial, out / f"{patient}.edf")
-    rml_bytes = fetch(rml["id"])
-    if hashlib.md5(rml_bytes).hexdigest() != rml["md5"]:
-        raise RuntimeError("MD5 du .rml différent de celui du dépôt")
     (out / f"{patient}.rml").write_bytes(rml_bytes)
     return {
         "edf_sha256": digest.hexdigest(),
@@ -192,6 +198,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--workers", type=int, default=WORKERS)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     log_path = args.out / "download_log.json"
@@ -200,7 +207,7 @@ def main() -> None:
         f["fileName"].removesuffix(".rml"): f for f in list_folder("/V3/APNEA_RML") if f["fileName"].endswith(".rml")
     }
     # Ordre aléatoire figé (graine 42) : tout préfixe téléchargé est un tirage au sort sans biais,
-    # si le téléchargement complet (environ 9 jours) devait être arrêté avant la fin.
+    # si le téléchargement complet (environ 3 jours à 4 requêtes simultanées) devait être arrêté avant la fin.
     order = np.random.default_rng(42).permutation(len(rmls))
     patients = [sorted(rmls)[i] for i in order][: args.limit]
     todo = [p for p in patients if p not in log["done"]]
@@ -208,10 +215,10 @@ def main() -> None:
     for index, patient in enumerate(todo):
         begin = time.time()
         try:
-            log["done"][patient] = download_patient(patient, rmls[patient], args.out)
+            log["done"][patient] = download_patient(patient, rmls[patient], args.out, args.workers)
             log["failed"].pop(patient, None)
             print(f"[{index + 1}/{len(todo)}] {patient} : {time.time() - begin:.0f} s", flush=True)
-        except (OSError, RuntimeError, ValueError) as exc:
+        except (OSError, RuntimeError, ValueError, http.client.HTTPException) as exc:
             log["failed"][patient] = str(exc)
             print(f"[{index + 1}/{len(todo)}] {patient} ÉCHEC : {exc}", flush=True)
         write_json_atomic(log_path, log)
