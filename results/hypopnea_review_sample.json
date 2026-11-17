@@ -1,0 +1,378 @@
+{
+  "kind": "hypopnea_review_sample",
+  "osf_threshold": 0.763603687286377,
+  "plan_sha256": "b49fd11db0753d9b71b49d456fff59f3667e2c0ef54c4cf57c9bf5ebca4ff2d2",
+  "seed": 42,
+  "sizes": {
+    "A": 20,
+    "B": 10,
+    "C": 10
+  },
+  "source_sha256": {
+    "results\\respiratory_errors_physionet2018.groups.npz": "acf8d144cf2b211fbf9801009ae3959f05eb83e39b855dbb0d90dafcdb7303c6",
+    "results\\respiratory_osf_vs_sleepfm_physionet2018.predictions.npz": "91f257ef403d0576f6327a2ffaea95a312f64bea144b8a0d0a5c2954422315f4",
+    "results\\respiratory_thresholds_physionet2018.json": "27b7eb4400017cd3c495bea6e831e2e744e7d4bf87c33f65d24cfc4d360bf066"
+  },
+  "windows": [
+    {
+      "epoch_idx": 315,
+      "group": "B",
+      "id": "F01",
+      "onset_s": 9989.99890625,
+      "order": 1,
+      "probability_osf": 0.8569807410240173,
+      "subject": "tr06-0532"
+    },
+    {
+      "epoch_idx": 73,
+      "group": "A",
+      "id": "F02",
+      "onset_s": 2609.99890625,
+      "order": 2,
+      "probability_osf": 0.6835513710975647,
+      "subject": "tr03-0487"
+    },
+    {
+      "epoch_idx": 384,
+      "group": "B",
+      "id": "F03",
+      "onset_s": 12869.998906249999,
+      "order": 3,
+      "probability_osf": 0.9034633040428162,
+      "subject": "tr04-0279"
+    },
+    {
+      "epoch_idx": 151,
+      "group": "A",
+      "id": "F04",
+      "onset_s": 4979.99890625,
+      "order": 4,
+      "probability_osf": 0.0057623605243861675,
+      "subject": "tr05-1521"
+    },
+    {
+      "epoch_idx": 469,
+      "group": "A",
+      "id": "F05",
+      "onset_s": 14609.99890625,
+      "order": 5,
+      "probability_osf": 0.2725118398666382,
+      "subject": "tr03-0792"
+    },
+    {
+      "epoch_idx": 591,
+      "group": "C",
+      "id": "F06",
+      "onset_s": 18119.99890625,
+      "order": 6,
+      "probability_osf": 0.8570705652236938,
+      "subject": "tr05-1277"
+    },
+    {
+      "epoch_idx": 632,
+      "group": "B",
+      "id": "F07",
+      "onset_s": 19529.99890625,
+      "order": 7,
+      "probability_osf": 0.934368908405304,
+      "subject": "tr04-0570"
+    },
+    {
+      "epoch_idx": 368,
+      "group": "A",
+      "id": "F08",
+      "onset_s": 15059.998906249999,
+      "order": 8,
+      "probability_osf": 0.4119645357131958,
+      "subject": "tr06-0193"
+    },
+    {
+      "epoch_idx": 240,
+      "group": "A",
+      "id": "F09",
+      "onset_s": 8009.99890625,
+      "order": 9,
+      "probability_osf": 0.553474485874176,
+      "subject": "tr05-1121"
+    },
+    {
+      "epoch_idx": 185,
+      "group": "B",
+      "id": "F10",
+      "onset_s": 5939.99890625,
+      "order": 10,
+      "probability_osf": 0.9886714220046997,
+      "subject": "tr05-1268"
+    },
+    {
+      "epoch_idx": 503,
+      "group": "A",
+      "id": "F11",
+      "onset_s": 16559.99890625,
+      "order": 11,
+      "probability_osf": 0.3164687752723694,
+      "subject": "tr06-0418"
+    },
+    {
+      "epoch_idx": 622,
+      "group": "C",
+      "id": "F12",
+      "onset_s": 19979.99890625,
+      "order": 12,
+      "probability_osf": 0.9617178440093994,
+      "subject": "tr06-0797"
+    },
+    {
+      "epoch_idx": 422,
+      "group": "A",
+      "id": "F13",
+      "onset_s": 13049.99890625,
+      "order": 13,
+      "probability_osf": 0.5620864629745483,
+      "subject": "tr05-1268"
+    },
+    {
+      "epoch_idx": 618,
+      "group": "A",
+      "id": "F14",
+      "onset_s": 18959.99890625,
+      "order": 14,
+      "probability_osf": 0.4748832881450653,
+      "subject": "tr03-0300"
+    },
+    {
+      "epoch_idx": 52,
+      "group": "A",
+      "id": "F15",
+      "onset_s": 2129.99890625,
+      "order": 15,
+      "probability_osf": 0.5434485673904419,
+      "subject": "tr05-0501"
+    },
+    {
+      "epoch_idx": 319,
+      "group": "B",
+      "id": "F16",
+      "onset_s": 10439.99890625,
+      "order": 16,
+      "probability_osf": 0.959688127040863,
+      "subject": "tr06-0363"
+    },
+    {
+      "epoch_idx": 572,
+      "group": "A",
+      "id": "F17",
+      "onset_s": 17669.99890625,
+      "order": 17,
+      "probability_osf": 0.5972854495048523,
+      "subject": "tr04-0915"
+    },
+    {
+      "epoch_idx": 546,
+      "group": "A",
+      "id": "F18",
+      "onset_s": 17729.99890625,
+      "order": 18,
+      "probability_osf": 0.7025226354598999,
+      "subject": "tr04-0279"
+    },
+    {
+      "epoch_idx": 758,
+      "group": "A",
+      "id": "F19",
+      "onset_s": 23339.99890625,
+      "order": 19,
+      "probability_osf": 0.1628267914056778,
+      "subject": "tr06-0556"
+    },
+    {
+      "epoch_idx": 496,
+      "group": "B",
+      "id": "F20",
+      "onset_s": 15419.99890625,
+      "order": 20,
+      "probability_osf": 0.9183191657066345,
+      "subject": "tr04-0133"
+    },
+    {
+      "epoch_idx": 169,
+      "group": "C",
+      "id": "F21",
+      "onset_s": 5669.99890625,
+      "order": 21,
+      "probability_osf": 0.9101728200912476,
+      "subject": "tr04-0671"
+    },
+    {
+      "epoch_idx": 50,
+      "group": "C",
+      "id": "F22",
+      "onset_s": 2039.99890625,
+      "order": 22,
+      "probability_osf": 0.9883147478103638,
+      "subject": "tr06-0532"
+    },
+    {
+      "epoch_idx": 138,
+      "group": "A",
+      "id": "F23",
+      "onset_s": 4559.99890625,
+      "order": 23,
+      "probability_osf": 0.7159812450408936,
+      "subject": "tr04-0741"
+    },
+    {
+      "epoch_idx": 498,
+      "group": "C",
+      "id": "F24",
+      "onset_s": 20819.99890625,
+      "order": 24,
+      "probability_osf": 0.9466565847396851,
+      "subject": "tr06-0050"
+    },
+    {
+      "epoch_idx": 698,
+      "group": "C",
+      "id": "F25",
+      "onset_s": 21389.99890625,
+      "order": 25,
+      "probability_osf": 0.8445135354995728,
+      "subject": "tr04-0631"
+    },
+    {
+      "epoch_idx": 461,
+      "group": "A",
+      "id": "F26",
+      "onset_s": 14249.99890625,
+      "order": 26,
+      "probability_osf": 0.34946250915527344,
+      "subject": "tr06-0202"
+    },
+    {
+      "epoch_idx": 172,
+      "group": "A",
+      "id": "F27",
+      "onset_s": 5579.99890625,
+      "order": 27,
+      "probability_osf": 0.550569474697113,
+      "subject": "tr04-0900"
+    },
+    {
+      "epoch_idx": 635,
+      "group": "C",
+      "id": "F28",
+      "onset_s": 19469.99890625,
+      "order": 28,
+      "probability_osf": 0.7850171327590942,
+      "subject": "tr06-0202"
+    },
+    {
+      "epoch_idx": 239,
+      "group": "A",
+      "id": "F29",
+      "onset_s": 7559.99890625,
+      "order": 29,
+      "probability_osf": 0.6078720688819885,
+      "subject": "tr05-1452"
+    },
+    {
+      "epoch_idx": 559,
+      "group": "C",
+      "id": "F30",
+      "onset_s": 17279.99890625,
+      "order": 30,
+      "probability_osf": 0.8452185392379761,
+      "subject": "tr04-0020"
+    },
+    {
+      "epoch_idx": 713,
+      "group": "B",
+      "id": "F31",
+      "onset_s": 21809.99890625,
+      "order": 31,
+      "probability_osf": 0.9588060975074768,
+      "subject": "tr05-0570"
+    },
+    {
+      "epoch_idx": 65,
+      "group": "A",
+      "id": "F32",
+      "onset_s": 2249.99890625,
+      "order": 32,
+      "probability_osf": 0.3498302102088928,
+      "subject": "tr03-0256"
+    },
+    {
+      "epoch_idx": 517,
+      "group": "A",
+      "id": "F33",
+      "onset_s": 15959.99890625,
+      "order": 33,
+      "probability_osf": 0.6095754504203796,
+      "subject": "tr05-0348"
+    },
+    {
+      "epoch_idx": 520,
+      "group": "C",
+      "id": "F34",
+      "onset_s": 16409.99890625,
+      "order": 34,
+      "probability_osf": 0.770453691482544,
+      "subject": "tr05-1716"
+    },
+    {
+      "epoch_idx": 770,
+      "group": "B",
+      "id": "F35",
+      "onset_s": 23699.99890625,
+      "order": 35,
+      "probability_osf": 0.8067554831504822,
+      "subject": "tr06-0556"
+    },
+    {
+      "epoch_idx": 26,
+      "group": "B",
+      "id": "F36",
+      "onset_s": 1589.99890625,
+      "order": 36,
+      "probability_osf": 0.9211305379867554,
+      "subject": "tr05-1121"
+    },
+    {
+      "epoch_idx": 70,
+      "group": "A",
+      "id": "F37",
+      "onset_s": 2699.99890625,
+      "order": 37,
+      "probability_osf": 0.35178178548812866,
+      "subject": "tr05-0011"
+    },
+    {
+      "epoch_idx": 33,
+      "group": "A",
+      "id": "F38",
+      "onset_s": 1589.99890625,
+      "order": 38,
+      "probability_osf": 0.6493388414382935,
+      "subject": "tr03-0401"
+    },
+    {
+      "epoch_idx": 846,
+      "group": "B",
+      "id": "F39",
+      "onset_s": 25829.99890625,
+      "order": 39,
+      "probability_osf": 0.956304132938385,
+      "subject": "tr04-0631"
+    },
+    {
+      "epoch_idx": 669,
+      "group": "C",
+      "id": "F40",
+      "onset_s": 21629.99890625,
+      "order": 40,
+      "probability_osf": 0.8555098176002502,
+      "subject": "tr03-0473"
+    }
+  ]
+}

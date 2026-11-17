@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relecture hypopnées</title>
+<!-- échantillon sha256 __SAMPLE__ -->
+<style>
+:root{--bg:#fff;--fg:#1d2430;--muted:#5d6878;--line:#d9dee6;--box:rgba(255,196,0,.18);--trace:#1d2430;
+--hyp:#2f7dd1;--obs:#d1452f;--cen:#8a3fd1;--mix:#c2307a;--aro:#2f9e5b;--accent:#2f7dd1}
+@media (prefers-color-scheme:dark){:root{--bg:#14181f;--fg:#e6e9ef;--muted:#9aa4b2;--line:#2c333e;
+--box:rgba(255,196,0,.16);--trace:#e6e9ef}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}h1{font-size:20px;margin:0 0 4px}
+.muted{color:var(--muted)}details{margin:8px 0 14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+button{font:inherit;padding:6px 12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin:6px 0}.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+fieldset{border:1px solid var(--line);border-radius:6px;margin:10px 0;padding:8px 12px}legend{font-weight:600}
+label{margin-right:14px;white-space:nowrap;display:inline-block}textarea,input[type=text]{display:block;margin-top:4px;width:100%;font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+.done{color:#2f9e5b}
+</style></head><body><main>
+<h1>Relecture de fenêtres respiratoires</h1>
+<p class="muted">PhysioNet 2018 (accès libre), __N__ fenêtres de 30 s. Merci pour votre aide.</p>
+<details open><summary><b>Mode d'emploi</b></summary>
+<p>Chaque écran montre 2 minutes de signal ; la fenêtre à juger (30 s) est sur fond jaune. Les annotations des
+experts PhysioNet sont en couleur sous les tracés. Répondez aux trois questions pour la fenêtre jaune, puis
+passez à la suivante. Vos réponses restent enregistrées dans ce navigateur ; à la fin, cliquez
+« Exporter les réponses (CSV) » et renvoyez le fichier.</p></details>
+<label style="display:block;max-width:420px">Votre nom ou initiales<input type="text" id="reviewer"></label>
+<div class="bar"><button id="prev">← Précédente</button><b id="pos"></b><button id="next" class="primary">Suivante →</button>
+<span id="count" class="muted"></span><span style="flex:1"></span><button id="export" class="primary">Exporter les réponses (CSV)</button></div>
+<canvas id="plot" width="1600" height="900"></canvas>
+<div class="legend"><span><i style="background:var(--box);border:1px solid #c9a400"></i>fenêtre à juger</span>
+<span><i style="background:var(--hyp)"></i>hypopnée</span><span><i style="background:var(--obs)"></i>apnée obstructive</span>
+<span><i style="background:var(--cen)"></i>apnée centrale</span><span><i style="background:var(--mix)"></i>apnée mixte</span>
+<span><i style="background:var(--aro)"></i>micro-éveil</span></div>
+<form id="form">
+<fieldset><legend>1. Un événement respiratoire est-il visible dans la fenêtre jaune ?</legend>
+<label><input type="radio" name="q1" value="aucun">aucun</label><label><input type="radio" name="q1" value="hypopnée">hypopnée</label>
+<label><input type="radio" name="q1" value="apnée">apnée</label><label><input type="radio" name="q1" value="incertain">incertain</label></fieldset>
+<fieldset><legend>2. Si une hypopnée est annotée : critères AASM remplis (baisse du débit ≥ 30 % pendant ≥ 10 s, avec désaturation ≥ 3 % ou micro-éveil) ?</legend>
+<label><input type="radio" name="q2" value="oui">oui</label><label><input type="radio" name="q2" value="non">non</label>
+<label><input type="radio" name="q2" value="incertain">incertain</label><label><input type="radio" name="q2" value="pas d'hypopnée annotée">pas d'hypopnée annotée</label></fieldset>
+<fieldset><legend>3. Qualité du signal respiratoire</legend>
+<label><input type="radio" name="q3" value="bonne">bonne</label><label><input type="radio" name="q3" value="artefact">artefact</label>
+<label><input type="radio" name="q3" value="capteur décroché">capteur décroché</label></fieldset>
+<label style="display:block">Commentaire (facultatif)<textarea name="note" rows="2"></textarea></label></form>
+</main>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const D=JSON.parse(document.getElementById('data').textContent),W=D.windows,KEY='relecture-hypopnees-v1';
+let answers={},reviewer='',i=0;
+try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');answers=s.answers||{};reviewer=s.reviewer||'';i=s.i||0}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({answers,reviewer,i}))}catch(e){}};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const color=n=>n.includes('hypopnea')?css('--hyp'):n.includes('obstructive')?css('--obs'):n.includes('central')?css('--cen'):n.includes('mixed')?css('--mix'):css('--aro');
+function draw(){const w=W[i],c=document.getElementById('plot'),x=c.getContext('2d'),L=215,R=20,T=10,rowH=150,evH=60,Wd=c.width-L-R;
+x.clearRect(0,0,c.width,c.height);x.font='22px system-ui';const sx=t=>L+t/120*Wd;
+x.fillStyle=css('--box');x.fillRect(sx(w.box[0]),T,sx(w.box[1])-sx(w.box[0]),rowH*5+evH);
+x.strokeStyle=css('--line');x.fillStyle=css('--muted');
+for(let t=0;t<=120;t+=10){x.beginPath();x.moveTo(sx(t),T);x.lineTo(sx(t),T+rowH*5+evH);x.stroke();x.fillText(t+' s',sx(t)-14,T+rowH*5+evH+26)}
+D.keys.forEach((k,r)=>{const v=w.traces[k],y0=T+r*rowH,n=v.length/2;let lo=Math.min(...v),hi=Math.max(...v);
+if(k==='SaO2'){const m=(lo+hi)/2;if(hi-lo<6){lo=m-3;hi=m+3}}if(hi===lo){hi=lo+1}
+const sy=val=>y0+rowH-8-(val-lo)/(hi-lo)*(rowH-16);x.fillStyle=css('--fg');x.fillText(D.channels[r],8,y0+rowH/2);
+if(k==='SaO2'){x.fillStyle=css('--muted');x.fillText(hi.toFixed(0),L-46,y0+24);x.fillText(lo.toFixed(0),L-46,y0+rowH-8)}
+x.strokeStyle=css('--trace');x.lineWidth=1.4;x.beginPath();
+for(let j=0;j<n;j++){const px=L+(j+.5)/n*Wd;x.moveTo(px,sy(v[2*j]));x.lineTo(px,sy(v[2*j+1]));if(j+1<n)x.lineTo(L+(j+1.5)/n*Wd,sy(v[2*j+2]))}x.stroke();
+x.strokeStyle=css('--line');x.beginPath();x.moveTo(L,y0+rowH);x.lineTo(L+Wd,y0+rowH);x.stroke()});
+const ey=T+rowH*5;x.fillStyle=css('--fg');x.fillText('Annotations',8,ey+38);
+w.events.forEach((e,k)=>{const a=Math.max(0,e.start),b=Math.min(120,e.end);x.fillStyle=color(e.name);
+const lane=e.name.startsWith('resp')?0:1;x.fillRect(sx(a),ey+8+lane*26,Math.max(2,sx(b)-sx(a)),20)});
+document.getElementById('pos').textContent=w.id+' — '+(i+1)+' / '+W.length;
+const f=document.getElementById('form'),a=answers[w.id]||{};f.reset();
+['q1','q2','q3'].forEach(q=>{if(a[q]){const el=f.querySelector(`input[name=${q}][value="${a[q]}"]`);if(el)el.checked=true}});
+f.note.value=a.note||'';const done=W.filter(v=>{const z=answers[v.id];return z&&z.q1&&z.q2&&z.q3}).length;
+document.getElementById('count').innerHTML=`<span class="${done===W.length?'done':''}">${done} / ${W.length} complètes</span>`}
+document.getElementById('form').addEventListener('input',e=>{const f=e.currentTarget,w=W[i];
+answers[w.id]={q1:(f.q1.value||''),q2:(f.q2.value||''),q3:(f.q3.value||''),note:f.note.value};save();draw()});
+const rv=document.getElementById('reviewer');rv.value=reviewer;rv.addEventListener('input',()=>{reviewer=rv.value;save()});
+document.getElementById('prev').onclick=()=>{i=(i+W.length-1)%W.length;save();draw()};
+document.getElementById('next').onclick=()=>{i=(i+1)%W.length;save();draw();window.scrollTo(0,0)};
+document.getElementById('export').onclick=()=>{const q=s=>'"'+String(s||'').replace(/"/g,'""')+'"';
+const rows=[['fenetre','q1_evenement','q2_criteres_aasm','q3_qualite','commentaire','relecteur'].join(',')];
+W.forEach(w=>{const a=answers[w.id]||{};rows.push([w.id,q(a.q1),q(a.q2),q(a.q3),q(a.note),q(reviewer)].join(','))});
+const b=new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),l=document.createElement('a');
+l.href=u;l.download='relecture_hypopnees_'+(reviewer||'medecin').replace(/[^\w-]+/g,'_')+'.csv';l.click();URL.revokeObjectURL(u)};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+if(i>=W.length)i=0;draw();
+</script></body></html>
