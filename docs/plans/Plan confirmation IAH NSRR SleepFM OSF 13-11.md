@@ -139,3 +139,17 @@ Correction du 16 novembre (accord du tuteur) : la règle d'échelle passe en **v
 (`physionet_median_v2`). Chaque sangle et le débit sont recentrés sur leur médiane de la nuit avant
 la mise à l'échelle, car les voies PhysioNet correspondantes sont centrées sur 0. Défaut trouvé sur
 UCDDB, où des lignes de base décalées ont rendu SleepFM inutilisable. Rien d'autre ne change.
+
+Décisions du 18 novembre (tuteur, Point du 18-11), fixées avant tout passage NSRR ou PSG-Audio et
+sans aucune donnée de ces cohortes regardée :
+- **OSF seul est jugé pour l'apnée sur NSRR et PSG-Audio.** Le test de robustesse (plan fixé avant
+  calcul, `results/robustness_sleepfm_channels.json`) montre que la respiration à basse fréquence rend
+  SleepFM inutilisable ; règle du 12-11 : abandonner SleepFM quand OSF le dépasse partout. Les
+  chiffres de SleepFM restent calculés et publiés, marqués « non jugé », sans verdict.
+- **Effectif minimal : 80 nuits évaluables par classe** (IAH ≥ 15 et IAH < 15), comptées après les
+  exclusions. En dessous, la sensibilité ou la spécificité concernée reçoit le statut « non concluant
+  (effectif insuffisant) » au lieu de « réussi » ou « échoué », et sa valeur est publiée avec son IC.
+  Verdict d'ensemble : « réussi » si les deux bornes basses dépassent 60 % avec des effectifs
+  suffisants ; « échoué » si une borne basse jugeable est à 60 % ou moins ; sinon « non concluant ».
+- **IC exact de Clopper-Pearson** (95 %) ajouté en complément du bootstrap pour la sensibilité et
+  la spécificité. Le critère reste lu sur le bootstrap ; le seuil de 60 % et la référence ne changent pas.

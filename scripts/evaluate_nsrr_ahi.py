@@ -7,8 +7,10 @@ NSRR. Modèles, seuils et droites de calibration viennent du résultat PhysioNet
 
 Référence principale : 4 types d'événements par heure de sommeil expert (`reference_ahi_nsrr`).
 Référence secondaire facultative : IAH officiel NSRR à 3 % et 4 % (`--official-csv`), mêmes métriques.
-Critère de réussite, pour chaque modèle : bornes basses des IC 95 % de la sensibilité et de la
-spécificité au-dessus de 60 %.
+Critère de réussite : bornes basses des IC 95 % (bootstrap) de la sensibilité et de la spécificité
+au-dessus de 60 %. Décisions du 18 novembre : OSF seul est jugé (SleepFM publié, non jugé) ; une classe
+de moins de 80 nuits rend son verdict « non concluant (effectif insuffisant) » ; IC exact de
+Clopper-Pearson publié en complément.
 
 Précontrôle avant toute prédiction et tout calcul de performance (audit du 13 novembre) : code et
 plan commités, règle figée, liste approuvée et couverture exacte, contrat d'extraction complet,
@@ -34,6 +36,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+from scipy.stats import beta
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -51,6 +54,9 @@ ROOT = Path(__file__).resolve().parents[1]
 FROZEN_AHI_SHA256 = "eda69eb95c167a1df729b4c728e744ef0275a4ec725b7ace2727f40954bd2990"
 RESPIRATORY_RULE = "physionet_median_v2"  # 16 novembre : recentrage ajouté (défaut trouvé sur UCDDB)
 SUCCESS_LOWER_BOUND = 0.60
+# Décisions du tuteur du 18 novembre (plan, dernière section), fixées avant tout passage NSRR ou PSG-Audio.
+MIN_NIGHTS_PER_CLASS = 80  # en dessous : « non concluant (effectif insuffisant) » pour la classe concernée
+JUDGED_MODELS = ("osf",)  # SleepFM inutilisable avec la respiration à basse fréquence : publié, non jugé
 PLAN = ROOT / "docs/plans/Plan confirmation IAH NSRR SleepFM OSF 13-11.md"
 CODE = tuple(
     sorted(
@@ -297,16 +303,51 @@ def night_row(npz_path: Path, parsed_or_error, frozen: dict, n_epochs: int) -> d
     return row
 
 
-def criterion(uncertainty: dict) -> dict:
+def clopper_pearson(hits: int, total: int, level: float = 0.95) -> list[float] | None:
+    """IC exact d'une proportion (complément du bootstrap, décision du 18 novembre)."""
+    if total == 0:
+        return None
+    alpha = 1 - level
+    low = 0.0 if hits == 0 else float(beta.ppf(alpha / 2, hits, total - hits + 1))
+    high = 1.0 if hits == total else float(beta.ppf(1 - alpha / 2, hits + 1, total - hits))
+    return [low, high]
+
+
+def exact_intervals(results: dict) -> dict:
+    out = {}
+    for model in MODELS:
+        c = results[model]["confusion_15"]
+        out[model] = {
+            "sensitivity": clopper_pearson(c["true_positive"], c["true_positive"] + c["false_negative"]),
+            "specificity": clopper_pearson(c["true_negative"], c["true_negative"] + c["false_positive"]),
+        }
+    return out
+
+
+def class_verdict(lower: float | None, nights: int) -> str:
+    if nights < MIN_NIGHTS_PER_CLASS:
+        return "non concluant (effectif insuffisant)"
+    return "réussi" if lower is not None and lower > SUCCESS_LOWER_BOUND else "échoué"
+
+
+def criterion(uncertainty: dict, positives: int, negatives: int) -> dict:
+    """Verdict par modèle (bornes basses bootstrap), avec effectif minimal et modèles jugés du 18 novembre."""
     out = {}
     for model in MODELS:
         low_sens = uncertainty["ci95"][model]["sensitivity"][0]
         low_spec = uncertainty["ci95"][model]["specificity"][0]
-        out[model] = {
-            "sensitivity_lower": low_sens,
-            "specificity_lower": low_spec,
-            "success": bool(low_sens > SUCCESS_LOWER_BOUND and low_spec > SUCCESS_LOWER_BOUND),
-        }
+        entry = {"sensitivity_lower": low_sens, "specificity_lower": low_spec}
+        if model not in JUDGED_MODELS:
+            out[model] = entry | {"judged": False, "verdict": "non jugé (respiration à basse fréquence)"}
+            continue
+        parts = {"sensitivity": class_verdict(low_sens, positives), "specificity": class_verdict(low_spec, negatives)}
+        if "échoué" in parts.values():
+            verdict = "échoué"
+        elif all(v == "réussi" for v in parts.values()):
+            verdict = "réussi"
+        else:
+            verdict = "non concluant (effectif insuffisant)"
+        out[model] = entry | {"judged": True, "by_class": parts, "verdict": verdict, "success": verdict == "réussi"}
     return out
 
 
@@ -462,10 +503,13 @@ def evaluate(args, checked: dict) -> dict:
         "calibration": frozen["calibration"],
         "results": results,
         "bootstrap": uncertainty,
+        "clopper_pearson_ci95": exact_intervals(results),
         "success_criterion": {
             "lower_bound": SUCCESS_LOWER_BOUND,
+            "min_nights_per_class": MIN_NIGHTS_PER_CLASS,
+            "judged_models": list(JUDGED_MODELS),
             "applies": args.cohort not in DESCRIPTIVE_COHORTS,
-            "models": criterion(uncertainty),
+            "models": criterion(uncertainty, int(truth.sum()), int((~truth).sum())),
         },
         "environment": run_environment(),
         "command": sys.argv,
@@ -497,11 +541,7 @@ def evaluate(args, checked: dict) -> dict:
         print(
             f"{model} : sensibilité {primary['sensitivity']:.3f} (borne basse {verdict['sensitivity_lower']:.3f}), "
             f"spécificité {primary['specificity']:.3f} (borne basse {verdict['specificity_lower']:.3f}) ; "
-            + (
-                "descriptif, pas de verdict"
-                if args.cohort in DESCRIPTIVE_COHORTS
-                else f"critère {'atteint' if verdict['success'] else 'non atteint'}"
-            )
+            + ("descriptif, pas de verdict" if args.cohort in DESCRIPTIVE_COHORTS else verdict["verdict"])
         )
     return report
 

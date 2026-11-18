@@ -247,15 +247,40 @@ def test_approved_lists_pass_metadata_checks():
             assert all(ev.subject_number(s) > 0 for s in subjects)
 
 
-def test_criterion():
-    ci = {
+def bounds(osf_sens, osf_spec):
+    return {
         "ci95": {
-            "sleepfm": {"sensitivity": [0.61, 0.9], "specificity": [0.7, 0.9]},
-            "osf": {"sensitivity": [0.59, 0.9], "specificity": [0.7, 0.9]},
+            "sleepfm": {"sensitivity": [0.9, 1.0], "specificity": [0.9, 1.0]},
+            "osf": {"sensitivity": [osf_sens, 0.9], "specificity": [osf_spec, 0.9]},
         }
     }
-    verdict = ev.criterion(ci)
-    assert verdict["sleepfm"]["success"] and not verdict["osf"]["success"]
+
+
+def test_criterion_judges_osf_only():
+    verdict = ev.criterion(bounds(0.61, 0.7), positives=200, negatives=200)
+    assert verdict["osf"]["verdict"] == "réussi" and verdict["osf"]["success"]
+    assert verdict["sleepfm"]["judged"] is False and "success" not in verdict["sleepfm"]  # même avec de bons chiffres
+    assert ev.criterion(bounds(0.59, 0.7), 200, 200)["osf"]["verdict"] == "échoué"
+    assert ev.criterion(bounds(0.60, 0.7), 200, 200)["osf"]["verdict"] == "échoué"  # strictement au-dessus
+
+
+def test_small_class_is_inconclusive_not_failed():
+    few_negatives = ev.criterion(bounds(0.7, 0.4), positives=200, negatives=79)["osf"]
+    assert few_negatives["by_class"] == {"sensitivity": "réussi", "specificity": "non concluant (effectif insuffisant)"}
+    assert few_negatives["verdict"] == "non concluant (effectif insuffisant)" and not few_negatives["success"]
+    assert ev.criterion(bounds(0.7, 0.7), 200, 80)["osf"]["verdict"] == "réussi"  # 80 nuits suffisent
+    # une classe jugeable en échec l'emporte sur l'autre, non concluante
+    assert ev.criterion(bounds(0.5, 0.9), positives=200, negatives=10)["osf"]["verdict"] == "échoué"
+
+
+def test_clopper_pearson_matches_reference_values():
+    low, high = ev.clopper_pearson(11, 11)
+    assert high == 1.0 and abs(low - 0.7151) < 1e-3  # UCDDB : 11/11 et bootstrap [1 ; 1]
+    low, high = ev.clopper_pearson(0, 10)
+    assert low == 0.0 and abs(high - 0.3085) < 1e-3
+    low, high = ev.clopper_pearson(60, 80)
+    assert abs(low - 0.6406) < 1e-3 and abs(high - 0.8401) < 1e-3
+    assert ev.clopper_pearson(0, 0) is None
 
 
 def test_subject_number_matches_nsrr_ids():
