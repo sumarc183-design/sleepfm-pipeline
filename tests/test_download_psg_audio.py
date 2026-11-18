@@ -104,8 +104,11 @@ def test_fetch_retries_after_incomplete_read(monkeypatch):
         def __exit__(self, *exc):
             return False
 
-        def read(self):
-            return b"ok"
+        def __init__(self):
+            self.parts = [b"ok", b""]
+
+        def read(self, n):
+            return self.parts.pop(0)
 
     def urlopen(request, timeout):
         attempts.append(request)
@@ -116,3 +119,38 @@ def test_fetch_retries_after_incomplete_read(monkeypatch):
     monkeypatch.setattr(dl.urllib.request, "urlopen", urlopen)
     monkeypatch.setattr(dl.time, "sleep", lambda _: None)
     assert dl.fetch("f") == b"ok" and len(attempts) == 2
+
+
+def http_error(code, headers=None):
+    return dl.urllib.error.HTTPError("u", code, "", headers or {}, None)
+
+
+def test_throttling_waits_longer_than_a_cut():
+    assert dl.retry_delay(http.client.IncompleteRead(b"", 1), 0) == 10
+    assert [dl.retry_delay(http_error(429), a) for a in range(6)] == [60, 120, 240, 480, 900, 900]
+    assert dl.retry_delay(http_error(504), 1) == 120
+    assert dl.retry_delay(http_error(429, {"Retry-After": "30"}), 3) == 30
+    assert dl.retry_delay(http_error(404), 0) == 10  # pas une limitation : attente courte
+
+
+def test_trickling_response_is_abandoned_at_the_deadline(monkeypatch):
+    clock = iter(range(0, 10_000, 400))  # chaque morceau arrive 400 s après le précédent
+    monkeypatch.setattr(dl.time, "monotonic", lambda: next(clock))
+
+    class Trickle:
+        def read(self, n):
+            return b"x"
+
+    with pytest.raises(TimeoutError, match="trop lente"):
+        dl.read_with_deadline(Trickle(), deadline=dl.time.monotonic() + dl.REQUEST_DEADLINE)
+    assert isinstance(TimeoutError(), OSError)  # donc réessayée par fetch
+
+
+def test_normal_response_is_read_whole():
+    class Body:
+        parts = [b"ab", b"cd", b""]
+
+        def read(self, n):
+            return self.parts.pop(0)
+
+    assert dl.read_with_deadline(Body(), deadline=float("inf")) == b"abcd"

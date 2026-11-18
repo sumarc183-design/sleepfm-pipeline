@@ -23,6 +23,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -40,6 +41,15 @@ AUDIO_MIN_RATE = 1000.0  # voies à 48 kHz retirées
 RANGES_PER_REQUEST = 300
 WORKERS = 4  # requêtes simultanées : débit x3 environ (mesuré le 16 nov.)
 HEADERS = {"User-Agent": "sleepfm-pipeline research download"}
+# Serveur saturé ou limitant le débit (vu le 17 nov. au soir : 429 et 504 en série) : attendre bien plus
+# longtemps qu'après une simple coupure, pour ne pas sauter les patients les uns après les autres.
+THROTTLED = {429, 502, 503, 504}
+RETRIES = 8
+# Le délai d'une lecture réseau ne borne pas une requête dont le serveur distille quelques octets :
+# blocage de plus de 5 h vu le 18 nov. à 03h13. Durée totale bornée (une requête prend d'ordinaire < 1 min).
+SOCKET_TIMEOUT = 120
+REQUEST_DEADLINE = 900.0
+PASSES = 3  # passages successifs : les patients en échec sont repris, au plus PASSES fois au total
 
 
 def list_folder(path: str) -> list[dict]:
@@ -54,7 +64,27 @@ def list_folder(path: str) -> list[dict]:
     return [f for f in payload["data"] if f["version"] == "V3"]
 
 
-def fetch(file_id: str, ranges: list[tuple[int, int]] | None = None, retries: int = 5) -> bytes | list[bytes]:
+def retry_delay(exc: Exception, attempt: int) -> float:
+    """Secondes avant le prochain essai : Retry-After du serveur s'il est donné, sinon 1, 2, 4… min (15 au plus)."""
+    if isinstance(exc, urllib.error.HTTPError) and exc.code in THROTTLED:
+        after = (exc.headers or {}).get("Retry-After", "")
+        if after.strip().isdigit():
+            return min(float(after), 900.0)
+        return min(60.0 * 2**attempt, 900.0)
+    return 10.0 * (attempt + 1)
+
+
+def read_with_deadline(response, deadline: float) -> bytes:
+    """Corps lu par morceaux ; au-delà de l'échéance, abandon (réessayé par `fetch`)."""
+    chunks = []
+    while chunk := response.read(1 << 20):
+        chunks.append(chunk)
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"réponse trop lente (plus de {REQUEST_DEADLINE:.0f} s)")
+    return b"".join(chunks)
+
+
+def fetch(file_id: str, ranges: list[tuple[int, int]] | None = None, retries: int = RETRIES) -> bytes | list[bytes]:
     """Fichier entier, ou liste des plages demandées (dans l'ordre) via une réponse multipart."""
     headers = dict(HEADERS)
     if ranges:
@@ -62,16 +92,18 @@ def fetch(file_id: str, ranges: list[tuple[int, int]] | None = None, retries: in
     for attempt in range(retries):
         try:
             request = urllib.request.Request(DOWNLOAD_URL.format(file_id), headers=headers)
-            with urllib.request.urlopen(request, timeout=600) as response:
-                body, ctype = response.read(), response.headers.get("Content-Type", "")
+            with urllib.request.urlopen(request, timeout=SOCKET_TIMEOUT) as response:
+                body = read_with_deadline(response, time.monotonic() + REQUEST_DEADLINE)
+                ctype = response.headers.get("Content-Type", "")
             if not ranges:
                 return body
             return parse_ranges(body, ctype, ranges)
         except (OSError, ValueError, http.client.HTTPException) as exc:  # IncompleteRead : coupure en cours de réponse
             if attempt == retries - 1:
                 raise
-            print(f"  nouvelle tentative ({exc})", flush=True)
-            time.sleep(10 * (attempt + 1))
+            delay = retry_delay(exc, attempt)
+            print(f"  nouvelle tentative dans {delay:.0f} s ({exc})", flush=True)
+            time.sleep(delay)
     raise AssertionError
 
 
@@ -199,6 +231,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--workers", type=int, default=WORKERS)
+    parser.add_argument("--passes", type=int, default=PASSES)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     log_path = args.out / "download_log.json"
@@ -210,18 +243,22 @@ def main() -> None:
     # si le téléchargement complet (environ 3 jours à 4 requêtes simultanées) devait être arrêté avant la fin.
     order = np.random.default_rng(42).permutation(len(rmls))
     patients = [sorted(rmls)[i] for i in order][: args.limit]
-    todo = [p for p in patients if p not in log["done"]]
-    print(f"{len(patients)} patients, {len(todo)} à télécharger", flush=True)
-    for index, patient in enumerate(todo):
-        begin = time.time()
-        try:
-            log["done"][patient] = download_patient(patient, rmls[patient], args.out, args.workers)
-            log["failed"].pop(patient, None)
-            print(f"[{index + 1}/{len(todo)}] {patient} : {time.time() - begin:.0f} s", flush=True)
-        except (OSError, RuntimeError, ValueError, http.client.HTTPException) as exc:
-            log["failed"][patient] = str(exc)
-            print(f"[{index + 1}/{len(todo)}] {patient} ÉCHEC : {exc}", flush=True)
-        write_json_atomic(log_path, log)
+    for passage in range(1, args.passes + 1):
+        todo = [p for p in patients if p not in log["done"]]
+        print(f"Passage {passage} : {len(patients)} patients, {len(todo)} à télécharger", flush=True)
+        if not todo:
+            break
+        for index, patient in enumerate(todo):
+            begin = time.time()
+            try:
+                log["done"][patient] = download_patient(patient, rmls[patient], args.out, args.workers)
+                log["failed"].pop(patient, None)
+                print(f"[{index + 1}/{len(todo)}] {patient} : {time.time() - begin:.0f} s", flush=True)
+            except (OSError, RuntimeError, ValueError, http.client.HTTPException) as exc:
+                log["failed"][patient] = str(exc)
+                print(f"[{index + 1}/{len(todo)}] {patient} ÉCHEC : {exc}", flush=True)
+            write_json_atomic(log_path, log)
+    print(f"Fin : {len(log['done'])} faits, {len(log['failed'])} en échec {sorted(log['failed'])}", flush=True)
 
 
 if __name__ == "__main__":
