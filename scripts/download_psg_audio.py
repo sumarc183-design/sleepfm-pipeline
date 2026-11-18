@@ -226,12 +226,22 @@ def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS)
     }
 
 
+def within_budget(sizes: list[int], budget: float | None) -> bool:
+    """Assez de place pour un patient de plus, de la taille du plus gros déjà vu (300 Mo avant le premier)."""
+    if budget is None:
+        return True
+    return sum(sizes) + max(sizes, default=300e6) <= budget
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--workers", type=int, default=WORKERS)
     parser.add_argument("--passes", type=int, default=PASSES)
+    # Second téléchargement depuis un autre réseau (Kaggle) : liste prise par la fin, volume borné.
+    parser.add_argument("--reverse", action="store_true", help="parcourir l'ordre figé depuis la fin")
+    parser.add_argument("--max-gb", type=float, default=None, help="arrêt avant de dépasser ce volume d'EDF")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     log_path = args.out / "download_log.json"
@@ -243,16 +253,26 @@ def main() -> None:
     # si le téléchargement complet (environ 3 jours à 4 requêtes simultanées) devait être arrêté avant la fin.
     order = np.random.default_rng(42).permutation(len(rmls))
     patients = [sorted(rmls)[i] for i in order][: args.limit]
+    if args.reverse:
+        patients = patients[::-1]
+    sizes = [(args.out / f"{p}.edf").stat().st_size for p in log["done"] if (args.out / f"{p}.edf").exists()]
+    budget = None if args.max_gb is None else args.max_gb * 1e9
     for passage in range(1, args.passes + 1):
         todo = [p for p in patients if p not in log["done"]]
+        if not within_budget(sizes, budget):
+            break
         print(f"Passage {passage} : {len(patients)} patients, {len(todo)} à télécharger", flush=True)
         if not todo:
             break
         for index, patient in enumerate(todo):
+            if not within_budget(sizes, budget):
+                print(f"Volume maximal atteint ({sum(sizes) / 1e9:.1f} Go) : arrêt", flush=True)
+                break
             begin = time.time()
             try:
                 log["done"][patient] = download_patient(patient, rmls[patient], args.out, args.workers)
                 log["failed"].pop(patient, None)
+                sizes.append((args.out / f"{patient}.edf").stat().st_size)
                 print(f"[{index + 1}/{len(todo)}] {patient} : {time.time() - begin:.0f} s", flush=True)
             except (OSError, RuntimeError, ValueError, http.client.HTTPException) as exc:
                 log["failed"][patient] = str(exc)

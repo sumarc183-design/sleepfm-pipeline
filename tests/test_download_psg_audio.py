@@ -146,6 +146,13 @@ def test_trickling_response_is_abandoned_at_the_deadline(monkeypatch):
     assert isinstance(TimeoutError(), OSError)  # donc réessayée par fetch
 
 
+def test_volume_budget_keeps_room_for_the_largest_patient():
+    assert dl.within_budget([], None) and dl.within_budget([10**9] * 50, None)
+    assert dl.within_budget([], 1e9) and not dl.within_budget([], 0.2e9)
+    assert dl.within_budget([100e6, 200e6], 0.5e9)  # 300 Mo faits + 200 Mo possibles
+    assert not dl.within_budget([100e6, 200e6], 0.49e9)
+
+
 def test_normal_response_is_read_whole():
     class Body:
         parts = [b"ab", b"cd", b""]
