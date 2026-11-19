@@ -66,6 +66,10 @@ CODE = tuple(
             "src/data/ahi.py",
             "src/data/nsrr_annotations.py",
             "src/data/ucddb_annotations.py",
+            # Étape amont PSG-Audio (audit A1) : assemblage des EDF, contrôle des en-têtes, exclusions.
+            "scripts/download_psg_audio.py",
+            "scripts/check_psg_audio_headers.py",
+            "scripts/reject_psg_audio_nights.py",
             *PREPARATION_CODE,
         }
     )
@@ -424,7 +428,11 @@ def against_official(night: dict, official: np.ndarray, calibration: dict) -> di
 
 
 def precheck(args) -> dict:
-    """Tout ce qui peut être vérifié sans lire une cible ni prédire. Lève une erreur sinon."""
+    """Tout ce qui peut être vérifié avant toute prédiction. Lève une erreur sinon.
+
+    Les annotations sont lues dès ce stade (présence, empreintes, lisibilité, concepts inconnus), de même
+    que le CSV officiel éventuel ; aucun IAH n'est calculé et aucun modèle n'est appliqué.
+    """
     outputs = {ext: Path(f"{args.out}.{ext}") for ext in ("json", "nights.npz", "code.zip")}
     if any(p.exists() for p in outputs.values()):
         raise ValueError("Sortie existante : la confirmation ne se lance qu'une fois")

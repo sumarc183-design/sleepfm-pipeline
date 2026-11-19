@@ -173,5 +173,6 @@ des types d'événements, toutes nuits confondues, ont été lus.
 - **Classe IAH vide ou moins de deux nuits** (audit A2) : le rapport est quand même écrit. La classe
   vide reçoit « non concluant (effectif insuffisant) » ; les mesures de la classe présente sont
   publiées avec leur IC, et les mesures non calculables avec leur raison.
-- Ces exclusions sont faites à l'extraction (`<sujet>.skipped` motivé), donc avant toute lecture des
-  annotations par l'évaluateur, et comptées dans le rapport.
+- Ces exclusions sont faites à l'extraction (`<sujet>.skipped` motivé, écrit par
+  `scripts/reject_psg_audio_nights.py`), donc avant toute lecture des annotations par l'évaluateur,
+  et comptées dans le rapport. Les échecs réseau ne sont pas des exclusions : ces nuits sont reprises.
