@@ -63,7 +63,9 @@ def summary(nights: dict, channels=CHANNELS) -> dict:
         p5, q1, q2, q3, p95 = np.percentile(scale, [5, 25, 50, 75, 95])
         out[channel] = {
             "robust_scale": {"p5": p5, "q1": q1, "median": q2, "q3": q3, "p95": p95},
-            "p95_over_p5": float(p95 / p5) if p5 > 0 else float("inf"),
+            # Ratio indéfini publié en null avec son motif (JSON strict, audit A6 du 19-11).
+            "p95_over_p5": float(p95 / p5) if p5 > 0 else None,
+            "p95_over_p5_undefined": None if p5 > 0 else "5e centile nul : voie plate dans au moins 5 % des nuits",
             "flat_nights": int((scale == 0).sum()),
             "median_of_medians": float(np.median(median)),
         }

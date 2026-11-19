@@ -1,0 +1,12 @@
+# Fichiers dont l'empreinte est vérifiée (listes approuvées, code de préparation, plans) : toujours
+# en LF, y compris dans un checkout Windows (audit A6 du 19-11).
+* text=auto eol=lf
+*.npz binary
+*.npy binary
+*.joblib binary
+*.pt binary
+*.pth binary
+*.edf binary
+*.zip binary
+*.png binary
+*.pdf binary

@@ -1,5 +1,9 @@
 # Comparer SleepFM et OSF — ce qui n'est PAS un simple remplacement de modèle
 
+> **État au 19 novembre 2026.** Le mapping PhysioNet et l'évaluation sont faits : voir
+> [Option A : résultat](#option-a--résultat-passage-unique-critère-fixé-avant). Les sections « À faire »
+> et « Proposition de protocole » ci-dessous sont des étapes historiques, conservées telles quelles.
+
 `src/models/osf_vit1d.py` implémente le backbone OSF adapté de
 yang-ai-lab/OSF-Open-Sleep-FM (MIT). Testé : architecture (ViT-Base,
 ~86M paramètres), forward pass, round-trip de checkpoints synthétiques. Mais comparer
