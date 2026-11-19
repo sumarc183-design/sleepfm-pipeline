@@ -95,6 +95,40 @@ def test_folder_index_keeps_files_only(monkeypatch):
 
 
 def test_pending_skips_done_and_rejected(tmp_path):
-    (tmp_path / "a.npz").touch()
+    (tmp_path / "a.npz").touch(), (tmp_path / "a.json").touch()  # NPZ et sa fiche
     (tmp_path / "b.skipped").touch()
     assert nsrr.pending(["a", "b", "c"], tmp_path) == ["c"]
+
+
+def test_only_success_or_unfinished_list_is_accepted(monkeypatch, capsys, tmp_path):
+    """Audit A3 : code 1 accepté seulement si l'extracteur vient d'écrire un statut incomplet."""
+    import subprocess
+
+    def fake(code, status=None):
+        def run(*a, **k):
+            if status is not None:
+                (tmp_path / "run_status.json").write_text(json.dumps({"complete": status}))
+            return subprocess.CompletedProcess([], code, "ligne\n[1/2] x : EDF absent\n", "contrat différent")
+
+        return run
+
+    monkeypatch.setattr(nsrr.subprocess, "run", fake(0))
+    nsrr.run_lot(["embed"], tmp_path)
+    monkeypatch.setattr(nsrr.subprocess, "run", fake(1, status=False))
+    nsrr.run_lot(["embed"], tmp_path)
+    assert "EDF absent" not in capsys.readouterr().out
+    old = tmp_path / "run_status.json"
+    nsrr.os.utime(old, (0, 0))  # statut d'un lot précédent : l'erreur de ce lot n'est pas masquée
+    for case in (fake(1), fake(1, status=True), fake(2, status=False)):
+        nsrr.os.utime(old, (0, 0))
+        monkeypatch.setattr(nsrr.subprocess, "run", case)
+        with pytest.raises(SystemExit, match="contrat différent"):
+            nsrr.run_lot(["embed"], tmp_path)
+
+
+def test_npz_without_its_record_is_still_pending(tmp_path):
+    (tmp_path / "a.npz").write_bytes(b"")
+    (tmp_path / "b.npz").write_bytes(b"")
+    (tmp_path / "b.json").write_text("{}")
+    (tmp_path / "c.skipped").write_text("EDF tronqué")
+    assert nsrr.pending(["a", "b", "c", "d"], tmp_path) == ["a", "d"]

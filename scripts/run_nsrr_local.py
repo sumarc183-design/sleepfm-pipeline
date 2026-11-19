@@ -111,7 +111,34 @@ def download_lot(cohort: str, lot: list[str], index: dict, folder: Path, token: 
 
 
 def pending(subjects: list[str], out: Path) -> list[str]:
-    return [s for s in subjects if not (out / f"{s}.npz").exists() and not (out / f"{s}.skipped").exists()]
+    """Nuits à télécharger : ni NPZ accompagné de sa fiche, ni rejet motivé (audit A3)."""
+    done = [s for s in subjects if (out / f"{s}.npz").exists() and (out / f"{s}.json").exists()]
+    return [s for s in subjects if s not in set(done) and not (out / f"{s}.skipped").exists()]
+
+
+def unfinished_run(out: Path, started: float) -> bool:
+    """Vrai si l'extracteur a écrit, pendant ce lot, un run_status.json « liste pas encore finie ».
+
+    `embed_nsrr` sort avec le code 1 dans ce cas normal, mais aussi pour une erreur bloquante
+    (contrat différent, cache abîmé) avant d'écrire ce statut : seul le premier cas est accepté
+    (audit A3). Le code de l'extracteur n'est pas modifié, car il fait partie du contrat des caches.
+    """
+    path = out / "run_status.json"
+    if not path.exists() or path.stat().st_mtime < started:
+        return False
+    return json.loads(path.read_text(encoding="utf-8")).get("complete") is False
+
+
+def run_lot(command: list[str], out: Path) -> None:
+    """Extraction d'un lot ; seul « liste pas encore finie » est accepté en plus du succès."""
+    started = time.time() - 1  # marge pour la résolution des dates de fichier
+    result = subprocess.run(command, capture_output=True, text=True)
+    for line in result.stdout.splitlines():
+        if "EDF absent" not in line:
+            print(line, flush=True)
+    if result.returncode == 0 or (result.returncode == 1 and unfinished_run(out, started)):
+        return
+    raise SystemExit(f"embed_nsrr a échoué (code {result.returncode}) :\n{result.stderr[-2000:]}")
 
 
 def main() -> None:
@@ -156,12 +183,7 @@ def main() -> None:
         edf_dir.mkdir(parents=True)
         lot = todo[start : start + LOT]
         unavailable += download_lot(args.cohort, lot, index, edf_dir, token)
-        result = subprocess.run(command, capture_output=True, text=True)  # code 1 tant que la liste n'est pas finie
-        for line in result.stdout.splitlines():
-            if "EDF absent" not in line:
-                print(line, flush=True)
-        if result.returncode not in (0, 1):
-            raise SystemExit(f"embed_nsrr a échoué :\n{result.stderr[-2000:]}")
+        run_lot(command, out)
         print(
             f"--- lot {start // LOT + 1} : {len(subjects) - len(pending(subjects, out))}/{len(subjects)} nuits",
             flush=True,
