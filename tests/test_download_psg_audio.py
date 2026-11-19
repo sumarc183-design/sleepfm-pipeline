@@ -12,18 +12,18 @@ from scripts import download_psg_audio as dl
 RATES = [2, 4, 48]  # deux voies gardées, une voie « audio » retirée (seuil abaissé pour le test)
 
 
-def edf(start: str, n_records: int, seed: int) -> bytes:
+def edf(start: str, n_records: int, seed: int, pmin: str = "0", rates: list[int] = RATES) -> bytes:
     """EDF synthétique : 3 voies, enregistrements d'une seconde."""
-    n = len(RATES)
+    n = len(rates)
     fixed = (
         f"{'0':<8}{'X':<80}{'Y':<80}{'01.01.20':<8}{start:<8}{256 * (1 + n):<8}{'':<44}{n_records:<8}{'1':<8}{n:<4}"
     ).encode()
     widths = (16, 80, 8, 8, 8, 8, 8, 80, 8, 32)
-    values = {0: [f"V{i}" for i in range(n)], 8: [str(r) for r in RATES]}
+    values = {0: [f"V{i}" for i in range(n)], 3: [pmin] + ["0"] * (n - 1), 8: [str(r) for r in rates]}
     body = b"".join(
         b"".join(f"{values.get(k, ['0'] * n)[i]:<{w}}".encode() for i in range(n)) for k, w in enumerate(widths)
     )
-    data = random.Random(seed).randbytes(2 * sum(RATES) * n_records)
+    data = random.Random(seed).randbytes(2 * sum(rates) * n_records)
     return fixed + body + data
 
 
@@ -177,3 +177,43 @@ def test_deadline_is_checked_even_if_bytes_trickle(monkeypatch):
 
     with pytest.raises(TimeoutError):
         dl.read_with_deadline(Trickle(), deadline=dl.time.monotonic() + dl.REQUEST_DEADLINE)
+
+
+@pytest.mark.parametrize(
+    ("second", "field"),
+    [
+        (edf("22.00.07", 5, 2, pmin="-100"), "pmin"),  # calibre différent sur une voie gardée
+        (edf("22.00.07", 5, 2, rates=[4, 2, 48]), "samples"),  # fréquences permutées, même taille
+    ],
+)
+def test_incompatible_segment_is_refused_before_any_edf_byte(server, tmp_path, second, field):
+    """Audit A1 du 19-11 : tranches de mêmes libellés mais de calibrations différentes."""
+    files, _ = server
+    files["s2"] = second
+    rml = {"id": "rml", "md5": hashlib.md5(files["rml"]).hexdigest()}
+    with pytest.raises(RuntimeError, match=rf"p\[002\]\.edf : voie V[01], {field}"):
+        dl.download_patient("p", rml, tmp_path)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_audio_voice_may_differ_and_source_headers_are_traced(server, tmp_path):
+    files, _ = server
+    files["s2"] = edf("22.00.07", 5, 2, rates=[2, 4, 96])  # seule la voie audio retirée change
+    rml = {"id": "rml", "md5": hashlib.md5(files["rml"]).hexdigest()}
+    entry = dl.download_patient("p", rml, tmp_path)
+    assert entry["duration_s"] == 12.0
+    headers = [hashlib.sha256(files[s][: 256 * 4]).hexdigest() for s in ("s1", "s2")]
+    assert entry["source_headers_sha256"] == headers
+
+
+def test_existing_edf_is_qualified_against_source_headers(server, tmp_path, monkeypatch):
+    from scripts import check_psg_audio_headers as check
+
+    files, _ = server
+    rml = {"id": "rml", "md5": hashlib.md5(files["rml"]).hexdigest()}
+    dl.download_patient("p", rml, tmp_path)
+    monkeypatch.setattr(check, "source_header", lambda file_id: files[file_id][: 256 * 4])
+    assert check.check_patient("p", tmp_path / "p.edf")["compatible"]
+    files["s2"] = edf("22.00.07", 5, 2, pmin="-100")  # tranche source recalibrée après coup
+    result = check.check_patient("p", tmp_path / "p.edf")
+    assert not result["compatible"] and "pmin" in result["reason"]

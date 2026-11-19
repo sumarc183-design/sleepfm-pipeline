@@ -173,6 +173,25 @@ def patient_segments(patient_dir: str) -> list[dict]:
     return sorted(files, key=lambda f: int(re.search(r"\[(\d+)\]", f["fileName"]).group(1)))
 
 
+COMPARED_FIELDS = ("label", "transducer", "unit", "pmin", "pmax", "dmin", "dmax", "prefilter", "samples")
+
+
+def check_compatible(first: dict, info: dict, keep: int) -> None:
+    """Refuse une tranche dont les voies gardées diffèrent de la première (audit A1, 19-11).
+
+    L'EDF assemblé garde l'en-tête de la première tranche et découpe chaque enregistrement
+    d'après ses tailles : calibre, unité, fréquence ou durée d'enregistrement différents
+    fausseraient le signal sans erreur. Les voies audio retirées peuvent différer.
+    """
+    if info["record_s"] != first["record_s"]:
+        raise RuntimeError(f"{info['name']} : durée d'enregistrement {info['record_s']} au lieu de {first['record_s']}")
+    for name in COMPARED_FIELDS:
+        for index, (a, b) in enumerate(zip(first["fields"][name][:keep], info["fields"][name][:keep], strict=True)):
+            if a.strip() != b.strip():
+                voice = first["fields"]["label"][index].decode(errors="replace").strip()
+                raise RuntimeError(f"{info['name']} : voie {voice}, {name} {b.strip()!r} au lieu de {a.strip()!r}")
+
+
 def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS) -> dict:
     rml_bytes = fetch(rml["id"])  # vérifié avant l'EDF : un .rml faux échoue en quelques secondes
     if hashlib.md5(rml_bytes).hexdigest() != rml["md5"].lower():  # le dépôt donne 93 MD5 en majuscules
@@ -194,6 +213,8 @@ def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS)
             this_keep != keep or info["fields"]["label"][:keep] != infos[0]["fields"]["label"][:keep]
         ):
             raise RuntimeError(f"{seg['fileName']} : voies différentes de la première tranche")
+        if keep is not None:
+            check_compatible(infos[0], info, keep)
         keep = this_keep
         infos.append(info)
     for previous, current in zip(infos[:-1], infos[1:], strict=True):
@@ -227,6 +248,7 @@ def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS)
         "kept_signals": [label.decode().strip() for label in infos[0]["fields"]["label"][:keep]],
         "duration_s": total * infos[0]["record_s"],
         "rml_md5": rml["md5"].lower(),
+        "source_headers_sha256": [hashlib.sha256(i["raw"]).hexdigest() for i in infos],
     }
 
 
