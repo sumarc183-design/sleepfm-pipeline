@@ -146,11 +146,37 @@ def test_trickling_response_is_abandoned_at_the_deadline(monkeypatch):
     assert isinstance(TimeoutError(), OSError)  # donc réessayée par fetch
 
 
-def test_volume_budget_keeps_room_for_the_largest_patient():
-    assert dl.within_budget([], None) and dl.within_budget([10**9] * 50, None)
-    assert dl.within_budget([], 1e9) and not dl.within_budget([], 0.2e9)
-    assert dl.within_budget([100e6, 200e6], 0.5e9)  # 300 Mo faits + 200 Mo possibles
-    assert not dl.within_budget([100e6, 200e6], 0.49e9)
+def test_budget_uses_the_exact_size_before_writing(server, tmp_path):
+    """Audit A4 : taille exacte connue après les en-têtes, comparée avant tout octet écrit."""
+    files, _ = server
+    rml = {"id": "rml", "md5": hashlib.md5(files["rml"]).hexdigest()}
+    size = 256 * 3 + 12 * 2 * sum(RATES[:2])
+    with pytest.raises(dl.BudgetExceeded):
+        dl.download_patient("p", rml, tmp_path, max_bytes=size - 1)
+    assert list(tmp_path.iterdir()) == []
+    dl.download_patient("p", rml, tmp_path, max_bytes=size)
+    assert (tmp_path / "p.edf").stat().st_size == size
+
+
+def test_frozen_order_comes_from_the_approved_list():
+    approved = [f"s{i:03d}" for i in range(20)]
+    forward = dl.frozen_order(approved, set(approved) | {"nouveau"})  # sujet ajouté au dépôt : ignoré
+    assert sorted(forward) == approved
+    assert dl.frozen_order(approved, set(approved), reverse=True, limit=5) == forward[::-1][:5]
+    with pytest.raises(SystemExit, match="Index ScienceDB modifié"):
+        dl.frozen_order(approved, set(approved[1:]))
+
+
+def test_finished_pair_is_rechecked_on_resume(server, tmp_path):
+    files, _ = server
+    rml = {"id": "rml", "md5": hashlib.md5(files["rml"]).hexdigest()}
+    entry = dl.download_patient("p", rml, tmp_path)
+    assert dl.intact(tmp_path, "p", entry) is None
+    edf = tmp_path / "p.edf"
+    edf.write_bytes(edf.read_bytes()[:-1] + b"\x00")
+    assert "SHA-256" in dl.intact(tmp_path, "p", entry)
+    (tmp_path / "p.rml").unlink()
+    assert dl.intact(tmp_path, "p", entry) == "fichier absent"
 
 
 def test_normal_response_is_read_whole():
@@ -217,3 +243,18 @@ def test_existing_edf_is_qualified_against_source_headers(server, tmp_path, monk
     files["s2"] = edf("22.00.07", 5, 2, pmin="-100")  # tranche source recalibrée après coup
     result = check.check_patient("p", tmp_path / "p.edf")
     assert not result["compatible"] and "pmin" in result["reason"]
+
+
+def test_end_of_response_after_the_deadline_is_refused(monkeypatch):
+    """Audit A4 : la fin de réponse arrivée après l'échéance n'est plus acceptée."""
+    clock = iter([0, 1000])  # morceau à 0 s, fin de réponse à 1 000 s
+    monkeypatch.setattr(dl.time, "monotonic", lambda: next(clock))
+
+    class Late:
+        parts = [b"ab", b""]
+
+        def read1(self, n):
+            return self.parts.pop(0)
+
+    with pytest.raises(TimeoutError):
+        dl.read_with_deadline(Late(), deadline=900)

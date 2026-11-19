@@ -30,7 +30,8 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from src.data.cache_contract import write_json_atomic  # noqa: E402
 
@@ -49,6 +50,7 @@ RETRIES = 8
 # blocage de plus de 5 h vu le 18 nov. à 03h13. Durée totale bornée (une requête prend d'ordinaire < 1 min).
 SOCKET_TIMEOUT = 120
 REQUEST_DEADLINE = 900.0
+APPROVED = ROOT / "configs/psgaudio_subjects.json"  # univers de sélection figé (audit A4)
 PASSES = 3  # passages successifs : les patients en échec sont repris, au plus PASSES fois au total
 
 
@@ -77,6 +79,9 @@ def retry_delay(exc: Exception, attempt: int) -> float:
 def read_with_deadline(response, deadline: float) -> bytes:
     """Corps lu par morceaux ; au-delà de l'échéance, abandon (réessayé par `fetch`).
 
+    L'échéance porte sur la lecture du corps. La connexion et l'attente des en-têtes sont bornées
+    séparément par SOCKET_TIMEOUT à chaque opération réseau.
+
     `read1` rend ce qui est déjà arrivé : `read(n)` attendrait n octets, et un serveur qui
     distille quelques octets par minute ne rendrait jamais la main (blocage de 7 h le 19-11).
     """
@@ -85,6 +90,8 @@ def read_with_deadline(response, deadline: float) -> bytes:
         chunks.append(chunk)
         if time.monotonic() > deadline:
             raise TimeoutError(f"réponse trop lente (plus de {REQUEST_DEADLINE:.0f} s)")
+    if time.monotonic() > deadline:  # fin de réponse arrivée après l'échéance (audit A4)
+        raise TimeoutError(f"réponse trop lente (plus de {REQUEST_DEADLINE:.0f} s)")
     return b"".join(chunks)
 
 
@@ -192,7 +199,13 @@ def check_compatible(first: dict, info: dict, keep: int) -> None:
                 raise RuntimeError(f"{info['name']} : voie {voice}, {name} {b.strip()!r} au lieu de {a.strip()!r}")
 
 
-def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS) -> dict:
+class BudgetExceeded(Exception):
+    """Le prochain EDF, de taille connue après lecture des en-têtes, dépasserait le volume maximal."""
+
+
+def download_patient(
+    patient: str, rml: dict, out: Path, workers: int = WORKERS, max_bytes: float | None = None
+) -> dict:
     rml_bytes = fetch(rml["id"])  # vérifié avant l'EDF : un .rml faux échoue en quelques secondes
     if hashlib.md5(rml_bytes).hexdigest() != rml["md5"].lower():  # le dépôt donne 93 MD5 en majuscules
         raise RuntimeError("MD5 du .rml différent de celui du dépôt")
@@ -224,6 +237,9 @@ def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS)
     record_bytes = [2 * sum(info["samples"]) for info in infos]
     kept_bytes = 2 * sum(infos[0]["samples"][:keep])
     total = sum(info["n_records"] for info in infos)
+    size = 256 * (1 + keep) + total * kept_bytes
+    if max_bytes is not None and size > max_bytes:  # taille exacte, avant tout octet écrit (audit A4)
+        raise BudgetExceeded(f"{patient} : {size / 1e9:.2f} Go pour {max_bytes / 1e9:.2f} Go restants")
     partial = out / f"{patient}.edf.part"
     digest = hashlib.sha256()
     jobs = []
@@ -252,11 +268,28 @@ def download_patient(patient: str, rml: dict, out: Path, workers: int = WORKERS)
     }
 
 
-def within_budget(sizes: list[int], budget: float | None) -> bool:
-    """Assez de place pour un patient de plus, de la taille du plus gros déjà vu (300 Mo avant le premier)."""
-    if budget is None:
-        return True
-    return sum(sizes) + max(sizes, default=300e6) <= budget
+def frozen_order(approved: list[str], index: set[str], reverse: bool = False, limit: int | None = None) -> list[str]:
+    """Ordre aléatoire figé (graine 42) sur la liste approuvée ; sens inverse appliqué avant la limite."""
+    missing = sorted(set(approved) - index)
+    if missing:
+        raise SystemExit(f"Index ScienceDB modifié : {len(missing)} sujets approuvés absents ({missing[:3]})")
+    ordered = sorted(approved)
+    patients = [ordered[i] for i in np.random.default_rng(42).permutation(len(ordered))]
+    return (patients[::-1] if reverse else patients)[:limit]
+
+
+def intact(out: Path, patient: str, entry: dict) -> str | None:
+    """Raison de reprendre un patient marqué terminé, ou None si ses deux fichiers sont conformes."""
+    edf, rml = out / f"{patient}.edf", out / f"{patient}.rml"
+    if not edf.exists() or not rml.exists():
+        return "fichier absent"
+    if hashlib.md5(rml.read_bytes()).hexdigest() != entry["rml_md5"]:
+        return "MD5 du .rml différent du journal"
+    digest = hashlib.sha256()
+    with edf.open("rb") as handle:
+        while block := handle.read(1 << 24):
+            digest.update(block)
+    return None if digest.hexdigest() == entry["edf_sha256"] else "SHA-256 de l'EDF différent du journal"
 
 
 def main() -> None:
@@ -277,29 +310,33 @@ def main() -> None:
     }
     # Ordre aléatoire figé (graine 42) : tout préfixe téléchargé est un tirage au sort sans biais,
     # si le téléchargement complet (environ 3 jours à 4 requêtes simultanées) devait être arrêté avant la fin.
-    order = np.random.default_rng(42).permutation(len(rmls))
-    patients = [sorted(rmls)[i] for i in order][: args.limit]
-    if args.reverse:
-        patients = patients[::-1]
+    approved = json.loads(APPROVED.read_text(encoding="utf-8"))["subjects"]
+    patients = frozen_order(approved, set(rmls), args.reverse, args.limit)
+    for patient in [p for p in log["done"] if p in patients]:  # reprise : paires revérifiées (audit A4)
+        if reason := intact(args.out, patient, log["done"][patient]):
+            print(f"{patient} repris : {reason}", flush=True)
+            del log["done"][patient]
     sizes = [(args.out / f"{p}.edf").stat().st_size for p in log["done"] if (args.out / f"{p}.edf").exists()]
     budget = None if args.max_gb is None else args.max_gb * 1e9
+    stop = False
     for passage in range(1, args.passes + 1):
         todo = [p for p in patients if p not in log["done"]]
-        if not within_budget(sizes, budget):
-            break
         print(f"Passage {passage} : {len(patients)} patients, {len(todo)} à télécharger", flush=True)
-        if not todo:
+        if not todo or stop:
             break
         for index, patient in enumerate(todo):
-            if not within_budget(sizes, budget):
-                print(f"Volume maximal atteint ({sum(sizes) / 1e9:.1f} Go) : arrêt", flush=True)
-                break
+            remaining = None if budget is None else budget - sum(sizes)
             begin = time.time()
             try:
-                log["done"][patient] = download_patient(patient, rmls[patient], args.out, args.workers)
+                entry = download_patient(patient, rmls[patient], args.out, args.workers, remaining)
+                log["done"][patient] = entry
                 log["failed"].pop(patient, None)
                 sizes.append((args.out / f"{patient}.edf").stat().st_size)
                 print(f"[{index + 1}/{len(todo)}] {patient} : {time.time() - begin:.0f} s", flush=True)
+            except BudgetExceeded as exc:
+                print(f"Volume maximal atteint ({sum(sizes) / 1e9:.1f} Go) : arrêt ({exc})", flush=True)
+                stop = True
+                break
             except (OSError, RuntimeError, ValueError, http.client.HTTPException) as exc:
                 log["failed"][patient] = str(exc)
                 print(f"[{index + 1}/{len(todo)}] {patient} ÉCHEC : {exc}", flush=True)
