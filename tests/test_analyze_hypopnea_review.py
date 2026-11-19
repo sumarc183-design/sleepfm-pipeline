@@ -44,3 +44,18 @@ def test_unanswered_or_unknown_choice_is_refused():
     rows = [("F01", "", "oui", "bonne")] + ROWS[1:]
     with pytest.raises(ValueError, match="hors choix"):
         ana.read_answers(csv_text(rows), {w["id"] for w in WINDOWS})
+
+
+def test_csv_is_tied_to_its_sample():
+    """Audit A7 : un CSV d'un autre tirage est refusé ; l'ancien format est signalé non vérifiable."""
+    ids = {w["id"] for w in WINDOWS}
+    old = ana.read_answers(csv_text(ROWS), ids)
+    assert ana.sample_check(old, "abc").startswith("non vérifiable")
+
+    def tagged(sha):
+        text = csv_text(ROWS).replace(HEADER, HEADER + ",tirage_sha256")
+        return text.replace(",Dr X", f",Dr X,{sha}")
+
+    assert ana.sample_check(ana.read_answers(tagged("abc"), ids), "abc") == "vérifié"
+    with pytest.raises(ValueError, match="autre tirage"):
+        ana.sample_check(ana.read_answers(tagged("autre"), ids), "abc")

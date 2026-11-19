@@ -48,7 +48,7 @@ passez à la suivante. Vos réponses restent enregistrées dans ce navigateur ; 
 </main>
 <script id="data" type="application/json">__DATA__</script>
 <script>
-const D=JSON.parse(document.getElementById('data').textContent),W=D.windows,KEY='relecture-hypopnees-v1';
+const SAMPLE='__SAMPLE__',D=JSON.parse(document.getElementById('data').textContent),W=D.windows,KEY='relecture-hypopnees-v1-'+SAMPLE;
 let answers={},reviewer='',i=0;
 try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');answers=s.answers||{};reviewer=s.reviewer||'';i=s.i||0}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({answers,reviewer,i}))}catch(e){}};
@@ -80,8 +80,8 @@ const rv=document.getElementById('reviewer');rv.value=reviewer;rv.addEventListen
 document.getElementById('prev').onclick=()=>{i=(i+W.length-1)%W.length;save();draw()};
 document.getElementById('next').onclick=()=>{i=(i+1)%W.length;save();draw();window.scrollTo(0,0)};
 document.getElementById('export').onclick=()=>{const q=s=>'"'+String(s||'').replace(/"/g,'""')+'"';
-const rows=[['fenetre','q1_evenement','q2_criteres_aasm','q3_qualite','commentaire','relecteur'].join(',')];
-W.forEach(w=>{const a=answers[w.id]||{};rows.push([w.id,q(a.q1),q(a.q2),q(a.q3),q(a.note),q(reviewer)].join(','))});
+const rows=[['fenetre','q1_evenement','q2_criteres_aasm','q3_qualite','commentaire','relecteur','tirage_sha256'].join(',')];
+W.forEach(w=>{const a=answers[w.id]||{};rows.push([w.id,q(a.q1),q(a.q2),q(a.q3),q(a.note),q(reviewer),SAMPLE].join(','))});
 const b=new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),l=document.createElement('a');
 l.href=u;l.download='relecture_hypopnees_'+(reviewer||'medecin').replace(/[^\w-]+/g,'_')+'.csv';l.click();URL.revokeObjectURL(u)};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);

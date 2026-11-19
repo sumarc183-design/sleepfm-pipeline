@@ -2,7 +2,10 @@
 
 Entrées : l'échantillon figé (`results/hypopnea_review_sample.json`) et le CSV exporté par la page.
 Le CSV est refusé s'il ne couvre pas exactement les 40 fenêtres ou contient une réponse hors des
-choix proposés ; le plan doit être celui du tirage (empreinte). Proportions par groupe, descriptives,
+choix proposés ; le plan doit être celui du tirage (empreinte). Le CSV porte l'empreinte du tirage
+(colonne `tirage_sha256`, audit A7 du 19-11) : une empreinte différente est refusée ; un CSV sans
+cette colonne (page envoyée avant le 19-11) est accepté et signalé « non vérifiable ».
+Proportions par groupe, descriptives,
 sans test (effectifs trop faibles) :
 - A et B : part « hypopnée nette, critères remplis » (Q1 = hypopnée et Q2 = oui) ;
 - C : part des fausses alertes où un événement est vu (Q1 = hypopnée ou apnée) ;
@@ -47,6 +50,16 @@ def read_answers(text: str, ids: set[str]) -> dict[str, dict]:
     return answers
 
 
+def sample_check(answers: dict[str, dict], sample_sha256: str) -> str:
+    """Rattachement du CSV au tirage : vérifié, refusé, ou non vérifiable pour une page antérieure."""
+    found = {row.get("tirage_sha256") for row in answers.values()}
+    if found == {None}:
+        return "non vérifiable : CSV sans empreinte du tirage (page antérieure au 19-11)"
+    if found != {sample_sha256}:
+        raise ValueError(f"CSV d'un autre tirage : {sorted(str(f) for f in found)} au lieu de {sample_sha256}")
+    return "vérifié"
+
+
 def proportion(hits: int, total: int) -> dict:
     return {"n": hits, "total": total, "part": round(hits / total, 3) if total else None}
 
@@ -84,6 +97,7 @@ def main() -> None:
     result = {
         "kind": "hypopnea_review_answers",
         "plan_sha256": sample["plan_sha256"],
+        "sample_check": sample_check(answers, file_sha256(args.sample)),
         "source_sha256": {"sample": file_sha256(args.sample), "answers": file_sha256(args.answers)},
         **summarize(sample["windows"], answers),
     }

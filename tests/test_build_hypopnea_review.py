@@ -53,3 +53,11 @@ def test_render_hides_groups_and_model_outputs():
     assert data["windows"] == [window]
     for leaked in ("probability", "group", "osf", "sleepfm", "tr0"):
         assert leaked not in json.dumps(data).lower()
+
+
+def test_storage_key_and_csv_carry_the_sample_hash():
+    """Audit A7 : deux tirages ne partagent ni les réponses enregistrées ni le format du CSV."""
+    html_text = page.render([], "d" * 64)
+    assert "const SAMPLE='" + "d" * 64 + "'" in html_text
+    assert "KEY='relecture-hypopnees-v1-'+SAMPLE" in html_text
+    assert "'tirage_sha256'" in html_text and "q(reviewer),SAMPLE]" in html_text
