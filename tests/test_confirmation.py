@@ -73,6 +73,8 @@ def setup(tmp_path):
         "split_file": split,
         "out": tmp_path / "sorties" / "confirmation",
         "require_clean": False,
+        "marker_dir": tmp_path / "registre",
+        "published": (),
     }
 
 
@@ -179,3 +181,32 @@ def test_all_subjects_rejected_is_refused(setup):
         (setup["embeddings_dir"] / f"{subject}.skipped").write_text("canaux manquants\n", encoding="utf-8")
     with pytest.raises(SystemExit, match="aucune nuit évaluable"):
         confirm.run_confirmation(**setup)
+
+
+def test_single_pass_does_not_depend_on_the_output_name(setup):
+    """Audit A5 : un autre préfixe ne relance pas la confirmation ; le passage publié compte aussi."""
+    report = confirm.run_confirmation(**setup)
+    marker = next(setup["marker_dir"].iterdir())
+    assert json.loads(marker.read_text(encoding="utf-8"))["state"] == "completed"
+    with pytest.raises(SystemExit, match="déjà lancée"):
+        confirm.run_confirmation(**(setup | {"out": setup["out"].with_name("autre_prefixe")}))
+    published = setup["out"].parent / "confirmation.json"
+    assert report["status"] == "terminé"
+    fresh = setup | {"out": setup["out"].with_name("troisieme"), "marker_dir": setup["marker_dir"].with_name("vide")}
+    with pytest.raises(SystemExit, match="déjà publiée"):
+        confirm.run_confirmation(**(fresh | {"published": (published,)}))
+    assert not (setup["out"].parent / "troisieme.json").exists()
+
+
+def test_published_physionet_pass_is_recognized():
+    """Le passage du 9 novembre (même protocole, même liste réservée) bloque toute relance."""
+    if not confirm.PUBLISHED[0].exists():
+        pytest.skip("résultat publié absent")
+    config = json.loads((confirm.ROOT / "configs/confirmation_physionet2018.json").read_text(encoding="utf-8"))
+    with pytest.raises(SystemExit, match="déjà publiée"):
+        confirm.reserve_pass(
+            confirm.ROOT / "configs/confirmation_physionet2018.json",
+            config,
+            confirm.ROOT / "inexistant",
+            confirm.PUBLISHED,
+        )

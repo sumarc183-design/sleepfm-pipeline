@@ -36,7 +36,8 @@ from pathlib import Path
 import numpy as np
 from sklearn.metrics import cohen_kappa_score, f1_score
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from run_baseline import cache_problem, load_cached_embeddings, rejection_reason  # noqa: E402
 from src.data.cache_contract import contract_differences, file_sha256, write_json_atomic  # noqa: E402
@@ -50,6 +51,9 @@ from src.models.linear_probe import (  # noqa: E402
 from src.models.probe_export import load_probes, run_environment  # noqa: E402
 
 BASELINE, CANDIDATE = "logistic", "sequence"
+# Registre du passage unique (audit A5) : indépendant du préfixe de sortie, réservé de façon exclusive.
+MARKER_DIR = ROOT / "results/confirmation_runs"
+PUBLISHED = (ROOT / "results/confirmation_physionet2018.json",)  # passage publié avant le registre
 LABEL_TO_STAGE = {v: k for k, v in STAGE_NAME_TO_LABEL.items()}
 
 
@@ -110,6 +114,24 @@ def pip_freeze() -> list[str] | None:
         return None
 
 
+def reserve_pass(config_path: Path, config: dict, marker_dir: Path, published: tuple[Path, ...]) -> Path:
+    """Réserve le passage unique de ce protocole et de cette liste réservée, ou refuse."""
+    config_sha = file_sha256(config_path)
+    for path in published:
+        if path.exists():
+            done = json.loads(path.read_text(encoding="utf-8"))
+            if done.get("config_sha256") == config_sha and done.get("reserved_sha256") == config["reserved_sha256"]:
+                raise SystemExit(f"Confirmation déjà publiée ({path.name}) : un seul passage. Rien n'a été calculé.")
+    marker = marker_dir / f"{config_sha[:12]}-{config['reserved_sha256'][:12]}.json"
+    marker_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        with marker.open("x", encoding="utf-8", newline="\n") as handle:  # exclusif entre processus
+            json.dump({"state": "started", "config_sha256": config_sha, "command": sys.argv}, handle)
+    except FileExistsError:
+        raise SystemExit(f"Confirmation déjà lancée ({marker.name}) : un seul passage. Rien n'a été calculé.") from None
+    return marker
+
+
 def run_confirmation(
     config_path: Path,
     models_dir: Path,
@@ -119,6 +141,8 @@ def run_confirmation(
     out: Path,
     rehearsal: list[str] | None = None,
     require_clean: bool = True,
+    marker_dir: Path = MARKER_DIR,
+    published: tuple[Path, ...] = PUBLISHED,
 ) -> dict:
     json_path, predictions_path = Path(f"{out}.json"), Path(f"{out}.predictions.npz")
     if json_path.exists() or predictions_path.exists():
@@ -162,6 +186,7 @@ def run_confirmation(
             problems.append(f"modèles : {exc}")
     if problems:
         raise SystemExit("Confirmation refusée, aucun score calculé :\n- " + "\n- ".join(problems))
+    marker = None if is_rehearsal else reserve_pass(config_path, config, marker_dir, published)
 
     report = {
         "status": "en cours",
@@ -240,6 +265,8 @@ def run_confirmation(
         "predictions": predictions_path.name,
     }
     write_json_atomic(json_path, json.loads(json.dumps(report, default=_json_default)))
+    if marker is not None:
+        write_json_atomic(marker, {"state": "completed", "report": str(json_path), "sha256": file_sha256(json_path)})
     print(report["kind"])
     print(f"{len(evaluated)} nuits évaluées sur {len(subjects)}, {len(rejected)} rejetée(s), {len(y)} époques")
     print(f"Baseline : κ {metrics[BASELINE]['cohen_kappa']:.4f}, BiGRU : κ {metrics[CANDIDATE]['cohen_kappa']:.4f}")
