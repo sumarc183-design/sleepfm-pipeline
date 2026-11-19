@@ -3,7 +3,7 @@ name = "sleepfm-pipeline"
 version = "0.1.0"
 description = "Reproduction et évaluation de SleepFM (modèle fondamental du sommeil) sur PhysioNet 2018 : embeddings figés, sondes et stadification 5 classes."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "Marc Su" }]
 license = { file = "LICENSE" }
 

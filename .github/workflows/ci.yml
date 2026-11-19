@@ -27,8 +27,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 3.10 : version minimale annoncée (pyproject, README) ; 3.11 : version de Colab et Kaggle
-        python-version: ["3.10", "3.11"]
+        # 3.11 : version minimale (scikit-learn 1.9 des modèles figés) et celle de Colab et Kaggle ; 3.12 : Windows local
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

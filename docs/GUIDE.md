@@ -12,8 +12,9 @@ pre-commit install                    # optionnel : lint et format à chaque com
 bash scripts/setup_sleepfm.sh         # clone le code officiel SleepFM dans third_party/ (best.pt)
 ```
 
-Python 3.10 ou plus. `requirements.txt` borne chaque dépendance à la version
-majeure validée (Mac Intel, Colab et Windows 11).
+Python 3.11 ou plus : les modèles figés sont enregistrés avec scikit-learn 1.9.1, qui n'existe pas
+pour Python 3.10. `requirements.txt` borne chaque dépendance à la version majeure validée
+(Mac Intel, Colab et Windows 11) et scikit-learn à la série 1.9.
 
 Sous Windows (Git Bash), activer avec `source .venv/Scripts/activate` ;
 `pre-commit` n'est pas dans `requirements-dev.txt` (`pip install pre-commit`).
