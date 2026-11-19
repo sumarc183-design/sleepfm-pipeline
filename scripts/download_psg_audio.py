@@ -75,9 +75,13 @@ def retry_delay(exc: Exception, attempt: int) -> float:
 
 
 def read_with_deadline(response, deadline: float) -> bytes:
-    """Corps lu par morceaux ; au-delà de l'échéance, abandon (réessayé par `fetch`)."""
+    """Corps lu par morceaux ; au-delà de l'échéance, abandon (réessayé par `fetch`).
+
+    `read1` rend ce qui est déjà arrivé : `read(n)` attendrait n octets, et un serveur qui
+    distille quelques octets par minute ne rendrait jamais la main (blocage de 7 h le 19-11).
+    """
     chunks = []
-    while chunk := response.read(1 << 20):
+    while chunk := response.read1(1 << 16):
         chunks.append(chunk)
         if time.monotonic() > deadline:
             raise TimeoutError(f"réponse trop lente (plus de {REQUEST_DEADLINE:.0f} s)")

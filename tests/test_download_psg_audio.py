@@ -107,7 +107,7 @@ def test_fetch_retries_after_incomplete_read(monkeypatch):
         def __init__(self):
             self.parts = [b"ok", b""]
 
-        def read(self, n):
+        def read1(self, n):
             return self.parts.pop(0)
 
     def urlopen(request, timeout):
@@ -138,7 +138,7 @@ def test_trickling_response_is_abandoned_at_the_deadline(monkeypatch):
     monkeypatch.setattr(dl.time, "monotonic", lambda: next(clock))
 
     class Trickle:
-        def read(self, n):
+        def read1(self, n):
             return b"x"
 
     with pytest.raises(TimeoutError, match="trop lente"):
@@ -157,7 +157,23 @@ def test_normal_response_is_read_whole():
     class Body:
         parts = [b"ab", b"cd", b""]
 
-        def read(self, n):
+        def read1(self, n):
             return self.parts.pop(0)
 
     assert dl.read_with_deadline(Body(), deadline=float("inf")) == b"abcd"
+
+
+def test_deadline_is_checked_even_if_bytes_trickle(monkeypatch):
+    """Régression du 19-11 : `read(n)` attendait n octets et ne rendait jamais la main."""
+    clock = iter(range(0, 10_000, 400))
+    monkeypatch.setattr(dl.time, "monotonic", lambda: next(clock))
+
+    class Trickle:
+        def read(self, n):  # ne doit plus être appelée
+            raise AssertionError("read(n) bloquerait jusqu'à n octets")
+
+        def read1(self, n):
+            return b"x"
+
+    with pytest.raises(TimeoutError):
+        dl.read_with_deadline(Trickle(), deadline=dl.time.monotonic() + dl.REQUEST_DEADLINE)
