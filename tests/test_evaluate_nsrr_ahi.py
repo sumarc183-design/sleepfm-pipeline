@@ -355,3 +355,35 @@ def test_constant_index_is_not_interpretable():
     status = ev.model_status(night, records, sorted(records))["models"]
     assert not status["sleepfm"]["interpretable"] and len(status["sleepfm"]["reasons"]) == 2
     assert status["osf"]["interpretable"]
+
+
+@needs_results
+@pytest.mark.parametrize(
+    ("n_events", "present", "absent"), [(60, "sensitivity", "specificity"), (0, "specificity", "sensitivity")]
+)
+def test_single_iah_class_still_writes_the_report(setup, n_events, present, absent):
+    """Audit A2 du 19-11 : toutes positives puis toutes négatives, rapport et verdict par classe."""
+    for subject in SUBJECTS[:-1]:
+        if subject != "mesa-sleep-0001":  # nuit trop courte, toujours exclue
+            (setup.annotations_dir / f"{subject}-nsrr.xml").write_bytes(night_xml(n_events=n_events))
+    report = ev.run(setup)
+    assert report["nights"]["evaluated"] == 11
+    assert report["nights"]["positive_15"] == (11 if n_events else 0)
+    for model in MODELS:
+        result = report["results"][model]
+        assert result["primary"][present] is not None and result["primary"][absent] is None
+        assert "auc_rate" in result["not_computable"]
+        assert report["bootstrap"]["ci95"][model][absent] is None
+        assert len(report["bootstrap"]["ci95"][model][present]) == 2
+    osf = report["success_criterion"]["models"]["osf"]
+    assert osf["by_class"][absent] == "non concluant (effectif insuffisant)"
+    assert osf["verdict"] == "non concluant (effectif insuffisant)"
+    marker = json.loads(next(setup.marker_dir.iterdir()).read_text(encoding="utf-8"))
+    assert marker["state"] == "completed"
+    assert json.loads(setup.out.with_suffix(".json").read_text(encoding="utf-8"))["nights"]["evaluated"] == 11
+
+
+@pytest.mark.parametrize(("nights", "expected"), [(79, "non concluant (effectif insuffisant)"), (80, "réussi")])
+def test_class_threshold_is_80_nights(nights, expected):
+    assert ev.class_verdict(0.65, nights) == expected
+    assert ev.class_verdict(0.55, 80) == "échoué" and ev.class_verdict(None, 0).startswith("non concluant")

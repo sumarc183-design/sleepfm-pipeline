@@ -41,8 +41,8 @@ from scipy.stats import beta
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.embed_nsrr import PREPARATION_CODE, expected_contract, subject_list  # noqa: E402
-from scripts.estimate_respiratory_ahi import MODELS, bootstrap, evaluate_test  # noqa: E402
-from src.data.ahi import AHI_CUTOFF, MIN_SLEEP_H, positive_rate  # noqa: E402
+from scripts.estimate_respiratory_ahi import MODELS, N_BOOT, SEED, bootstrap, evaluate_test  # noqa: E402
+from src.data.ahi import AHI_CUTOFF, MIN_SLEEP_H, bootstrap_draws, percentile_ci, positive_rate  # noqa: E402
 from src.data.cache_contract import file_sha256, write_json_atomic  # noqa: E402
 from src.data.nsrr_annotations import parse_nsrr_xml, reference_ahi_nsrr  # noqa: E402
 from src.data.nsrr_cache import EPOCH_S, check_cache  # noqa: E402
@@ -334,8 +334,9 @@ def criterion(uncertainty: dict, positives: int, negatives: int) -> dict:
     """Verdict par modèle (bornes basses bootstrap), avec effectif minimal et modèles jugés du 18 novembre."""
     out = {}
     for model in MODELS:
-        low_sens = uncertainty["ci95"][model]["sensitivity"][0]
-        low_spec = uncertainty["ci95"][model]["specificity"][0]
+        ci = uncertainty["ci95"][model]
+        low_sens = ci["sensitivity"][0] if ci["sensitivity"] else None  # classe absente : non définie
+        low_spec = ci["specificity"][0] if ci["specificity"] else None
         entry = {"sensitivity_lower": low_sens, "specificity_lower": low_spec}
         if model not in JUDGED_MODELS:
             out[model] = entry | {"judged": False, "verdict": "non jugé (respiration à basse fréquence)"}
@@ -349,6 +350,57 @@ def criterion(uncertainty: dict, positives: int, negatives: int) -> dict:
             verdict = "non concluant (effectif insuffisant)"
         out[model] = entry | {"judged": True, "by_class": parts, "verdict": verdict, "success": verdict == "réussi"}
     return out
+
+
+ONE_CLASS = "non calculable : moins de deux classes IAH parmi les nuits évaluées"
+
+
+def one_class_metrics(night: dict, calibration: dict, truth: np.ndarray) -> tuple[dict, dict, dict]:
+    """Moins de deux classes IAH ou de deux nuits (audit A2 du 19-11) : rapport écrit quand même.
+
+    Seules les mesures de la classe présente sont définies : sensibilité si des nuits positives,
+    spécificité si des nuits négatives, avec le même bootstrap (graine, tirages) que le cas général.
+    AUC, corrélations et accords entre classes sont publiés comme non calculables, avec la raison.
+    """
+    n = len(truth)
+    reference = night.get("reference_ahi", np.zeros(0))
+    draws = bootstrap_draws(n, N_BOOT, SEED) if n else None
+    results, estimates, ci = {}, {}, {}
+    for model in MODELS:
+        rate = calibration[model]["rate"]
+        estimated = rate["a"] + rate["b"] * night[f"rate_{model}"] if n else np.zeros(0)
+        estimates[model] = estimated
+        predicted = estimated >= AHI_CUTOFF
+        correct = predicted == truth  # dans une seule classe : sensibilité ou spécificité par nuit
+        interval = percentile_ci(correct[draws].mean(axis=1)) if n else None
+        results[model] = {
+            "primary": {
+                "sensitivity": float(correct[truth].mean()) if truth.any() else None,
+                "specificity": float(correct[~truth].mean()) if (~truth).any() else None,
+            },
+            "mae": float(np.abs(estimated - reference).mean()) if n else None,
+            "not_computable": {k: ONE_CLASS for k in ("auc_rate", "spearman", "bland_altman", "kappa")},
+            "confusion_15": {
+                "true_positive": int((predicted & truth).sum()),
+                "false_negative": int((~predicted & truth).sum()),
+                "false_positive": int((predicted & ~truth).sum()),
+                "true_negative": int((~predicted & ~truth).sum()),
+            },
+        }
+        ci[model] = {
+            "sensitivity": interval if truth.any() else None,
+            "specificity": interval if (~truth).any() else None,
+            "auc_rate": None,
+        }
+    uncertainty = {
+        "draws": N_BOOT,
+        "seed": SEED,
+        "skipped_draws": 0,
+        "ci95": ci,
+        "auc_difference_osf_minus_sleepfm_ci95": None,
+        "not_computable": ONE_CLASS,
+    }
+    return results, estimates, uncertainty
 
 
 def against_official(night: dict, official: np.ndarray, calibration: dict) -> dict:
@@ -468,17 +520,16 @@ def evaluate(args, checked: dict) -> dict:
         else:
             rows[subject] = row
     subjects = sorted(rows)
-    if len(subjects) < 2:
-        raise ValueError("Moins de 2 nuits évaluables")
-    night = {"subject": np.array(subjects)}
-    for key in rows[subjects[0]]:
+    night = {"subject": np.array(subjects, dtype=str)}
+    for key in rows[subjects[0]] if subjects else ():
         night[key] = np.array([rows[s][key] for s in subjects], dtype=float)
-    truth = night["reference_ahi"] >= AHI_CUTOFF
-    if truth.all() or not truth.any():
-        raise ValueError("Une seule classe IAH parmi les nuits : critère non calculable")
-    eligible = np.ones(len(subjects), dtype=bool)
-    results, estimates = evaluate_test(night, frozen["calibration"], eligible)
-    uncertainty = bootstrap(night, estimates, eligible)
+    truth = night["reference_ahi"] >= AHI_CUTOFF if subjects else np.zeros(0, dtype=bool)
+    if truth.any() and not truth.all():
+        eligible = np.ones(len(subjects), dtype=bool)
+        results, estimates = evaluate_test(night, frozen["calibration"], eligible)
+        uncertainty = bootstrap(night, estimates, eligible)
+    else:  # verdict par classe prévu au plan : la classe vide est « non concluant (effectif insuffisant) »
+        results, estimates, uncertainty = one_class_metrics(night, frozen["calibration"], truth)
     report = {
         "kind": "nsrr_ahi_confirmation",
         "cohort": args.cohort,
@@ -497,7 +548,7 @@ def evaluate(args, checked: dict) -> dict:
             "excluded": excluded,
         },
         "policy": {"xml_overrun_tolerance_s": XML_OVERRUN_TOLERANCE_S, "min_sleep_h": MIN_SLEEP_H},
-        "model_status": model_status(night, extraction["records"], subjects),
+        "model_status": model_status(night, extraction["records"], subjects) if subjects else None,
         "null_means": "valeur non calculable (série constante, dénominateur nul)",
         "thresholds": frozen["thresholds"],
         "calibration": frozen["calibration"],
@@ -536,11 +587,16 @@ def evaluate(args, checked: dict) -> dict:
         ext: {"file": p.name, "sha256": file_sha256(p)} for ext, p in outputs.items() if ext != "json"
     }
     write_json_atomic(outputs["json"], report)
+
+    def shown(value):
+        return "non définie" if value is None else f"{value:.3f}"
+
     for model, verdict in report["success_criterion"]["models"].items():
         primary = results[model]["primary"]
         print(
-            f"{model} : sensibilité {primary['sensitivity']:.3f} (borne basse {verdict['sensitivity_lower']:.3f}), "
-            f"spécificité {primary['specificity']:.3f} (borne basse {verdict['specificity_lower']:.3f}) ; "
+            f"{model} : sensibilité {shown(primary['sensitivity'])} "
+            f"(borne basse {shown(verdict['sensitivity_lower'])}), "
+            f"spécificité {shown(primary['specificity'])} (borne basse {shown(verdict['specificity_lower'])}) ; "
             + ("descriptif, pas de verdict" if args.cohort in DESCRIPTIVE_COHORTS else verdict["verdict"])
         )
     return report

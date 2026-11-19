@@ -153,3 +153,25 @@ sans aucune donnée de ces cohortes regardée :
   suffisants ; « échoué » si une borne basse jugeable est à 60 % ou moins ; sinon « non concluant ».
 - **IC exact de Clopper-Pearson** (95 %) ajouté en complément du bootstrap pour la sensibilité et
   la spécificité. Le critère reste lu sur le bootstrap ; le seuil de 60 % et la référence ne changent pas.
+
+Règles PSG-Audio du 19 novembre (Marc, après l'audit du 19-11), fixées avant le passage PSG-Audio.
+Aucun IAH, aucune prédiction ni aucune métrique PSG-Audio n'a été calculé. Pour le contrôle PPC,
+seuls l'en-tête d'étude des `.rml` (`StudyType`, configuration des voies) et les comptes globaux
+des types d'événements, toutes nuits confondues, ont été lus.
+- **Nuits sous PPC : aucune.** Article de PSG-Audio (Korompili et al., Sci Data 2021) : protocole de
+  nuit fractionnée, « only the first part of the recorded study was included ». Les 105 premiers
+  `.rml` sont de type `PSG`, de configuration diagnostique unique (`LDxS_PSG_AASM-C3-C4`), sans voie
+  de pression ni de fuite. Les nuits courtes (partie diagnostique d'une nuit fractionnée, environ 4 h)
+  sont **gardées** : elles restent soumises à la règle d'1 h de sommeil. La durée d'enregistrement de
+  chaque nuit est publiée, avec le nombre de nuits de moins de 5 h, sans verdict séparé.
+- **Enregistrement interrompu** (tranches EDF non contiguës, par exemple 00001394, à qui il manque
+  11 min) : nuit **exclue**, avec le motif publié. Le signal n'est ni comblé ni recollé.
+- **Tranches incompatibles** (calibre, unité, fréquence, filtre ou durée d'enregistrement différents
+  de la première tranche sur une voie gardée ; contrôle de l'audit A1) : nuit **exclue**, avec le motif
+  publié. Aucune conversion. Les EDF assemblés avant ce contrôle sont qualifiés par les en-têtes source
+  (`scripts/check_psg_audio_headers.py`). Une nuit incompatible est exclue de la même façon.
+- **Classe IAH vide ou moins de deux nuits** (audit A2) : le rapport est quand même écrit. La classe
+  vide reçoit « non concluant (effectif insuffisant) » ; les mesures de la classe présente sont
+  publiées avec leur IC, et les mesures non calculables avec leur raison.
+- Ces exclusions sont faites à l'extraction (`<sujet>.skipped` motivé), donc avant toute lecture des
+  annotations par l'évaluateur, et comptées dans le rapport.
