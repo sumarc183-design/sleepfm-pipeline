@@ -41,3 +41,39 @@ jobs:
         run: pytest tests/ -v -m "not slow"
       - name: Test bout-en-bout (données synthétiques)
         run: pytest tests/ -v -m "slow"
+
+  # Audit A6 du 19-11 : le projet tourne sous Windows (empreintes, fins de ligne, chemins).
+  test-windows:
+    runs-on: windows-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installer les dépendances
+        run: pip install -r requirements-dev.txt
+      - name: Fins de ligne LF dans le checkout (empreintes des fichiers figés)
+        shell: bash
+        run: |
+          if git ls-files --eol | grep "w/crlf"; then echo "Fichiers en CRLF"; exit 1; fi
+      - name: Tests unitaires (rapides)
+        run: pytest tests/ -m "not slow"
+
+  # Environnement séparé de lecture des annotations respiratoires (wfdb 4.1.2, NumPy 1, pandas 2).
+  test-respiratory:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Installer l'environnement respiratoire
+        run: pip install -r requirements-respiratory.txt pytest
+      - name: Cohérence des dépendances
+        run: pip check
+      - name: Lecture des annotations respiratoires
+        run: pytest tests/test_respiratory_event_eval.py tests/test_respiratory_baseline.py -m "not slow"
