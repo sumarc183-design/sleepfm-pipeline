@@ -438,7 +438,7 @@ def precheck(args) -> dict:
         raise ValueError("Sortie existante : la confirmation ne se lance qu'une fois")
     if not args.plan.exists():
         raise ValueError(f"Plan absent : {args.plan}")
-    # Un plan hors du dépôt (dossier Journal) n'est pas suivi par git : son empreinte est enregistrée.
+    # Un plan hors du dépôt n'est pas suivi par git : son empreinte est enregistrée.
     plan = args.plan.resolve()
     dirty = uncommitted([*CODE, *([plan.relative_to(ROOT)] if plan.is_relative_to(ROOT) else [])])
     if dirty:

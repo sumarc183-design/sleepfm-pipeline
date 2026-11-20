@@ -5,7 +5,7 @@ C = fausses alertes OSF sans événement annoté (10). Au plus une fenêtre par 
 groupe : nuits tirées d'abord, puis une fenêtre par nuit. Ordre d'affichage mélangé. Graine 42,
 tirage unique : refuse d'écraser un échantillon existant.
 
-    python scripts/select_hypopnea_review.py --plan "../Journal/Plan examen hypopnées médecin 17-11.md" \\
+    python scripts/select_hypopnea_review.py --plan "docs/plans/Plan examen hypopnées médecin 17-11.md" \\
         --out results/hypopnea_review_sample.json
 """
 

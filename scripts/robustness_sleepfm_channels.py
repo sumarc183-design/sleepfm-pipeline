@@ -1,11 +1,11 @@
 """Robustesse de la sonde respiratoire SleepFM aux canaux absents et à la respiration sous-échantillonnée.
 
-Plan fixé avant calcul : Journal/Plan robustesse SleepFM canaux PhysioNet 16-11.md (passer son chemin
+Plan fixé avant calcul : docs/plans/Plan robustesse SleepFM canaux PhysioNet 16-11.md (passer son chemin
 avec --plan, empreinte enregistrée). Diagnostic descriptif sur les 40 nuits de validation : aucune règle,
 aucun modèle ni seuil ne change. Téléchargement nuit par nuit (la suivante pendant le calcul),
 fichiers supprimés après lecture ; reprise après arrêt.
 
-    python scripts/robustness_sleepfm_channels.py --plan "../Journal/Plan robustesse SleepFM canaux PhysioNet 16-11.md"
+    python scripts/robustness_sleepfm_channels.py --plan "docs/plans/Plan robustesse SleepFM canaux PhysioNet 16-11.md"
 """
 
 from __future__ import annotations
