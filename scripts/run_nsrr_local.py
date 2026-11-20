@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 import shutil
+import ssl
 import subprocess
 import sys
 import time
@@ -30,6 +31,26 @@ DATASET = {"mesa": "mesa", "shhs1": "shhs"}
 EDF_PATH = {"mesa": "polysomnography/edfs", "shhs1": "polysomnography/edfs/shhs1"}
 XML_PATH = {"mesa": "polysomnography/annotations-events-nsrr", "shhs1": "polysomnography/annotations-events-nsrr/shhs1"}
 HEADERS = {"User-Agent": "sleepfm-pipeline research download"}
+# sleepdata.org n'envoie pas son certificat intermédiaire (Sectigo DV R36, vérifié le 20-11) : Windows
+# le retrouve seul, pas Linux (Kaggle). Intermédiaire public joint, vérification complète conservée
+# jusqu'à la racine Sectigo R46 du magasin système ou de certifi. SHA-256 de l'intermédiaire :
+# 8C:54:C3:34:B6:6B:A4:E4:26:77:2A:F4:A3:F9:13:6C:19:A1:AE:C7:29:FD:B2:8C:53:5C:07:A5:A4:EF:22:E0
+INTERMEDIATE = Path(__file__).resolve().parents[1] / "configs/certs/sectigo_dv_r36.pem"
+
+
+def tls_context() -> ssl.SSLContext:
+    context = ssl.create_default_context()
+    try:
+        import certifi
+
+        context.load_verify_locations(certifi.where())
+    except ImportError:
+        pass
+    context.load_verify_locations(INTERMEDIATE)
+    return context
+
+
+TLS = tls_context()
 LOT = 10
 
 
@@ -54,7 +75,7 @@ def folder_index(dataset: str, path: str, token: str) -> dict[str, dict]:
     """{nom de fichier: {size, md5, full_path}} d'un dossier NSRR (API publique de la gem)."""
     query = urllib.parse.urlencode({"auth_token": token, "path": path})
     request = urllib.request.Request(f"{WEBSITE}/api/v1/datasets/{dataset}/files.json?{query}", headers=HEADERS)
-    with urllib.request.urlopen(request, timeout=120) as response:
+    with urllib.request.urlopen(request, timeout=120, context=TLS) as response:
         entries = json.load(response)
     return {
         e["file_name"]: {"size": int(e["file_size"]), "md5": e["file_checksum_md5"], "full_path": e["full_path"]}
@@ -71,7 +92,8 @@ def download_file(dataset: str, entry: dict, dest: Path, token: str, attempts: i
     for _ in range(attempts):
         digest, size = hashlib.md5(), 0
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=HEADERS), timeout=600) as response:
+            request = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(request, timeout=600, context=TLS) as response:
                 if "text/html" in response.headers.get("Content-Type", ""):
                     raise AccessError(f"{entry['full_path']} : page HTML au lieu du fichier (accès non ouvert ?)")
                 with partial.open("wb") as handle:

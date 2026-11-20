@@ -30,7 +30,7 @@ def entry(body: bytes, name="mesa-sleep-0001.edf"):
 def serve(monkeypatch, *bodies):
     calls = []
 
-    def urlopen(request, timeout):
+    def urlopen(request, timeout, context=None):
         calls.append(request.full_url)
         body = bodies[min(len(calls), len(bodies)) - 1]
         if isinstance(body, Exception):
@@ -132,3 +132,15 @@ def test_npz_without_its_record_is_still_pending(tmp_path):
     (tmp_path / "b.json").write_text("{}")
     (tmp_path / "c.skipped").write_text("EDF tronqué")
     assert nsrr.pending(["a", "b", "c", "d"], tmp_path) == ["a", "d"]
+
+
+def test_tls_context_verifies_with_the_joined_intermediate():
+    """sleepdata.org sans intermédiaire (20-11) : vérification conservée, intermédiaire public joint."""
+    import hashlib
+    import ssl
+
+    assert nsrr.TLS.verify_mode == ssl.CERT_REQUIRED and nsrr.TLS.check_hostname
+    der = ssl.PEM_cert_to_DER_cert(nsrr.INTERMEDIATE.read_text(encoding="ascii"))
+    assert hashlib.sha256(der).hexdigest().upper() == (
+        "8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0"
+    )
