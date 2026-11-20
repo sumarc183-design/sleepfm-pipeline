@@ -142,13 +142,27 @@ ce titre au notebook importé pour s'y retrouver.
 | `notebooks/sleepfm_embeddings_physionet2018.ipynb` | SleepFM — embeddings PhysioNet 2018 (GPU) | Calcule les embeddings SleepFM sur GPU (Kaggle ou Colab) ; sondes ensuite sur le Mac, ou ici avec `EMBED_ONLY = False` |
 | `notebooks/sleepfm_raw_grid_physionet2018.ipynb` | SleepFM — prédiction sur PSG brute, grille fixe (PhysioNet 2018, GPU) | Embeddings des 100 nuits de test sur la grille fixe de 30 s, pour évaluer la prédiction sur PSG brute ; évaluation ensuite sur le Mac |
 | `notebooks/sleepfm_osf_physionet2018.ipynb` | SleepFM — embeddings OSF PhysioNet 2018 (comparaison exploratoire, GPU) | Embeddings OSF figés des 500 sujets de développement, mêmes fenêtres que SleepFM (option A de `docs/OSF_COMPARISON.md`) |
+| `notebooks/sleepfm_nsrr_embeddings.ipynb` | SleepFM NSRR embeddings MESA (GPU) | Embeddings SleepFM et OSF de la liste figée NSRR, une partie de 400 nuits par session (`PART`), jeton dans le secret Kaggle `NSRR_TOKEN` ; sortie : un zip par partie |
 
 **NSRR sans cloud** : `scripts/run_nsrr_local.py` reprend la logique du notebook NSRR sur la machine
 locale (lots de 10 nuits téléchargés depuis sleepdata.org, taille et MD5 vérifiés, embeddings puis EDF
-supprimés ; environ 1 min par nuit sur processeur). Les données ne quittent pas la machine, tant que
+supprimés ; environ 6 min par nuit MESA sur processeur, dont 2,5 min de calcul, mesuré le 20-11). Les données ne quittent pas la machine, tant que
 l'accord NSRR n'a pas été vérifié pour Kaggle. Jeton personnel dans `~/.nsrr_token` (jamais commité).
 Essai : `--cohort mesa --limit 2` ; annotations XML : `--annotations`. Il s'arrête net si l'accès à la
 cohorte n'est pas encore ouvert (page HTML au lieu du fichier).
+
+**Confirmation NSRR, de bout en bout** (exemple MESA ; SHHS-1 : `shhs1`, `shhs1-dataset-0.21.0.csv`) :
+
+```bash
+python scripts/run_nsrr_local.py --cohort mesa --annotations          # XML dans data/nsrr/mesa/annotations-events-nsrr
+python scripts/merge_embedding_parts.py --out embeddings/nsrr_mesa ~/Downloads/embeddings_nsrr_mesa_part*.zip
+python scripts/embed_nsrr.py --cohort mesa --edf-dir data/nsrr/mesa/vide --subjects configs/nsrr_mesa_subjects.json     --out embeddings/nsrr_mesa --checkpoint third_party/sleepfm/sleepfm/checkpoint/best.pt     --osf-checkpoint third_party/osf/osf_backbone.pth --respiratory-rule physionet_median_v2   # recalcule run_status.json
+python scripts/evaluate_nsrr_ahi.py --cohort mesa --embeddings embeddings/nsrr_mesa     --annotations-dir data/nsrr/mesa/annotations-events-nsrr     --official-csv data/nsrr/mesa/datasets/mesa-sleep-dataset-0.8.0.csv --out results/nsrr_ahi_mesa   # une seule fois
+```
+
+Le CSV officiel (IAH `ahi_a0h3` et `ahi_a0h4`, référence secondaire) se télécharge comme les EDF,
+MD5 vérifié ; contrôlé le 20-11 : les 2 056 nuits MESA et les 5 793 nuits SHHS-1 y ont une valeur.
+Le certificat intermédiaire de sleepdata.org est joint (`configs/certs/`), car le serveur ne l'envoie pas.
 
 ### Google Colab (GPU gratuit)
 
