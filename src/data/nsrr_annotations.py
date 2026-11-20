@@ -34,9 +34,20 @@ RESPIRATORY_CONCEPTS = {
     "mixed apnea": "resp_mixedapnea",
     "hypopnea": "resp_hypopnea",
 }
-# Concepts respiratoires attendus mais non ciblés par la règle (désaturations, artefacts d'oxymétrie).
-# Tout autre concept de la famille « Respiratory », ou contenant « apnea », est inconnu.
-NON_TARGET_RESPIRATORY = frozenset(("spo2 desaturation", "spo2 artifact"))
+# Concepts respiratoires attendus mais non ciblés par la règle : désaturations et artefacts
+# d'oxymétrie (13 nov.) ; « Unsure », RERA, respiration périodique et artefact respiratoire (plan,
+# 20 nov., relevés dans les XML MESA). Tout autre concept de la famille « Respiratory », ou contenant
+# « apnea », est inconnu.
+NON_TARGET_RESPIRATORY = frozenset(
+    (
+        "spo2 desaturation",
+        "spo2 artifact",
+        "unsure",
+        "respiratory effort related arousal",
+        "periodic breathing",
+        "respiratory artifact",
+    )
+)
 SLEEP_STAGES = ("N1", "N2", "N3", "R")
 
 

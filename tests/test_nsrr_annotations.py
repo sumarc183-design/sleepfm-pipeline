@@ -96,3 +96,25 @@ def test_truncated_xml_is_value_error():
 
 def test_recording_end_from_stages():
     assert parse_nsrr_xml(SAMPLE)["recording_end_s"] == pytest.approx(9000.0)
+
+
+def test_mesa_non_target_concepts_are_neither_counted_nor_blocking():
+    """Plan du 20-11 : Unsure, RERA, respiration périodique, artefact respiratoire (XML MESA réels)."""
+    xml = document(
+        scored("Stages|Stages", "Stage 2 sleep|2", 0, 7200),
+        scored("Respiratory|Respiratory", "Hypopnea|Hypopnea", 100, 20),
+        scored("Respiratory|Respiratory", "Unsure|Unsure", 300, 11.4),
+        scored("Respiratory|Respiratory", "Respiratory effort related arousal|RERA", 400, 12),
+        scored("Respiratory|Respiratory", "Periodic breathing|Periodic breathing", 500, 60),
+        scored("Respiratory|Respiratory", "Respiratory artifact|Respiratory artifact", 600, 30),
+    )
+    parsed = parse_nsrr_xml(xml)
+    assert parsed["unknown_concepts"] == {}
+    assert set(parsed["other_concepts"]) == {
+        "unsure",
+        "respiratory effort related arousal",
+        "periodic breathing",
+        "respiratory artifact",
+    }
+    reference = reference_ahi_nsrr(parsed)
+    assert reference["events"] == 1 and reference["ahi"] == 0.5  # seule l'hypopnée compte, 2 h de sommeil

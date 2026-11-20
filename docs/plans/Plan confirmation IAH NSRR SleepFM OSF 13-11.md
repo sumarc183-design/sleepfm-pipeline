@@ -176,3 +176,14 @@ des types d'événements, toutes nuits confondues, ont été lus.
 - Ces exclusions sont faites à l'extraction (`<sujet>.skipped` motivé, écrit par
   `scripts/reject_psg_audio_nights.py`), donc avant toute lecture des annotations par l'évaluateur,
   et comptées dans le rapport. Les échecs réseau ne sont pas des exclusions : ces nuits sont reprises.
+
+Concepts respiratoires NSRR du 20 novembre (Marc), fixés avant le passage NSRR. Aucun IAH, aucune
+prédiction ni aucune métrique NSRR n'a été calculé : seuls la lisibilité des XML MESA déjà reçus
+(682) et les comptes de concepts, toutes nuits confondues, ont été lus.
+- **Non ciblés** (ni comptés dans l'IAH de référence, ni bloquants) : `Unsure` (événement dont le
+  scoreur n'était pas sûr, présent dans 673 nuits sur 682), RERA, respiration périodique, artefact
+  respiratoire. L'IAH de référence reste la somme des apnées obstructives, centrales, mixtes et des
+  hypopnées annotées explicitement, comme sur PhysioNet ; RERA et respiration périodique sont déjà
+  non ciblés pour PSG-Audio. L'IAH officiel NSRR (`ahi_a0h3`, `ahi_a0h4`) reste lu en référence
+  secondaire, sans changement.
+- Tout autre concept respiratoire inconnu continue d'arrêter le précontrôle.
