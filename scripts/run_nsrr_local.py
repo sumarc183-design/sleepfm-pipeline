@@ -23,6 +23,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 WEBSITE = "https://sleepdata.org"
@@ -114,22 +115,28 @@ def download_file(dataset: str, entry: dict, dest: Path, token: str, attempts: i
     raise RuntimeError(f"{entry['full_path']} : {problem}")
 
 
-def download_lot(cohort: str, lot: list[str], index: dict, folder: Path, token: str) -> list[str]:
-    """EDF du lot dans `folder` ; renvoie les sujets non obtenus (absents de NSRR ou en échec)."""
-    missing = []
-    for subject in lot:
+def download_lot(cohort: str, lot: list[str], index: dict, folder: Path, token: str, workers: int = 1) -> list[str]:
+    """EDF du lot dans `folder` ; renvoie les sujets non obtenus (absents de NSRR ou en échec), dans l'ordre.
+
+    `workers` fichiers à la fois : NSRR limite le débit par connexion (environ 2,5 Mo/s mesurés sur
+    Kaggle le 20-11), le GPU attendait les EDF les trois quarts du temps. Accès refusé : arrêt du lot.
+    """
+
+    def one(subject: str) -> str | None:
         entry = index.get(f"{subject}.edf")
         if entry is None:
-            missing.append(subject)
-            continue
+            return subject
         try:
             download_file(DATASET[cohort], entry, folder / f"{subject}.edf", token)
         except RuntimeError as exc:
             if isinstance(exc, AccessError):
                 raise
             print(f"  {subject} non obtenu : {redact(exc, token)}", flush=True)
-            missing.append(subject)
-    return missing
+            return subject
+        return None
+
+    with ThreadPoolExecutor(max(1, workers)) as pool:
+        return [s for s in pool.map(one, lot) if s is not None]
 
 
 def pending(subjects: list[str], out: Path) -> list[str]:

@@ -144,3 +144,29 @@ def test_tls_context_verifies_with_the_joined_intermediate():
     assert hashlib.sha256(der).hexdigest().upper() == (
         "8C54C334B66BA4E426772AF4A3F9136C19A1AEC729FDB28C535C07A5A4EF22E0"
     )
+
+
+def test_parallel_lot_downloads_several_files_and_keeps_order(monkeypatch, tmp_path):
+    """4 fichiers à la fois (20-11) : mêmes sujets manquants, dans l'ordre du lot."""
+    import threading
+    import time
+
+    running, peak, lock = [0], [0], threading.Lock()
+
+    def fake_download(dataset, entry, dest, token, attempts=2):
+        with lock:
+            running[0] += 1
+            peak[0] = max(peak[0], running[0])
+        time.sleep(0.05)
+        with lock:
+            running[0] -= 1
+        if "0003" in dest.name:
+            raise RuntimeError("MD5 différent après deux essais")
+        dest.write_bytes(b"EDF")
+
+    monkeypatch.setattr(nsrr, "download_file", fake_download)
+    lot = [f"mesa-sleep-000{i}" for i in range(1, 9)]
+    index = {f"{s}.edf": {} for s in lot if s != "mesa-sleep-0006"}
+    missing = nsrr.download_lot("mesa", lot, index, tmp_path, TOKEN, workers=4)
+    assert missing == ["mesa-sleep-0003", "mesa-sleep-0006"]
+    assert peak[0] > 1 and len(list(tmp_path.glob("*.edf"))) == 6
